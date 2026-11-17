@@ -40,7 +40,7 @@ describe('packaged photo sessions', () => {
   it('retains three historical fixture JPEGs, byte-for-byte matching their provenance', () => {
     expect(demoPack.media).toHaveLength(3);
     for (const m of demoPack.media) {
-      const bytes = readFileSync(`test-fixtures/legacy-shrimp${m.path}`);
+      const bytes = readFileSync(`../../test-fixtures/legacy-shrimp${m.path}`);
       expect(bytes.subarray(0, 2).toString('hex')).toBe('ffd8');
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(m.sha256);
       expect(m.path).not.toMatch(/black-tiger|whiteleg|giant-river|FDA/iu);

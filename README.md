@@ -31,13 +31,13 @@ Reload giữ câu/lựa chọn/thứ tự/lần nộp; nộp kép không cộng 
 
 ## Dữ liệu và tài sản
 
-- `src/data/customer.ts`: 6 loài, 24 tên gọi có tham chiếu nguồn, 3 bài HS mới, version `seafood-trade-demo-1`. Nhóm thịt trắng/đỏ là thuộc tính thương mại, tách khỏi định danh.
-- `src/data/customerMedia.ts`, `public/media/customer/`: 5 ảnh thật ứng viên với nguồn/quyền, hash, ID ảnh gốc; 0 ảnh duyệt nhận diện. Ảnh mực còn thiếu.
-- `public/media/illustrations/`: 3 minh họa 2D nền alpha riêng cho trang học, thư viện và ôn tập. Nền do CSS quản lý, không cần gen lại khi đổi màu nền. Không gán loài hoặc đưa vào allowlist nhận diện. Hồ sơ AI giữ nội bộ, không caption trên UI. [Prompt/metadata](docs/sources/customer-demo/illustrations-v2.json).
+- `apps/web/src/data/customer.ts`: 6 loài, 24 tên gọi có tham chiếu nguồn, 3 bài HS mới, version `seafood-trade-demo-1`. Nhóm thịt trắng/đỏ là thuộc tính thương mại, tách khỏi định danh.
+- `apps/web/src/data/customerMedia.ts`, `apps/web/public/media/customer/`: 5 ảnh thật ứng viên với nguồn/quyền, hash, ID ảnh gốc; 0 ảnh duyệt nhận diện. Ảnh mực còn thiếu.
+- `apps/web/public/media/illustrations/`: 3 minh họa 2D nền alpha riêng cho trang học, thư viện và ôn tập. Nền do CSS quản lý, không cần gen lại khi đổi màu nền. Không gán loài hoặc đưa vào allowlist nhận diện. Hồ sơ AI giữ nội bộ, không caption trên UI. [Prompt/metadata](docs/sources/customer-demo/illustrations-v2.json).
 - [Hồ sơ nguồn](docs/sources/customer-demo/README.md), [18 mục phát âm](docs/sources/customer-demo/pronunciation.csv): 0 audio, 6 hướng dẫn Nhật nháp, 12 mục Anh/khoa học thiếu phiên âm/hướng dẫn; 0 được duyệt. Không giả clip hoặc dùng mạng/TTS lúc chơi.
-- `src/domain/packState.ts`: lưu lịch sử cũ nhưng không tính vào bộ mới; session cũ có thông báo đổi nội dung. Không đổi ID loài để gán lại tiến độ.
-- `src/data/demo.ts`, `src/data/imageMedia.ts`, `test-fixtures/legacy-shrimp/`: fixtures lịch sử phục vụ test; không import vào app. Ảnh cũ đã chuyển khỏi `public/`.
-- `src/data/public.ts`: public pack độc lập vẫn rỗng và đóng; kiểm nguồn không tự đồng nghĩa được duyệt. Không giả reviewer/ngày duyệt.
+- `apps/web/src/domain/packState.ts`: lưu lịch sử cũ nhưng không tính vào bộ mới; session cũ có thông báo đổi nội dung. Không đổi ID loài để gán lại tiến độ.
+- `apps/web/src/data/demo.ts`, `apps/web/src/data/imageMedia.ts`, `test-fixtures/legacy-shrimp/`: fixtures lịch sử phục vụ test; không import vào app. Ảnh cũ đã chuyển khỏi `apps/web/public/`.
+- `apps/web/src/data/public.ts`: public pack độc lập vẫn rỗng và đóng; kiểm nguồn không tự đồng nghĩa được duyệt. Không giả reviewer/ngày duyệt.
 
 Hình/âm thanh/font phục vụ từ file đóng gói; không phụ thuộc API ngoài khi học. Nguồn ngoài là liên kết người học chủ động mở sau khi xem lời giải/nguồn, không phải fallback media.
 
@@ -70,3 +70,7 @@ Kiểm mobile gồm 320×568, 360×640, 390×740, cả 18 flashcard và các tr�
 [Kế hoạch đã chốt](docs/PLAN_CUSTOMER_DEMO.md), [PRD](docs/Seafood_Deck_PRD.md), [prompt hiện hành](docs/Seafood_Deck_AI_Build_Prompt.md). Áp dụng frontend-design, web-design-guidelines và imagegen cho nhận diện/minh họa; không emoji.
 
 [Inbox/outbox](docs/FILE_HANDOFF.md) chỉ dùng giao nhận. Xử lý xong thì lưu trữ phần cần giữ, xóa phần thừa và để trống hàng chờ; không tạo outbox chỉ để lặp báo cáo chat. Không quét/phục vụ inbox/outbox/archive trong runtime hoặc Docker.
+
+## Monorepo
+
+Frontend đã chuyển sang `apps/web` bằng npm workspaces. Các lệnh `npm ci`, `npm test`, `npm run build`, `npm run dev`, `npm run test:e2e` vẫn chạy từ root. Docker context là root; Dockerfile FE ở `apps/web/Dockerfile` (root Dockerfile giữ tương thích lệnh cũ). Storage key `seafood-deck:state:v1` và hash routes giữ nguyên tại mốc dời FE.
