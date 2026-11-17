@@ -1,0 +1,26 @@
+# VPS only: pulls a prebuilt image; no source/build context required.
+name: seafoodeck
+services:
+  web:
+    image: ${IMAGE_REF:?Set IMAGE_REF in .env to the GHCR tag or digest}
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-seafoodeck.tiendn.io.vn}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: '0.50'
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+volumes:
+  caddy_data:
+  caddy_config:

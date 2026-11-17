@@ -1,0 +1,42 @@
+SEAFOOD DECK — customer demo photo credits
+All five photos remain draft; species identification has not been human-approved.
+
+/media/customer/r101-v1.jpg
+Hans-Petter Fjeld
+CC BY-SA 2.5
+https://creativecommons.org/licenses/by-sa/2.5
+https://commons.wikimedia.org/wiki/File:Gadus_morhua_Cod-2b-Atlanterhavsparken-Norway.JPG
+SHA-256: b8738d2fbf45b9411f3a57693da3af96390efe2369b2ea89f52388ba4f73a1a1
+Unmodified JPEG source file.
+
+/media/customer/r102-v1.jpg
+OAR/National Undersea Research Program (NURP)
+Public domain
+https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg#Licensing
+https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg
+SHA-256: fa6d6fd98e4191e22c169d6d7c536cd7cda7d3f3352567d23dc46bdc27317798
+Unmodified JPEG source file.
+
+/media/customer/r104-v1.jpg
+Daiju Azuma
+CC BY-SA 2.5
+https://creativecommons.org/licenses/by-sa/2.5
+https://commons.wikimedia.org/wiki/File:Octopus_sinensis.jpg
+SHA-256: a98f36a8a33897caac3aa4a6257a6b25f89e581b304e5ed549136dd560f541c6
+Unmodified JPEG source file.
+
+/media/customer/r103-v1.jpg
+H. Zell
+CC BY-SA 3.0
+https://creativecommons.org/licenses/by-sa/3.0
+https://commons.wikimedia.org/wiki/File:Perna_viridis_01.jpg
+SHA-256: 0c29f6c5f5b13350fb288f100022ccc26af3a75d0334184f7c98d5ae3b3d4371
+Thumbnail 960px do Wikimedia cung cấp; không crop; không phải ảnh gốc mới.
+
+/media/customer/r105-v1.jpg
+H. Zell
+CC BY-SA 3.0
+https://creativecommons.org/licenses/by-sa/3.0
+https://commons.wikimedia.org/wiki/File:Meretrix_lyrata_01.jpg
+SHA-256: 99e049f496f700cdb284a17bc659d8b31c5ec2631c3dfb9b307b88345514b33f
+Thumbnail 960px do Wikimedia cung cấp; không crop; không phải ảnh gốc mới.

@@ -1,0 +1,19 @@
+# Alternative VPS deployment behind an existing host reverse proxy.
+# Use this file on its own, not as a ports override for compose.ghcr.yaml.
+name: seafoodeck
+services:
+  web:
+    image: ${IMAGE_REF:?Set IMAGE_REF in .env to the GHCR tag or digest}
+    environment:
+      SITE_ADDRESS: ':80'
+    ports:
+      - '127.0.0.1:${ORIGIN_PORT:-18083}:80'
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: '0.50'
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'

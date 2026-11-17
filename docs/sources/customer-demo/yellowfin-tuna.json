@@ -1,0 +1,379 @@
+{
+  "batchcomplete": "",
+  "continue": {
+    "gsroffset": 4,
+    "continue": "gsroffset||"
+  },
+  "query": {
+    "pages": {
+      "155157608": {
+        "pageid": 155157608,
+        "ns": 6,
+        "title": "File:Banc de thons albacores (Thunnus albacares) (Ifremer 00568-68027 - 25201).jpg",
+        "index": 4,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 3009505,
+            "width": 3008,
+            "height": 2000,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Banc_de_thons_albacores_%28Thunnus_albacares%29_%28Ifremer_00568-68027_-_25201%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Banc_de_thons_albacores_(Thunnus_albacares)_(Ifremer_00568-68027_-_25201).jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/155157608",
+            "sha1": "4a23d05e57e11e28c2b98340e0dab981076da0ca",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2024-11-14 00:24:14",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Banc de thons albacores (Thunnus albacares) (Ifremer 00568-68027 - 25201)",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Thunnus albacares|Files from Océanothèque uploaded by OptimusPrimeBot",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Series of photographs of a school of albacore tuna gathered by a seine net, off the Seychelles.</p><p> Albacore tuna, also known as yellowfin tuna, is a species of fish with a cosmopolitan distribution: in fact, it is found globally in the Western Atlantic, the Red Sea and the Indo-Pacific region (particularly in East Africa and around New Zealand). It evolves in schools in waters close to the surface, at temperatures ranging from 18 to 31°C.</p><p> This species measures an average of 150 cm when adult. Its vernacular name is due to the yellow color of its fins, clearly visible in the images.",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "26 February 2006 (upload date)",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://image.ifremer.fr/data/00568/68027\">Banc de thons albacores (Thunnus albacares)</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Marc Taquet",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/4.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "155043250": {
+        "pageid": 155043250,
+        "ns": 6,
+        "title": "File:Marquage d'un thon albacore (Thunnus albacares) (Ifremer 00540-65191).jpg",
+        "index": 2,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2993600,
+            "width": 3008,
+            "height": 2000,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Marquage_d%27un_thon_albacore_%28Thunnus_albacares%29_%28Ifremer_00540-65191%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Marquage_d%27un_thon_albacore_(Thunnus_albacares)_(Ifremer_00540-65191).jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/155043250",
+            "sha1": "2d49183a050feaf603042937ce668cf05bc51492",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2024-11-09 12:05:09",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Marquage d'un thon albacore (Thunnus albacares) (Ifremer 00540-65191)",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Thunnus albacares|Files from Océanothèque uploaded by OptimusPrimeBot",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Tagging operation of an albacore tuna.</p><p class=\"mw-empty-elt\"></p><p> The yellowfin tuna, also known as the yellowfin tuna, is a species of fish with a cosmopolitan distribution: in fact, it is found globally in the Western Atlantic, the Red Sea and the Indo-Pacific region (particularly in East Africa and around New Zealand). It lives in schools in waters close to the surface, at temperatures ranging from 18 to 31°C. This species measures on average 150 cm when adult. It is recognizable, among other things, by its yellow fins (which gave it its vernacular name).</p><p class=\"mw-empty-elt\"></p><p> Appreciated for its flesh, particularly by European consumers, yellowfin tuna remains a resource to be monitored: in fact, the yellowfin tuna population in the Indian Ocean is threatened by overfishing. There were 430,327 tonnes of yellowfin tuna caught in 2014 (source: Indian Ocean Tuna Commission).",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "14 October 2004 (upload date)",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://image.ifremer.fr/data/00540/65191\">Marquage d'un thon albacore (Thunnus albacares)</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Marc Taquet",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/4.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "155043252": {
+        "pageid": 155043252,
+        "ns": 6,
+        "title": "File:Mensuration d'un thon albacore (Thunnus albacares) (Ifremer 00540-65193).jpg",
+        "index": 3,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 3026709,
+            "width": 2000,
+            "height": 3008,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Mensuration_d%27un_thon_albacore_%28Thunnus_albacares%29_%28Ifremer_00540-65193%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Mensuration_d%27un_thon_albacore_(Thunnus_albacares)_(Ifremer_00540-65193).jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/155043252",
+            "sha1": "b19bc46e2e7c1213785aa7cb202f3be7c37764b2",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2024-11-09 12:05:16",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Mensuration d'un thon albacore (Thunnus albacares) (Ifremer 00540-65193)",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Thunnus albacares|Files from Océanothèque uploaded by OptimusPrimeBot",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A scientific staff takes the measurements of a yellowfin tuna before electronic tagging.</p><p class=\"mw-empty-elt\"></p><p> The yellowfin tuna, also known as the yellowfin tuna, is a species of fish with a cosmopolitan distribution: in fact, it is found globally in the Western Atlantic, the Red Sea and the Indo-Pacific region (particularly in East Africa and around New Zealand). It lives in schools in waters close to the surface, at temperatures ranging from 18 to 31°C. This species measures on average 150 cm when adult. It is recognizable, among other things, by its yellow fins (which gave it its vernacular name).</p><p class=\"mw-empty-elt\"></p><p> Appreciated for its flesh, particularly by European consumers, yellowfin tuna remains a resource to be monitored: in fact, the yellowfin tuna population in the Indian Ocean is threatened by overfishing. There were 430,327 tonnes of yellowfin tuna caught in 2014 (source: Indian Ocean Tuna Commission).",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "14 October 2004 (upload date)",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://image.ifremer.fr/data/00540/65193\">Mensuration d'un thon albacore (Thunnus albacares)</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Marc Taquet",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/4.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "10209454": {
+        "pageid": 10209454,
+        "ns": 6,
+        "title": "File:Yellowfin tuna nurp.jpg",
+        "index": 1,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 261859,
+            "width": 1558,
+            "height": 1106,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Yellowfin_tuna_nurp.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/10209454",
+            "sha1": "756adbcb70d3751d84971edc5b2ab5d6c412de6d",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2012-10-21 23:08:45",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Yellowfin tuna nurp",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Thunnus albacares|PD US NOAA|Underwater photographs of fish",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Yellowfin tuna (<i>Thunnus albacares</i>) in the Gulf Stream",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2001-01-19",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external free\" href=\"https://web.archive.org/web/20010220220800/http://www.photolib.noaa.gov/nurp/nur00010.htm\">https://web.archive.org/web/20010220220800/http://www.photolib.noaa.gov/nurp/nur00010.htm</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "OAR/National Undersea Research Program (NURP)",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

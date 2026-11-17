@@ -1,0 +1,407 @@
+{
+  "batchcomplete": "",
+  "continue": {
+    "gsroffset": 4,
+    "continue": "gsroffset||"
+  },
+  "query": {
+    "pages": {
+      "127374423": {
+        "pageid": 127374423,
+        "ns": 6,
+        "title": "File:Dead Atlantic Cod (Gadus morhua), Haroldswick - geograph.org.uk - 4237977.jpg",
+        "index": 3,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 278518,
+            "width": 1024,
+            "height": 681,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Dead_Atlantic_Cod_%28Gadus_morhua%29%2C_Haroldswick_-_geograph.org.uk_-_4237977.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Dead_Atlantic_Cod_(Gadus_morhua),_Haroldswick_-_geograph.org.uk_-_4237977.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/127374423",
+            "sha1": "635956df3e43456c26f6ca32cff2f03879fbb293",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2023-01-04 13:45:02",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Dead Atlantic Cod (Gadus morhua), Haroldswick - geograph.org.uk - 4237977",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Gadus morhua|Haroldswick|Images from Geograph Britain and Ireland|Dead fish in Scotland",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "GPSLatitude": {
+                "value": "60.788103",
+                "source": "commons-desc-page"
+              },
+              "GPSLongitude": {
+                "value": "-0.830580",
+                "source": "commons-desc-page"
+              },
+              "GPSMapDatum": {
+                "value": "WGS-84",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Dead Atlantic Cod (Gadus morhua), Haroldswick <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Dead_Atlantic_Cod_(Gadus_morhua),_Haroldswick_-_geograph.org.uk_-_4237977.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2014-11-08",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/photo/4237977\">Geograph Britain and Ireland</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Dead_Atlantic_Cod_(Gadus_morhua),_Haroldswick_-_geograph.org.uk_-_4237977.jpg#P7482\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/9715\">Mike Pennington</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Dead_Atlantic_Cod_(Gadus_morhua),_Haroldswick_-_geograph.org.uk_-_4237977.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 2.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 2.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Attribution": {
+                "value": "<i>Dead Atlantic Cod (Gadus morhua), Haroldswick</i> by Mike Pennington",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/2.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-2.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "1371692": {
+        "pageid": 1371692,
+        "ns": 6,
+        "title": "File:Gadus morhua (High Arctic, Canada).png",
+        "index": 4,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 714113,
+            "width": 650,
+            "height": 979,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/9/94/Gadus_morhua_%28High_Arctic%2C_Canada%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Gadus_morhua_(High_Arctic,_Canada).png",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/1371692",
+            "sha1": "40da7e04775fca26e57fdec56ad3e906468d7552",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2006-11-15 17:08:44",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Gadus morhua (High Arctic, Canada)",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Gadus morhua|Media from PLOS Biology|Cod fishery in Canada|Open Access File of the Day",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "<p>Atlantic cod (<i>Gadus morhua</i>) in a High Arctic Lake in Canada.\n</p>\nThese cod resemble those of past Atlantic catches. Measuring 47–53 inches (120–135 cm) long and weighing between 44 and 57 pounds (20 and 26 kg), it is easy to see that today's 16–20 inches (40–50 cm) commercially caught cod are less than half this size.",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "Published: April 13, 2004",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "Gewin V: <i>Troubled Waters: The Future of Global Fisheries.</i> PLoS Biol 2/4/2004: e113. <a rel=\"nofollow\" class=\"external free\" href=\"https://dx.doi.org/10.1371/journal.pbio.0020113\">https://dx.doi.org/10.1371/journal.pbio.0020113</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Photo, with permission, by David Hardie, Dalhousie University.",
+                "source": "commons-desc-page"
+              },
+              "Permission": {
+                "value": "<i>This file was published in a <b><a href=\"https://en.wikipedia.org/wiki/Public_Library_of_Science\" class=\"extiw\" title=\"en:Public Library of Science\">Public Library of Science</a></b> journal. <a rel=\"nofollow\" class=\"external text\" href=\"http://www.plos.org\">Their website</a> <a rel=\"nofollow\" class=\"external text\" href=\"https://www.plos.org/terms-of-use\">states</a> that the content of all PLOS journals is published under the Creative Commons Attribution 4.0 license (or its previous version depending on the publication date), unless indicated otherwise.</i><br>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseShortName": {
+                "value": "CC BY 2.5",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 2.5",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/2.5",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-2.5",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "22566947": {
+        "pageid": 22566947,
+        "ns": 6,
+        "title": "File:Gadus morhua 2.jpg",
+        "index": 2,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 144284,
+            "width": 640,
+            "height": 381,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Gadus_morhua_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Gadus_morhua_2.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/22566947",
+            "sha1": "27140411d81a403b87d79a9c2ddb0b182ec01d81",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2012-11-06 09:22:24",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Gadus morhua 2",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Gadus morhua|PD US NOAA|Template Unknown (author)",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Atlantic cod, <i><a href=\"//commons.wikimedia.org/wiki/Gadus_morhua\" title=\"Gadus morhua\">Gadus morhua</a></i>",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2009-12-17 03:34:03",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"http://www.fishwatch.gov/seafood_profiles/species/cod/species_pages/atlantic_cod.htm\">NOAA FishWatch</a> (see Gallery)",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Unknown author<span style=\"display: none;\">Unknown author</span>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "8399498": {
+        "pageid": 8399498,
+        "ns": 6,
+        "title": "File:Gadus morhua Cod-2b-Atlanterhavsparken-Norway.JPG",
+        "index": 1,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 1412196,
+            "width": 2396,
+            "height": 1312,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Gadus_morhua_Cod-2b-Atlanterhavsparken-Norway.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Gadus_morhua_Cod-2b-Atlanterhavsparken-Norway.JPG",
+            "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/8399498",
+            "sha1": "e18b1996aeb249cf6eb43a8314ad3d5990903d5a",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2020-02-15 08:23:22",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "Gadus morhua Cod-2b-Atlanterhavsparken-Norway",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Self-published work|Photographs taken on 2006-07-04|Gadus morhua in Atlanterhavsparken",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Cod, <i><a href=\"//commons.wikimedia.org/wiki/Gadus_morhua\" title=\"Gadus morhua\">Gadus morhua</a></i>, taken through glass at Atlanterhavsparken, Ålesund, Norway",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "4 July 2006, 11:44:29 (according to <span lang=\"en\" dir=\"ltr\"><a href=\"https://en.wikipedia.org/wiki/Exif\" class=\"extiw\" title=\"en:Exif\">Exif</a></span> data)",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<b>Hans-Petter Fjeld</b>",
+                "source": "commons-desc-page"
+              },
+              "Permission": {
+                "value": "Own work, Share alike, Attribution Required.",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 2.5",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 2.5",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/2.5",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-2.5",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

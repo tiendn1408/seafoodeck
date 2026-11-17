@@ -1,0 +1,746 @@
+:root {
+  color: #17353d;
+  background: #f1f4ef;
+  --ink: #17353d;
+  --muted: #536c6b;
+  --green: #165451;
+  --orange: #b66447;
+  --line: #d7e2dc;
+  --mint: #e5efea;
+  --peach: #f4e9df;
+  --lavender: #eaf0f1;
+}
+.app-header {
+  background: #fbfcf9;
+}
+.header-course {
+  color: #486964;
+}
+.brand-symbol {
+  background: #174d49;
+}
+.header-nav a.active {
+  background: #e3eee7;
+  color: #164e49;
+}
+.home-content {
+  max-width: 1160px;
+}
+.trade-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  border-radius: 14px;
+  background: #123f45;
+  color: #f4f6ec;
+  overflow: hidden;
+  min-height: 230px;
+}
+.trade-intro-copy {
+  padding: 30px 36px;
+  position: relative;
+  z-index: 1;
+}
+.trade-intro .course-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #b9d3c6;
+  font-size: 12px;
+}
+.trade-intro .collection-dot {
+  background: #c98b6a;
+}
+.trade-intro h1 {
+  font-size: 42px;
+  line-height: 1.15;
+  letter-spacing: -1.6px;
+  margin: 13px 0;
+  color: #f8faf2;
+  text-wrap: initial;
+  font-weight: 500;
+}
+.trade-intro-copy > p {
+  color: #d0e1d8;
+  font-size: 13px;
+  max-width: 42ch;
+}
+.trade-pillars {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  font-size: 10px;
+  color: #c1d7ce;
+}
+.trade-pillars > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.trade-intro-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: #d5e2cd;
+  min-width: 0;
+  background: transparent;
+}
+.trade-intro-art > svg:nth-child(2) {
+  width: 60px;
+  height: 60px;
+}
+.trade-intro-art::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px solid #d5e2cd35;
+  border-radius: 50% 40% 45% 35%;
+  pointer-events: none;
+}
+.family-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 26px;
+}
+.family-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 17px;
+  border-bottom: 1px solid #bdcfc5;
+  color: #315e58;
+  min-width: 0;
+}
+.family-nav a:hover {
+  background: #e7eee7;
+}
+.family-nav a > span {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+}
+.family-nav small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+.lesson-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.lesson-toolbar h2 {
+  font-size: 19px;
+}
+.lesson-toolbar > span {
+  color: #736340;
+  font-size: 11px;
+}
+.learning-selection {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.learning-selection label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.learning-selection label > span {
+  color: var(--muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.learning-selection select {
+  min-height: 44px;
+  border: 1px solid #bdcfc5;
+  background: #fbfcf9;
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 9px 32px 9px 12px;
+  min-width: 0;
+  max-width: 280px;
+  font-size: 13px;
+}
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.mode-card {
+  padding: 0;
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  min-height: 142px;
+  background: #fbfcf9;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: left;
+  overflow: hidden;
+  min-width: 0;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.mode-card:hover {
+  border-color: #699b89;
+  background: #fff;
+}
+.mode-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #e7eee7;
+  color: #387265;
+  padding: 8px;
+}
+.mode-visual > span {
+  font-size: 8px;
+  text-align: center;
+}
+.mode-hs .mode-visual {
+  color: #7e674b;
+  background: #eee9dd;
+}
+.mode-image .mode-visual {
+  color: #376976;
+  background: #e5edef;
+}
+.mode-match .mode-visual {
+  color: #6d664d;
+  background: #eeede0;
+}
+.mode-copy {
+  padding: 19px 20px 15px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mode-copy h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 500;
+}
+.mode-copy h2 svg {
+  display: none;
+}
+.mode-copy > p {
+  font-size: 12px;
+  margin: 7px 0 15px;
+  color: var(--muted);
+}
+.mode-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+.mode-footer > svg {
+  color: #397665;
+}
+.course-shelf {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #bdcfc5;
+  border-radius: 0;
+  padding: 16px 2px;
+  margin-top: 18px;
+}
+.course-shelf > svg:first-child {
+  color: #397665;
+}
+.pack-update-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #cddad0;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.group-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+.group-filters button {
+  font-size: 12px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border: 1px solid #c8d7cd;
+  border-radius: 6px;
+  color: #4b6b60;
+  background: #f8faf5;
+}
+.group-filters button[aria-pressed='true'] {
+  background: #1f564d;
+  color: #f6f8ef;
+  border-color: #1f564d;
+}
+.group-filters button:hover {
+  border-color: #548b75;
+}
+.library-card {
+  background: #fbfcf9;
+}
+.library-cover {
+  background: #e5ece7;
+}
+.library-cover > span {
+  background: #f7faf0ed;
+}
+.library-photo[hidden] {
+  display: none;
+}
+.specimen-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #618077;
+  background: #e5ece7;
+  text-align: center;
+  padding: 16px;
+}
+.specimen-missing > svg {
+  width: 42px;
+  height: 42px;
+}
+.specimen-missing > span {
+  font-size: 12px;
+}
+.specimen-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fbfcf9;
+}
+.specimen-record .profile-photo {
+  border: 0;
+  border-radius: 0;
+  background: #e5ece7;
+}
+.specimen-record .profile-photo img {
+  width: 100%;
+  height: 260px;
+}
+.specimen-record .specimen-missing {
+  min-height: 260px;
+}
+.specimen-ledger {
+  padding: 24px;
+}
+.specimen-ledger > div + div {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.ledger-label {
+  display: block;
+  color: #647d70;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.specimen-ledger strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+.specimen-ledger p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.product-form-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.product-form-tags > span {
+  font-size: 11px;
+  border: 1px solid #c8d7cd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f0f5eb;
+}
+.commercial-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  margin-top: 18px;
+  background: #efece1;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #6d6149;
+}
+.commercial-note strong {
+  font-weight: 500;
+}
+.commercial-note p {
+  margin-top: 5px;
+}
+.commercial-note > svg {
+  margin-top: 3px;
+}
+.name-card {
+  background: #fbfcf9;
+}
+.name-source-note {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.source-details a {
+  text-decoration: underline;
+}
+.flashcard-center .specimen-missing.flash-photo {
+  min-height: 0;
+  padding: 10px;
+  border-radius: 6px;
+}
+.flashcard-center .specimen-missing.flash-photo > svg {
+  width: 30px;
+  height: 30px;
+}
+.flashcard {
+  background: #fcfdf9;
+}
+.flashcard-top {
+  border-bottom-color: #e6ede6;
+}
+.flashcard h2 {
+  font-size: clamp(24px, 3.1vw, 32px);
+}
+@media (max-width: 800px) {
+  .learning-selection {
+    flex-wrap: wrap;
+  }
+  .specimen-record {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .content {
+    padding-top: 18px;
+  }
+  .focus-mode .content {
+    padding-top: 8px;
+  }
+  .trade-intro {
+    grid-template-columns: minmax(0, 1fr) 112px;
+    min-height: 190px;
+    border-radius: 10px;
+  }
+  .trade-intro-copy {
+    padding: 20px 0 20px 20px;
+  }
+  .trade-intro .course-label {
+    font-size: 10px;
+    gap: 5px;
+  }
+  .trade-intro .collection-dot {
+    display: none;
+  }
+  .trade-intro h1 {
+    font-size: 29px;
+    letter-spacing: -1px;
+    margin: 12px 0 0;
+  }
+  .trade-intro-copy > p {
+    font-size: 11px;
+    margin-top: 10px;
+    max-width: 23ch;
+  }
+  .trade-pillars {
+    display: none;
+  }
+  .trade-intro-art {
+    gap: 6px;
+    flex-direction: column;
+  }
+  .trade-intro-art > svg {
+    width: 34px;
+    height: 34px;
+  }
+  .trade-intro-art > svg:nth-child(2) {
+    width: 35px;
+    height: 35px;
+  }
+  .trade-intro-art::after {
+    inset: 8px;
+  }
+  .family-nav {
+    gap: 7px;
+    margin: 12px 0 23px;
+  }
+  .family-nav a {
+    padding: 10px 3px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .family-nav a > svg {
+    width: 19px;
+    height: 19px;
+  }
+  .family-nav a > svg:last-child {
+    display: none;
+  }
+  .family-nav a > span {
+    flex-basis: 100%;
+    font-size: 11px;
+  }
+  .family-nav small {
+    font-size: 9px;
+  }
+  .lesson-toolbar {
+    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .lesson-toolbar h2 {
+    font-size: 18px;
+  }
+  .lesson-toolbar > span {
+    font-size: 10px;
+  }
+  .learning-selection {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .learning-selection label {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  .learning-selection label > span {
+    font-size: 11px;
+  }
+  .learning-selection select {
+    max-width: 100%;
+    width: 100%;
+    font-size: 12px;
+    padding: 10px 36px 10px 10px;
+  }
+  .mode-grid {
+    gap: 11px;
+  }
+  .mode-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 170px;
+  }
+  .mode-visual {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    min-height: 52px;
+    gap: 8px;
+  }
+  .mode-visual > svg {
+    width: 24px;
+    height: 24px;
+  }
+  .mode-visual > span {
+    font-size: 9px;
+  }
+  .mode-copy {
+    padding: 12px;
+    flex: 1;
+  }
+  .mode-copy h2 {
+    font-size: 14px;
+    min-height: 42px;
+    line-height: 1.5;
+  }
+  .mode-copy > p {
+    display: none;
+  }
+  .mode-footer {
+    font-size: 10px;
+    align-items: flex-start;
+    padding-top: 10px;
+    gap: 6px;
+  }
+  .mode-footer > svg {
+    width: 15px;
+  }
+  .course-shelf {
+    margin-top: 14px;
+    gap: 12px;
+  }
+  .course-shelf strong {
+    font-size: 13px;
+  }
+  .course-shelf small {
+    font-size: 10px;
+  }
+  .specimen-record .profile-photo {
+    padding: 14px;
+  }
+  .specimen-record .profile-photo img {
+    height: 205px;
+  }
+  .specimen-record .specimen-missing {
+    min-height: 205px;
+  }
+  .specimen-ledger {
+    padding: 20px;
+  }
+  .specimen-ledger p {
+    font-size: 13px;
+  }
+  .commercial-note {
+    font-size: 12px;
+    padding: 16px;
+  }
+  .name-card h2 {
+    font-size: 26px;
+  }
+  .name-source-note {
+    font-size: 10px;
+  }
+  .flashcard h2 {
+    font-size: 25px;
+  }
+}
+@media (max-width: 360px) {
+  .trade-intro {
+    grid-template-columns: minmax(0, 1fr) 86px;
+  }
+  .trade-intro h1 {
+    font-size: 26px;
+  }
+  .trade-intro-copy {
+    padding-left: 16px;
+  }
+  .trade-intro-copy > p {
+    font-size: 10px;
+  }
+  .flashcard h2 {
+    font-size: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
+.trade-intro-art {
+  margin: 0;
+  overflow: hidden;
+}
+.trade-intro-art::after {
+  display: none;
+}
+.trade-intro-art > img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+  padding: 16px 22px 16px 0;
+}
+@media (max-width: 600px) {
+  .trade-intro {
+    grid-template-columns: 1fr;
+  }
+  .trade-intro-copy {
+    padding: 19px 20px;
+  }
+  .trade-intro h1 {
+    margin-top: 9px;
+    font-size: 28px;
+  }
+  .trade-intro-copy > p {
+    display: none;
+  }
+  .trade-intro-art {
+    min-height: 160px;
+  }
+  .trade-intro-art > img {
+    padding: 0 22px 12px;
+  }
+}
+
+/* Keep native select semantics and popup, but own the closed-field chevron spacing. */
+.learning-selection select,
+.select-label select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2317353d' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+}
+.library-heading-art {
+  width: 164px;
+  height: 108px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.library-heading .count-pill {
+  margin-left: auto;
+}
+.review-empty-art {
+  display: block;
+  width: 190px;
+  height: 126px;
+  object-fit: contain;
+  margin: 0 auto 18px;
+}
+@media (max-width: 600px) {
+  .library-heading {
+    position: relative;
+    padding-right: 92px;
+  }
+  .library-heading-art {
+    position: absolute;
+    right: 0;
+    top: 4px;
+    width: 86px;
+    height: 72px;
+  }
+  .library-heading .count-pill {
+    margin-left: 0;
+  }
+}
+@media (forced-colors: active) {
+  .learning-selection select,
+  .select-label select {
+    appearance: auto;
+    background-image: none;
+  }
+}
+@media (max-width: 360px) {
+  .trade-intro h1 {
+    font-size: 26px;
+  }
+  .trade-intro-art {
+    min-height: 128px;
+  }
+}

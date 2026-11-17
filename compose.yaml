@@ -1,0 +1,27 @@
+name: seafoodeck
+services:
+  web:
+    image: seafoodeck:${IMAGE_TAG:-flat-illustrations-20261117}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RELEASE_TAG: ${IMAGE_TAG:-flat-illustrations-20261117}
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-seafoodeck.tiendn.io.vn}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  caddy_data:
+  caddy_config:

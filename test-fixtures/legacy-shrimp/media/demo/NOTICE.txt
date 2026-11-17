@@ -1,0 +1,30 @@
+Seafood Deck internal demo — photo provenance
+
+All three photographs are DRAFT for species identification. No reviewer or
+identification approval is claimed. Public content pack remains disabled.
+The JPEG bytes are copied unchanged; the app displays them with contain,
+without cropping, upscaling the file or editing the subject.
+
+m001-v1.jpg — Penaeus monodon.jpg
+Credit: Almandine; current Commons version edited by Epipelagic (ruler removed).
+Source: https://commons.wikimedia.org/wiki/File:Penaeus_monodon.jpg
+License chosen: Creative Commons Attribution-ShareAlike 3.0 Unported
+https://creativecommons.org/licenses/by-sa/3.0/
+SHA256: 298113473c2391a0a1c2e78981d7990179c19f26a330104674b34a138da64432
+
+m003-v1.jpg — Macrobrachium rosenbergii.jpg
+Credit: Citron / CC-BY-SA-3.0
+Source: https://commons.wikimedia.org/wiki/File:Macrobrachium_rosenbergii.jpg
+License: Creative Commons Attribution-ShareAlike 3.0 Unported
+https://creativecommons.org/licenses/by-sa/3.0/
+SHA256: 0652184eecc63e324645e7c033dbc4af85908965c50e0b04750141b4d97d0e8c
+
+m005-v1.jpg — Penaeus vannamei 01.jpg
+Credit: USDA Agricultural Research Service, image K3507-12
+Source: https://commons.wikimedia.org/wiki/File:Penaeus_vannamei_01.jpg
+Source records United States Government Work/public domain in the United States.
+No determination of worldwide copyright status is asserted by this demo.
+SHA256: c7ac3e79ac9f249fe95f4d1a30478b0226afe8a4c3f87103ba5f4d20c141e274
+
+Attribution and source/license links are shown after an image answer in the app.
+FDA 253 and the TSV reference image are not bundled or used as fallback images.

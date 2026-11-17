@@ -1,0 +1,34 @@
+{
+  "tool": "built-in imagegen",
+  "generatedAt": "2026-11-17",
+  "aiGenerated": true,
+  "purposes": [
+    "ui-illustration"
+  ],
+  "transparentBackground": true,
+  "identificationAllowed": false,
+  "uiCaption": false,
+  "assets": [
+    {
+      "id": "seafood-assortment-2d-v2",
+      "path": "/media/illustrations/seafood-assortment-2d-v2.png",
+      "placement": "home-intro",
+      "prompt": "Use case: stylized-concept. Asset for Seafood Deck, adult professional seafood trade learning app. Create crisp FLAT TWO-DIMENSIONAL editorial vector-style illustration, restrained simple geometric cut-paper shapes, confident ink outlines, 4–5 flat solid colors (sage, chalk, petrol teal, muted coral), visually sophisticated, no gradients, no 3D, no realistic rendering, no photographic texture, no gloss or shadows, no letters, no text, no watermark, no shrimp/prawns/crustaceans. Actual transparent background with clean alpha around the entire isolated composition; no solid backdrop, no floor, no rectangular plate of color. Wide landscape 3:2, compact coherent composition filling most canvas with small safe margin. Decorative UI asset, not scientific identification. Primary request: a balanced flowing arrangement of ONE stylized silver whole fish and one simple red fillet, ONE elongated squid and small octopus, TWO clams and TWO dark mussels, all simplified playful-with-restraint adult editorial shapes. A few minimal curved strokes suggest sorting fresh seafood. No tray, ice, kitchen, water scene or container. Clear silhouettes that read at 300 pixels wide. Works on dark or light web backgrounds.",
+      "sha256": "00269b52661374e767713bec270df7f3a97c8814d86d36d294b23e58968a5a23"
+    },
+    {
+      "id": "seafood-notebook-2d-v2",
+      "path": "/media/illustrations/seafood-notebook-2d-v2.png",
+      "placement": "library-heading",
+      "prompt": "Use case: stylized-concept. Asset for Seafood Deck, adult professional seafood trade learning app. Create crisp FLAT TWO-DIMENSIONAL editorial vector-style illustration, restrained simple geometric cut-paper shapes, confident ink outlines, 4–5 flat solid colors (sage, chalk, petrol teal, muted coral), visually sophisticated, no gradients, no 3D, no realistic rendering, no photographic texture, no gloss or shadows, no letters, no text, no watermark, no shrimp/prawns/crustaceans. Actual transparent background with clean alpha around the entire isolated composition; no solid backdrop, no floor, no rectangular plate of color. Wide landscape 3:2, compact coherent composition filling most canvas with small safe margin. Decorative UI asset, not scientific identification. Primary request: an open seafood field notebook, pages ivory with small simple fish silhouette and shell silhouette, no writing; a slender magnifying lens rests partly across one page, two small shells beside it. Compact asymmetric arrangement, elegant professional learning/lookup metaphor. Thin dark outlines and flat color areas. Distinct artwork for a species library header, NOT the seafood assortment scene.",
+      "sha256": "433f3aefee6cade6a24ca26433745b14820e9fa18aaac39cf3d51419afd6b828"
+    },
+    {
+      "id": "seafood-review-2d-v2",
+      "path": "/media/illustrations/seafood-review-2d-v2.png",
+      "placement": "review-empty",
+      "prompt": "Use case: stylized-concept. Asset for Seafood Deck, adult professional seafood trade learning app. Create crisp FLAT TWO-DIMENSIONAL editorial vector-style illustration, restrained simple geometric cut-paper shapes, confident ink outlines, 4–5 flat solid colors (sage, chalk, petrol teal, muted coral), visually sophisticated, no gradients, no 3D, no realistic rendering, no photographic texture, no gloss or shadows, no letters, no text, no watermark, no shrimp/prawns/crustaceans. Actual transparent background with clean alpha around the entire isolated composition; no solid backdrop, no floor, no rectangular plate of color. Wide landscape 3:2, compact coherent composition filling most canvas with small safe margin. Decorative UI asset, not scientific identification. Primary request: a small stack of two seafood trade specimen tags with round punch holes and string; one tag carries a simple fish silhouette, another a bivalve silhouette. A pencil and two simple check marks nearby convey revisiting learning. Compact composition with generous clear alpha gaps between objects. Distinct artwork for an empty revision screen, NOT a seafood assortment or open notebook.",
+      "sha256": "3989e2153312247942c90395e1948661f92b9bb5322b1e8a8b0c5e6c16650669"
+    }
+  ]
+}

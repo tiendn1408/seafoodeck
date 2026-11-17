@@ -1,0 +1,19 @@
+species_id,ten_viet,kind,audio_file,audio_status,pronunciation_status,approval,notes
+atlantic-cod,Cá tuyết Đại Tây Dương,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+atlantic-cod,Cá tuyết Đại Tây Dương,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+atlantic-cod,Cá tuyết Đại Tây Dương,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+yellowfin-tuna,Cá ngừ vây vàng,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+yellowfin-tuna,Cá ngừ vây vàng,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+yellowfin-tuna,Cá ngừ vây vàng,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+mitre-squid,Mực ống Trung Hoa,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+mitre-squid,Mực ống Trung Hoa,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+mitre-squid,Mực ống Trung Hoa,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+east-asian-octopus,Bạch tuộc Đông Á,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+east-asian-octopus,Bạch tuộc Đông Á,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+east-asian-octopus,Bạch tuộc Đông Á,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+lyrate-clam,Nghêu Bến Tre,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+lyrate-clam,Nghêu Bến Tre,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+lyrate-clam,Nghêu Bến Tre,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+green-mussel,Vẹm xanh,en,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.
+green-mussel,Vẹm xanh,ja,,missing,draft_kana_romaji,not_reviewed,Chưa có file nghe; hướng dẫn đọc Nhật chưa đối chiếu bản thu.
+green-mussel,Vẹm xanh,scientific,,missing,missing,not_reviewed,Thiếu file nghe và hướng dẫn đọc/phiên âm.

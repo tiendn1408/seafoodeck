@@ -1,0 +1,17 @@
+{
+  "id": "trade-desk-ai-v1",
+  "path": "/media/illustrations/trade-desk-ai-v1.png",
+  "aiGenerated": true,
+  "purposes": [
+    "ui-illustration"
+  ],
+  "status": "superseded-not-runtime",
+  "reviewer": null,
+  "tool": "built-in imagegen",
+  "generatedAt": "2026-11-17",
+  "prompt": "Use case: stylized-concept. ONE finished landscape 3:2 raster editorial illustration for the intro panel of Seafood Deck, a professional Vietnamese seafood trade learning application for new employees and salespeople. Decorative artwork ONLY, not a species identification reference. The brief excludes shrimp completely. Subject: a refined seafood receiving and inspection still life with equal visual weight for the THREE families: silver whole commercial fish plus a small dark-red fish fillet and a small white fillet; a gracefully elongated squid and a compact octopus with naturally flowing arms; a few closed pale clams and dark green mussels. Arrange these as one coherent handsome composition in two shallow steel receiving trays with a little ice and two blank specimen tags, viewed obliquely from above, tightly composed but with clean edges and breathing room. This is a seafood professional's material inventory, NOT a cooked platter, sushi restaurant, fishing holiday, or children's aquarium. Style: contemporary editorial gouache with crisp delicate ink details, realistic proportions but visibly hand illustrated; sophisticated restrained botanical-atlas quality, adult vocational brand. Colors: deep petrol-teal solid backdrop close to #214E50, mineral sage, chalk silver, sea-glass greens, restrained red-brown fish flesh. Subtle grain confined to painted objects; backdrop clean. Gentle directional light, no glossy plastic 3D, no emoji, no faces on animals, no text, no numbers, no logos, no watermark, no chart, no labels with letters. No shrimp, prawns, lobster, crabs, salmon centerpiece, generic ocean horizon, anchor or ship. All three seafood families must remain legible as a balanced single group when reduced to a mobile illustration. No UI mockup. Opaque filled background.",
+  "notes": "Minh họa nhóm nguyên liệu; không gán speciesId, không dùng trong bài nhận diện chấm điểm. Không phải ảnh thật hoặc dữ liệu catalogue khách.",
+  "sha256": "4d178160cf8573e7d5aa2d5e40348657d1baf0e7bff4b2cad15e3531064246ba",
+  "supersededBy": "illustrations-v2.json",
+  "archivedPath": "docs/sources/customer-demo/superseded/trade-desk-ai-v1.png"
+}

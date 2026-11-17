@@ -1,0 +1,18 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+*.tar.gz
+*.tar
+
+# Local handoff payloads; durable instructions and ledgers live under docs/.
+/_inbox/*
+!/_inbox/README.md
+/_outbox/*
+!/_outbox/README.md
+/_archive/*
+!/_archive/README.md
