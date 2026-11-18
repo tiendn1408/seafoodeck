@@ -23,3 +23,16 @@ _backups/
 **/dist/
 
 /apps/api/src/generated/
+
+# Local brainstorm/SDD scratch
+.superpowers/
+# Impeccable scratch (mocks, decision pages, review captures, caches)
+.impeccable/mocks/
+.impeccable/questions/
+.impeccable/review/
+.impeccable/build/
+.impeccable/hook.cache.json
+**/.impeccable/mocks/
+**/.impeccable/questions/
+**/.impeccable/review/
+**/.impeccable/build/
