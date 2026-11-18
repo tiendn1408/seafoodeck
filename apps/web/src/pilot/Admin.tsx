@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { extraRows } from './itemExtras';
 import { api, type CatalogItem } from './api';
 import { SignedImage, Pronunciation } from './Media';
 import { HsAdmin, type AdminTariff } from './HsAdmin';
@@ -305,6 +306,24 @@ export function Admin() {
                 </label>
               ))}
             </div>
+            {extraRows(revision.data).length > 0 && (
+              <dl className="pilot-extra-fields">
+                {extraRows(revision.data).map((row) => (
+                  <div key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>
+                      {row.value}
+                      {row.unsourced && (
+                        <small className="pilot-unsourced">
+                          {' '}
+                          Chưa có nguồn — không hiển thị cho người học
+                        </small>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             <button
               className="btn secondary"
               disabled={busy}
