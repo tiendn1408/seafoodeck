@@ -41,6 +41,11 @@ export function shuffled<T>(rows: T[]) {
   }
   return result;
 }
+export function pickPool(ids: string[], focusId: string | undefined, size = 100): string[] {
+  const focus = focusId && ids.includes(focusId) ? focusId : undefined;
+  const rest = shuffled(ids.filter((id) => id !== focus));
+  return (focus ? [focus, ...rest] : rest).slice(0, size);
+}
 export function distinctNames<T>(rows: T[], labels: (row: T) => string[]) {
   const seen: Set<string>[] = [];
   return rows.filter((row) => {
@@ -201,16 +206,21 @@ export class Learning {
       if (old.releaseId !== release.id)
         throw new ConflictException('Bộ học đã đổi; lịch sử cũ giữ riêng.');
     } else {
-      const rows = await this.db.revision.findMany({
-        where: {
-          releases: { some: { releaseId: release.id } },
-          AND: ['vi', 'en', 'ja', 'scientific'].map((k) => ({
-            names: { some: { kind: k, label: { not: '' } } },
-          })),
-        },
-        take: 100,
-        include: { names: true, media: { include: { asset: true } } },
-      });
+      const include = { names: true, media: { include: { asset: true } } } as const;
+      const eligibleIds = (
+        await this.db.revision.findMany({
+          where: {
+            releases: { some: { releaseId: release.id } },
+            AND: ['vi', 'en', 'ja', 'scientific'].map((k) => ({
+              names: { some: { kind: k, label: { not: '' } } },
+            })),
+          },
+          select: { id: true },
+        })
+      ).map((r) => r.id);
+      const pool = pickPool(eligibleIds, revisionId);
+      const loaded = await this.db.revision.findMany({ where: { id: { in: pool } }, include });
+      const rows = pool.flatMap((id) => loaded.filter((r) => r.id === id));
       const selected = revisionId ? rows.find((r) => r.id === revisionId) : rows[0];
       if (!selected) throw new BadRequestException('Chưa có mục đủ bốn tên để học.');
       const label = (r: typeof selected, k: string) => r.names.find((n) => n.kind === k)!.label;
@@ -365,7 +375,7 @@ export class Learning {
       if (mode === 'hs' || mode === 'full') {
         const availableScenarios = await this.db.tradeScenario.findMany({
           where: {
-            revisionId: { in: rows.map((r) => r.id) },
+            revisionId: { in: eligibleIds },
             ...(!release.internal ? { status: 'approved' } : {}),
           },
           include: { tariff: true },

@@ -1,7 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readCsv, validateItem, csvHeader, Catalog, publicRowProblem } from './catalog';
-import { canonical, grade, distinctNames, selectHsCases, type PrivateQuestion } from './learning';
+import {
+  canonical,
+  grade,
+  distinctNames,
+  selectHsCases,
+  pickPool,
+  type PrivateQuestion,
+} from './learning';
 import { normalizeCode, validateHs } from './hs';
 import { passwordHash, passwordMatches } from './security';
 const item = {
@@ -209,4 +216,15 @@ test('public publish no longer requires approved audio', () => {
     publicRowProblem({ status: 'approved', reviewedBy: 'u1', names: publicNames.slice(1) })!,
     /tên/,
   );
+});
+
+test('pickPool keeps the focus item even beyond the first 100', () => {
+  const ids = Array.from({ length: 250 }, (_, i) => `r${i}`);
+  const pool = pickPool(ids, 'r240');
+  assert.equal(pool[0], 'r240');
+  assert.equal(pool.length, 100);
+  assert.equal(new Set(pool).size, 100);
+  assert.ok(pool.every((id) => ids.includes(id)));
+  assert.equal(pickPool(ids.slice(0, 5), undefined).length, 5);
+  assert.equal(pickPool(ids, 'missing')[0] === 'missing', false);
 });
