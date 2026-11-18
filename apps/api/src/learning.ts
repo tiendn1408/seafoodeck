@@ -46,6 +46,34 @@ export function pickPool(ids: string[], focusId: string | undefined, size = 100)
   const rest = shuffled(ids.filter((id) => id !== focus));
   return (focus ? [focus, ...rest] : rest).slice(0, size);
 }
+export function orderPoolIds(
+  allIds: string[],
+  mediaIds: string[],
+  focusId: string | undefined,
+  size = 100,
+): string[] {
+  const all = new Set(allIds);
+  const focus = focusId && all.has(focusId) ? focusId : undefined;
+  const media = shuffled(mediaIds.filter((id) => all.has(id) && id !== focus));
+  const mediaSet = new Set(media);
+  const rest = shuffled(allIds.filter((id) => id !== focus && !mediaSet.has(id)));
+  return [...(focus ? [focus] : []), ...media, ...rest].slice(0, size);
+}
+interface AssetLike {
+  role: string;
+  nameKind?: string | null;
+  aiGenerated?: boolean;
+  revokedAt?: Date | null;
+  status: string;
+}
+const assetUsable = (a: AssetLike, internal: boolean) =>
+  !a.revokedAt && (internal || a.status === 'approved');
+export function usableAudio(a: AssetLike, kind: string, internal: boolean): boolean {
+  return a.role === 'pronunciation' && a.nameKind === kind && assetUsable(a, internal);
+}
+export function usableImage(a: AssetLike, internal: boolean): boolean {
+  return a.role === 'identification' && !a.aiGenerated && assetUsable(a, internal);
+}
 export function distinctNames<T>(rows: T[], labels: (row: T) => string[]) {
   const seen: Set<string>[] = [];
   return rows.filter((row) => {
@@ -207,18 +235,33 @@ export class Learning {
         throw new ConflictException('Bộ học đã đổi; lịch sử cũ giữ riêng.');
     } else {
       const include = { names: true, media: { include: { asset: true } } } as const;
+      const base = {
+        releases: { some: { releaseId: release.id } },
+        AND: ['vi', 'en', 'ja', 'scientific'].map((k) => ({
+          names: { some: { kind: k, label: { not: '' } } },
+        })),
+      };
       const eligibleIds = (
-        await this.db.revision.findMany({
-          where: {
-            releases: { some: { releaseId: release.id } },
-            AND: ['vi', 'en', 'ja', 'scientific'].map((k) => ({
-              names: { some: { kind: k, label: { not: '' } } },
-            })),
-          },
-          select: { id: true },
-        })
+        await this.db.revision.findMany({ where: base, select: { id: true } })
       ).map((r) => r.id);
-      const pool = pickPool(eligibleIds, revisionId);
+      // Media-bearing ids are placed first so large releases cannot drop them from the pool;
+      // the remaining rows still fill the pool as distractor names.
+      const statusFilter = release.internal ? {} : { status: 'approved' };
+      const mediaAsset =
+        mode === 'listening'
+          ? { role: 'pronunciation', nameKind: kind, revokedAt: null, ...statusFilter }
+          : mode === 'image'
+            ? { role: 'identification', aiGenerated: false, revokedAt: null, ...statusFilter }
+            : undefined;
+      const mediaIds = mediaAsset
+        ? (
+            await this.db.revision.findMany({
+              where: { ...base, media: { some: { asset: mediaAsset } } },
+              select: { id: true },
+            })
+          ).map((r) => r.id)
+        : [];
+      const pool = orderPoolIds(eligibleIds, mediaIds, revisionId);
       const loaded = await this.db.revision.findMany({ where: { id: { in: pool } }, include });
       const rows = pool.flatMap((id) => loaded.filter((r) => r.id === id));
       const selected = revisionId ? rows.find((r) => r.id === revisionId) : rows[0];
@@ -228,11 +271,7 @@ export class Learning {
         for (const k of ['en', 'ja', 'scientific']) {
           const n = selected.names.find((n) => n.kind === k)!;
           const audio = selected.media.find(
-            (m) =>
-              m.asset.role === 'pronunciation' &&
-              m.asset.nameKind === k &&
-              !m.asset.revokedAt &&
-              (release.internal || m.asset.status === 'approved'),
+            (m) => usableAudio(m.asset, k, release.internal),
           );
           questions.push({
             type: 'flashcard',
@@ -287,11 +326,7 @@ export class Learning {
             : shuffled(rows)
           ).flatMap((r) => {
             const asset = r.media.find(
-              (m) =>
-                m.asset.role === 'pronunciation' &&
-                m.asset.nameKind === kind &&
-                !m.asset.revokedAt &&
-                (release.internal || m.asset.status === 'approved'),
+              (m) => usableAudio(m.asset, kind, release.internal),
             )?.asset;
             if (!asset || hashes.has(asset.hash)) return [];
             hashes.add(asset.hash);
@@ -330,11 +365,7 @@ export class Learning {
             : shuffled(rows)
           ).flatMap((r) => {
             const asset = r.media.find(
-              (m) =>
-                m.asset.role === 'identification' &&
-                !m.asset.aiGenerated &&
-                !m.asset.revokedAt &&
-                (release.internal || m.asset.status === 'approved'),
+              (m) => usableImage(m.asset, release.internal),
             )?.asset;
             if (!asset) return [];
             const original =

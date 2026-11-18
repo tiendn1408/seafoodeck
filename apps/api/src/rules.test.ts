@@ -7,6 +7,9 @@ import {
   distinctNames,
   selectHsCases,
   pickPool,
+  orderPoolIds,
+  usableAudio,
+  usableImage,
   type PrivateQuestion,
 } from './learning';
 import { normalizeCode, validateHs, validateTariffScope } from './hs';
@@ -228,6 +231,45 @@ test('pickPool keeps the focus item even beyond the first 100', () => {
   assert.ok(pool.every((id) => ids.includes(id)));
   assert.equal(pickPool(ids.slice(0, 5), undefined).length, 5);
   assert.equal(pickPool(ids, 'missing')[0] === 'missing', false);
+});
+
+test('orderPoolIds keeps every media-bearing id plus distractors', () => {
+  const ids = Array.from({ length: 250 }, (_, i) => `r${i}`);
+  const media = ['r200', 'r221', 'r249'];
+  for (let n = 0; n < 20; n += 1) {
+    const pool = orderPoolIds(ids, media, undefined);
+    assert.equal(pool.length, 100);
+    assert.equal(new Set(pool).size, 100);
+    assert.ok(media.every((id) => pool.includes(id)));
+  }
+  assert.equal(orderPoolIds(ids, media, 'r5')[0], 'r5');
+  assert.ok(media.every((id) => orderPoolIds(ids, media, 'r5').includes(id)));
+  assert.equal(orderPoolIds(ids, [], undefined).length, 100);
+});
+
+test('usableAudio requires approved (or internal), unrevoked, matching nameKind', () => {
+  const a = (o: Record<string, unknown> = {}) => ({
+    role: 'pronunciation',
+    nameKind: 'en',
+    status: 'approved',
+    revokedAt: null,
+    ...o,
+  });
+  for (const internal of [false, true]) {
+    assert.equal(usableAudio(a(), 'en', internal), true);
+    assert.equal(usableAudio(a({ revokedAt: new Date() }), 'en', internal), false);
+    assert.equal(usableAudio(a({ nameKind: 'ja' }), 'en', internal), false);
+    assert.equal(usableAudio(a({ role: 'profile' }), 'en', internal), false);
+  }
+  assert.equal(usableAudio(a({ status: 'draft' }), 'en', false), false);
+  assert.equal(usableAudio(a({ status: 'draft' }), 'en', true), true);
+  assert.equal(usableImage({ role: 'identification', status: 'draft' }, false), false);
+  assert.equal(usableImage({ role: 'identification', status: 'draft' }, true), true);
+  assert.equal(
+    usableImage({ role: 'identification', status: 'approved', aiGenerated: true }, true),
+    false,
+  );
+  assert.equal(usableImage({ role: 'profile', status: 'approved' }, true), false);
 });
 
 test('WCO tariffs are 6-digit only', () => {
