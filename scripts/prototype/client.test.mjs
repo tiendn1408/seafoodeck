@@ -5,6 +5,7 @@ import {
   ApiError,
   SUPPORTED_IMAGE_FORMATS,
   detectImageFormat,
+  NetworkError,
   withRetry,
 } from './client.mjs';
 
@@ -35,6 +36,62 @@ test('withRetry retries network errors', async () => {
     { baseMs: 1 },
   );
   assert.equal(value, 1);
+});
+
+test('withRetry POST does not retry network errors', async () => {
+  let calls = 0;
+  await assert.rejects(
+    withRetry(
+      async () => {
+        calls += 1;
+        throw new NetworkError('x');
+      },
+      { baseMs: 1, method: 'POST' },
+    ),
+    (e) => e instanceof NetworkError,
+  );
+  assert.equal(calls, 1);
+});
+
+test('withRetry POST retries 429', async () => {
+  let calls = 0;
+  const value = await withRetry(
+    async () => {
+      calls += 1;
+      if (calls < 2) throw fail(429);
+      return 'ok';
+    },
+    { baseMs: 1, method: 'POST' },
+  );
+  assert.equal(value, 'ok');
+  assert.equal(calls, 2);
+});
+
+test('withRetry GET retries NetworkError', async () => {
+  let calls = 0;
+  await withRetry(
+    async () => {
+      calls += 1;
+      if (calls < 2) throw new NetworkError('x');
+    },
+    { baseMs: 1 },
+  );
+  assert.equal(calls, 2);
+});
+
+test('withRetry never retries programming errors', async () => {
+  let calls = 0;
+  await assert.rejects(
+    withRetry(
+      async () => {
+        calls += 1;
+        throw new TypeError('x is not a function');
+      },
+      { baseMs: 1 },
+    ),
+    TypeError,
+  );
+  assert.equal(calls, 1);
 });
 
 test('withRetry does not retry 400', async () => {

@@ -125,11 +125,13 @@ test('mediaInfo', () => {
 test('planItem', () => {
   const st = (o) => ({
     externalId: 'x',
-    latest: { fromImporter: true, status: 'draft', released: false, ...o },
+    latest: { fromImporter: true, status: 'draft', released: false, version: 1, ...o },
   });
   assert.equal(planItem(null, full), 'create');
   assert.equal(planItem(st({}), full), 'resume');
   assert.equal(planItem(st({ released: true }), full), 'skip-existing');
   assert.equal(planItem(st({ fromImporter: false }), full), 'skip-existing');
+  assert.equal(planItem(st({ version: 2 }), full), 'skip-existing');
+  assert.equal(planItem(st({ status: 'revoked' }), full), 'skip-existing');
   assert.equal(DUPLICATE_SCIENTIFIC.length, 4);
 });

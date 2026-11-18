@@ -9,13 +9,27 @@ export class ApiError extends Error {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Retries only on HTTP 429 or network failures (errors without an HTTP status).
-export async function withRetry(fn, { tries = 5, baseMs = 500 } = {}) {
+export class NetworkError extends Error {
+  constructor(message, cause) {
+    super(message, { cause });
+    this.name = 'NetworkError';
+  }
+}
+
+// True only for explicit fetch/network failures, never for programming errors.
+export function isNetworkError(error) {
+  if (error instanceof NetworkError) return true;
+  return error instanceof TypeError && error.message === 'fetch failed';
+}
+
+// GET retries HTTP 429 and network failures. POST retries only HTTP 429, because a request
+// that failed mid-flight may already have been applied and a retry would duplicate it.
+export async function withRetry(fn, { tries = 5, baseMs = 500, method = 'GET' } = {}) {
   for (let attempt = 1; ; attempt += 1) {
     try {
       return await fn();
     } catch (error) {
-      const retryable = error?.status === 429 || error?.status === undefined;
+      const retryable = error?.status === 429 || (method === 'GET' && isNetworkError(error));
       if (!retryable || attempt >= tries) throw error;
       await sleep(baseMs * 2 ** (attempt - 1));
     }
@@ -42,11 +56,17 @@ export class ApiClient {
           }
         : {}),
     };
-    const response = await this.fetch(`${this.baseUrl}/api/v1${path}`, {
-      method,
-      headers,
-      body: !hasBody ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-    });
+    let response;
+    try {
+      response = await this.fetch(`${this.baseUrl}/api/v1${path}`, {
+        method,
+        headers,
+        body: !hasBody ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+      });
+    } catch (error) {
+      if (error instanceof TypeError) throw new NetworkError(`${method} ${path}: lỗi mạng`, error);
+      throw error;
+    }
     const setCookie = response.headers.getSetCookie?.()[0];
     if (setCookie) this.cookie = setCookie.split(';')[0];
     const text = await response.text();

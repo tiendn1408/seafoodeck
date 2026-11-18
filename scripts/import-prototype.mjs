@@ -116,13 +116,16 @@ async function main() {
   const client = new ApiClient(values['base-url']);
   const { username, password } = await readCredentials();
   await withRetry(() => client.get('/auth/me'));
-  await withRetry(() => client.post('/auth/login', { username, credential: password }));
+  await withRetry(() => client.post('/auth/login', { username, credential: password }), {
+    method: 'POST',
+  });
 
   const counts = {};
   const duplicates = [];
   const failures = [];
   const unsupportedImages = [];
-  const tally = { scenarios: 0, images: 0, imagesMissingFile: 0, imagesNoAttribution: 0 };
+  const tally = { scenarios: 0, images: 0, imagesMissingFile: 0 };
+  const noAttribution = [];
   const tariffIds = new Map();
 
   const tariffFor = async (code) => {
@@ -132,14 +135,16 @@ async function main() {
     let id = found.find((t) => t.code === code)?.id;
     if (!id) {
       if (dryRun) return null;
-      const created = await withRetry(() =>
-        client.post('/admin/tariffs', {
-          code,
-          level: 6,
-          market: 'WCO',
-          version: 'HS 2022',
-          source: TARIFF_SOURCE,
-        }),
+      const created = await withRetry(
+        () =>
+          client.post('/admin/tariffs', {
+            code,
+            level: 6,
+            market: 'WCO',
+            version: 'HS 2022',
+            source: TARIFF_SOURCE,
+          }),
+        { method: 'POST' },
       );
       id = created.id;
     }
@@ -163,7 +168,9 @@ async function main() {
 
       let revisionId = state?.latest.revisionId;
       if (plan === 'create' && !dryRun) {
-        const ids = await withRetry(() => client.post('/admin/items', { item }));
+        const ids = await withRetry(() => client.post('/admin/items', { item }), {
+          method: 'POST',
+        });
         revisionId = ids[0];
       }
 
@@ -181,10 +188,12 @@ async function main() {
               const form = new FormData();
               form.append('file', new Blob([bytes], { type: `image/${format}` }), `${sp.id}.jpg`);
               for (const [k, v] of Object.entries(media)) form.append(k, v);
-              await withRetry(() => client.post(`/admin/revisions/${revisionId}/media`, form));
+              await withRetry(() => client.post(`/admin/revisions/${revisionId}/media`, form), {
+                method: 'POST',
+              });
             }
             tally.images += 1;
-            tally.imagesNoAttribution += 1;
+            noAttribution.push(sp.id);
           }
         }
       }
@@ -194,8 +203,9 @@ async function main() {
         if (have.has(scenario.data.provenance.prototypeCaseId)) continue;
         const tariffId = await tariffFor(scenario.code);
         if (!dryRun) {
-          await withRetry(() =>
-            client.post('/admin/scenarios', { revisionId, data: scenario.data, tariffId }),
+          await withRetry(
+            () => client.post('/admin/scenarios', { revisionId, data: scenario.data, tariffId }),
+            { method: 'POST' },
           );
         }
         tally.scenarios += 1;
@@ -211,7 +221,8 @@ async function main() {
   console.log(`  scenario ${dryRun ? 'sẽ tạo' : 'đã tạo'}: ${tally.scenarios}`);
   console.log(`  ảnh ${dryRun ? 'sẽ tải' : 'đã tải'}: ${tally.images}`);
   console.log(`  ảnh thiếu file: ${tally.imagesMissingFile}`);
-  console.log(`  ảnh rights thiếu ghi công: ${tally.imagesNoAttribution}`);
+  console.log(`  ảnh rights thiếu ghi công: ${noAttribution.length}`);
+  for (const id of noAttribution) console.log(`    - ${id}`);
   console.log(`  loài trùng (bỏ qua): ${duplicates.length ? duplicates.join('; ') : 'không có'}`);
   console.log('Danh sách theo loài (tính riêng, không cộng vào tổng):');
   console.log(`  skipped-unsupported-image (cảnh báo): ${unsupportedImages.length}`);

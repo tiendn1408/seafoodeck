@@ -126,7 +126,7 @@ export function mediaInfo(species) {
 
 export function planItem(state, _item) {
   if (!state) return 'create';
-  const { fromImporter, status, released } = state.latest;
-  if (fromImporter && status === 'draft' && !released) return 'resume';
+  const { fromImporter, status, released, version } = state.latest;
+  if (fromImporter && status === 'draft' && !released && version === 1) return 'resume';
   return 'skip-existing';
 }
