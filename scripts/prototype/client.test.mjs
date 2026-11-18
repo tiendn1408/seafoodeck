@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { ApiClient, ApiError, withRetry } from './client.mjs';
+
+const fail = (status) => Object.assign(new ApiError(`HTTP ${status}`, status), {});
+
+test('withRetry retries 429 and succeeds on third try', async () => {
+  let calls = 0;
+  const value = await withRetry(
+    async () => {
+      calls += 1;
+      if (calls < 3) throw fail(429);
+      return 'ok';
+    },
+    { baseMs: 1 },
+  );
+  assert.equal(value, 'ok');
+  assert.equal(calls, 3);
+});
+
+test('withRetry retries network errors', async () => {
+  let calls = 0;
+  const value = await withRetry(
+    async () => {
+      calls += 1;
+      if (calls < 2) throw new TypeError('fetch failed');
+      return 1;
+    },
+    { baseMs: 1 },
+  );
+  assert.equal(value, 1);
+});
+
+test('withRetry does not retry 400', async () => {
+  let calls = 0;
+  await assert.rejects(
+    withRetry(
+      async () => {
+        calls += 1;
+        throw fail(400);
+      },
+      { baseMs: 1 },
+    ),
+    (e) => e.status === 400,
+  );
+  assert.equal(calls, 1);
+});
+
+test('withRetry throws after tries exhausted', async () => {
+  let calls = 0;
+  await assert.rejects(
+    withRetry(
+      async () => {
+        calls += 1;
+        throw fail(429);
+      },
+      { tries: 3, baseMs: 1 },
+    ),
+    (e) => e.status === 429,
+  );
+  assert.equal(calls, 3);
+});
+
+function fakeFetch(log) {
+  return async (url, init) => {
+    log.push({ url, init });
+    const path = new URL(url).pathname;
+    if (path === '/api/v1/auth/me')
+      return new Response(JSON.stringify({ csrf: 'tok1' }), {
+        status: 200,
+        headers: { 'set-cookie': 'seafoodeck_session=abc; Path=/; HttpOnly' },
+      });
+    if (path === '/api/v1/missing') return new Response('{"message":"nope"}', { status: 404 });
+    return new Response(JSON.stringify({ id: 'x' }), { status: 201 });
+  };
+}
+
+test('ApiClient keeps cookie and csrf, prefixes /api/v1', async () => {
+  const log = [];
+  const client = new ApiClient('http://h:1/', fakeFetch(log));
+  await client.get('/auth/me');
+  const created = await client.post('/admin/items', { item: 1 });
+  assert.deepEqual(created, { id: 'x' });
+  const second = log[1];
+  assert.equal(second.url, 'http://h:1/api/v1/admin/items');
+  assert.equal(second.init.headers.Cookie, 'seafoodeck_session=abc');
+  assert.equal(second.init.headers['X-CSRF-Token'], 'tok1');
+  assert.equal(second.init.headers['Content-Type'], 'application/json');
+  assert.equal(second.init.headers.Origin, undefined);
+  assert.equal(second.init.body, '{"item":1}');
+});
+
+test('ApiClient sends FormData without content-type and throws ApiError', async () => {
+  const log = [];
+  const client = new ApiClient('http://h:1', fakeFetch(log));
+  await client.get('/auth/me');
+  const form = new FormData();
+  form.append('a', 'b');
+  await client.post('/admin/revisions/1/media', form);
+  assert.equal(log[1].init.headers['Content-Type'], undefined);
+  assert.equal(log[1].init.body, form);
+  await assert.rejects(client.get('/missing'), (e) => e instanceof ApiError && e.status === 404);
+  assert.equal(await client.getOptional('/missing'), null);
+});
