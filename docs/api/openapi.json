@@ -993,6 +993,32 @@
           "note": {
             "type": "string"
           },
+          "taxonomicGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "family": {
+            "type": "string",
+            "nullable": true
+          },
+          "familyVi": {
+            "type": "string",
+            "nullable": true
+          },
+          "enAliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "jaKanji": {
+            "type": "string",
+            "nullable": true
+          },
+          "jaTrade": {
+            "type": "string",
+            "nullable": true
+          },
           "media": {
             "type": "array",
             "items": {

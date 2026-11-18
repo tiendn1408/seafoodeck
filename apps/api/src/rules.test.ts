@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readCsv, validateItem, csvHeader } from './catalog';
+import { readCsv, validateItem, csvHeader, Catalog } from './catalog';
 import { canonical, grade, distinctNames, selectHsCases, type PrivateQuestion } from './learning';
 import { normalizeCode, validateHs } from './hs';
 import { passwordHash, passwordMatches } from './security';
@@ -174,4 +174,23 @@ test('HS round includes its paired forms and missing facts; due review can targe
   );
   assert.equal(selectHsCases(rows, '5')[0].id, '5');
   assert.throws(() => selectHsCases(rows, 'missing'));
+});
+test('learner DTO exposes names/taxonomy but never unsourced fields', () => {
+  const dto = new Catalog(null as never).dto({
+    id: 'r1',
+    data: { ...item, ...extended },
+    names: [],
+    media: [],
+  });
+  assert.equal(dto.family, 'Penaeidae');
+  assert.equal(dto.jaTrade, 'ブラックタイガー');
+  assert.deepEqual(dto.enAliases, ['Giant tiger prawn']);
+  for (const k of ['rarity', 'marketPrice', 'hsHints', 'provenance', 'tradeRestriction'])
+    assert.ok(!(k in dto), k);
+  assert.ok(!/USD|đ\/kg|0306\.17/.test(JSON.stringify(dto)));
+});
+test('legacy item DTO has empty extended fields', () => {
+  const dto = new Catalog(null as never).dto({ id: 'r1', data: item, names: [], media: [] });
+  assert.equal(dto.family, null);
+  assert.deepEqual(dto.enAliases, []);
 });

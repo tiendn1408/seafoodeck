@@ -214,7 +214,15 @@ export class Catalog {
     if (release.internal && !actor.internal) throw new NotFoundException();
     return release;
   }
-  async list(actor: AuthSession, page = 1, limit = 12, query = '', group = '', learnable = false) {
+  async list(
+    actor: AuthSession,
+    page = 1,
+    limit = 12,
+    query = '',
+    group = '',
+    learnable = false,
+    taxon = '',
+  ) {
     if (
       !Number.isInteger(page) ||
       page < 1 ||
@@ -222,14 +230,18 @@ export class Catalog {
       limit < 1 ||
       limit > 50 ||
       query.length > 100 ||
-      group.length > 80
+      group.length > 80 ||
+      !['', 'fish', 'crustacean', 'mollusc', 'other'].includes(taxon)
     )
       throw new BadRequestException('Phân trang/bộ lọc không hợp lệ.');
     const release = await this.current(actor);
     const where: Prisma.RevisionWhereInput = {
-      ...(learnable
-        ? { AND: kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } })) }
-        : {}),
+      AND: [
+        ...(learnable
+          ? kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } }))
+          : []),
+        ...(taxon ? [{ data: { path: ['taxonomicGroup'], equals: taxon } }] : []),
+      ],
       releases: { some: { releaseId: release.id } },
       ...(query
         ? {
@@ -293,6 +305,12 @@ export class Catalog {
       forms: d.forms,
       identification: d.identification,
       note: d.note,
+      taxonomicGroup: d.taxonomicGroup ?? null,
+      family: d.family ?? null,
+      familyVi: d.familyVi ?? null,
+      enAliases: d.enAliases ?? [],
+      jaKanji: d.jaKanji ?? null,
+      jaTrade: d.jaTrade ?? null,
       media: row.media
         .filter((m) => !m.asset.revokedAt)
         .map((m) => ({
