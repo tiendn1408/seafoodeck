@@ -1,17 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  BookOpen,
-  Library,
-  RotateCcw,
-  Target,
-  ArrowRight,
-  Fish,
-  Tags,
-  ScanLine,
-  PackageCheck,
-  ShieldCheck,
-  LogOut,
-} from 'lucide-react';
+import { BookOpen, Library, ArrowRight, Fish, Tags, ScanLine, PackageCheck } from 'lucide-react';
 import {
   api,
   setCsrf,
@@ -28,6 +16,9 @@ import {
 } from './api';
 import { SignedImage, Pronunciation, stopAudio, MediaCredit } from './Media';
 import { Admin } from './Admin';
+import { AppShell } from '../learner/AppShell';
+import { ErrorNote } from '../learner/ErrorNote';
+import { Login } from '../learner/Login';
 import {
   LEDGER_KEY,
   loadLedger,
@@ -43,26 +34,8 @@ const modeNames: Record<string, string> = {
   hs: 'HS theo dạng hàng',
 };
 const icons = { flashcard: BookOpen, match: Tags, image: ScanLine, hs: PackageCheck };
-const nav = [
-  ['home', 'Học tập', BookOpen],
-  ['library', 'Thư viện', Library],
-  ['review', 'Ôn tập', RotateCcw],
-  ['progress', 'Tiến độ', Target],
-] as const;
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
-}
-function ErrorNote({ message, retry }: { message: string; retry?: () => void }) {
-  return (
-    <div className="notice pilot-error" role="alert">
-      <span>{message}</span>
-      {retry && (
-        <button className="btn secondary" onClick={retry}>
-          Thử lại
-        </button>
-      )}
-    </div>
-  );
 }
 export default function PilotApp() {
   const [initial] = useState(loadLedger);
@@ -170,70 +143,27 @@ export default function PilotApp() {
     reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version),
     due = reviews.filter((r) => Date.parse(r.dueAt) <= now);
   const staff = auth && ['admin', 'editor', 'reviewer', 'publisher'].includes(auth.role);
+  const signedIn = !!auth && auth.role !== 'guest';
+  function logout() {
+    void api<AuthView>('/auth/logout', {})
+      .then((a) => {
+        setAuth(a);
+        setCsrf(a.csrf);
+        setGame(null);
+        location.hash = 'home';
+      })
+      .catch((e) => setError(e.message));
+  }
   return (
-    <>
-      <a
-        className="skip-link"
-        href="#main"
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById('main')?.focus();
-        }}
-      >
-        Đến nội dung
-      </a>
-      <header className="app-header">
-        <a className="brand" href="#home">
-          <span className="brand-symbol">
-            <BookOpen size={23} />
-          </span>
-          <span>
-            seafood<strong>deck</strong>.
-          </span>
-        </a>
-        <span className="header-course">Sổ tay thủy hải sản</span>
-        <nav className="header-nav" aria-label="Điều hướng chính">
-          {nav.map(([id, label, Icon]) => (
-            <a
-              key={id}
-              href={'#' + id}
-              className={route === id || (route === 'study' && id === 'home') ? 'active' : ''}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-            </a>
-          ))}
-          {staff && (
-            <a href="#admin">
-              <ShieldCheck size={19} />
-              <span>Quản trị</span>
-            </a>
-          )}
-        </nav>
-        {auth && auth.role !== 'guest' && (
-          <button
-            className="icon-button"
-            aria-label="Đăng xuất"
-            onClick={() =>
-              void api<AuthView>('/auth/logout', {})
-                .then((a) => {
-                  setAuth(a);
-                  setCsrf(a.csrf);
-                  setGame(null);
-                  location.hash = 'home';
-                })
-                .catch((e) => setError(e.message))
-            }
-          >
-            <LogOut size={18} />
-          </button>
-        )}
-      </header>
-      <main
-        id="main"
-        tabIndex={-1}
-        className={`content home-content ${route === 'study' ? 'pilot-study-content' : ''}`}
-      >
+    <AppShell
+      route={route}
+      tone="ice"
+      staff={!!staff}
+      internal={!!auth?.internal}
+      signedIn={signedIn}
+      onLogout={logout}
+    >
+      <div className={`content home-content ${route === 'study' ? 'pilot-study-content' : ''}`}>
         {warning && <ErrorNote message={warning} />}
         {!saved && (
           <ErrorNote message="Trình duyệt không lưu được tiến độ. Phiên trên máy chủ vẫn hoạt động, nhưng cần giữ trang này mở." />
@@ -250,12 +180,6 @@ export default function PilotApp() {
           />
         ) : (
           <>
-            <div className="pilot-scope">
-              {auth.internal
-                ? 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt'
-                : 'Bộ học được cấp quyền'}{' '}
-              · Online
-            </div>
             {['home', 'library'].includes(route) && (
               <CatalogScreen
                 key={route}
@@ -286,7 +210,7 @@ export default function PilotApp() {
                 />
               ) : (
                 <p role="status">
-                  {pending ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học tập.'}
+                  {pending ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học.'}
                 </p>
               ))}
             {route === 'review' && (
@@ -376,87 +300,8 @@ export default function PilotApp() {
             {route === 'admin' && staff && <Admin />}
           </>
         )}
-      </main>
-      <footer className="pilot-footer">
-        <Fish size={17} />
-        Seafood Deck<span>Dành cho người mới và nhân viên kinh doanh thủy hải sản</span>
-      </footer>
-    </>
-  );
-}
-function Login({ onLogin }: { onLogin: (a: AuthView) => void }) {
-  const [staff, setStaff] = useState(false),
-    [credential, setCredential] = useState(''),
-    [username, setUsername] = useState(''),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(false);
-  return (
-    <section className="pilot-login">
-      <img
-        src="/media/illustrations/seafood-notebook-2d-v2.png"
-        alt=""
-        width="1536"
-        height="1024"
-      />
-      <div>
-        <p>Thủy hải sản thương mại</p>
-        <h1>Vào bộ học của bạn.</h1>
-        <p>
-          {staff
-            ? 'Đăng nhập bằng tài khoản quản trị được cấp.'
-            : 'Nhập mã mời từ người phụ trách. Bạn không cần tạo tài khoản.'}
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setBusy(true);
-            setError('');
-            void api<AuthView>('/auth/login', { credential, ...(staff ? { username } : {}) })
-              .then(onLogin)
-              .catch((e) => setError(e.message))
-              .finally(() => setBusy(false));
-          }}
-        >
-          {staff && (
-            <label>
-              Tài khoản
-              <input
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </label>
-          )}
-          <label>
-            {staff ? 'Mật khẩu' : 'Mã mời'}
-            <input
-              type="password"
-              autoComplete={staff ? 'current-password' : 'off'}
-              value={credential}
-              onChange={(e) => setCredential(e.target.value)}
-              required
-              maxLength={150}
-            />
-          </label>
-          {error && <ErrorNote message={error} />}
-          <button className="btn primary" disabled={busy}>
-            {busy ? 'Đang kiểm tra…' : 'Vào bộ học'}
-            <ArrowRight size={17} />
-          </button>
-        </form>
-        <button
-          className="pilot-text-button"
-          onClick={() => {
-            setStaff(!staff);
-            setError('');
-            setCredential('');
-          }}
-        >
-          {staff ? 'Dùng mã mời người học' : 'Dành cho quản trị'}
-        </button>
       </div>
-    </section>
+    </AppShell>
   );
 }
 function VersionLoader({ onVersion }: { onVersion: (id: string) => void }) {

@@ -36,7 +36,7 @@ async function login(page: Page, admin = false) {
 }
 async function start(page: Page, name: string) {
   if (!(await page.getByRole('heading', { name: 'Luyện nghiệp vụ' }).isVisible()))
-    await page.getByRole('link', { name: 'Học tập', exact: true }).click();
+    await page.getByRole('link', { name: 'Học', exact: true }).click();
   const response = page.waitForResponse(
     (r) => r.url().endsWith('/api/v1/learning/sessions') && r.request().method() === 'POST',
   );

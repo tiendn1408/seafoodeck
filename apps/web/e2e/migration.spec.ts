@@ -42,7 +42,7 @@ test('old shrimp session and reviews remain stored but never appear in the new p
   expect((await saved(page)).attempts).toHaveLength(1);
   await page.goto('/#study');
   await expect(page.getByRole('heading', { name: 'Nội dung đã được cập nhật' })).toBeVisible();
-  await page.getByRole('link', { name: 'Học tập', exact: true }).click();
+  await page.getByRole('link', { name: 'Học', exact: true }).click();
   await page.getByRole('button', { name: /Flashcard tên loài/ }).click();
   const s = await saved(page);
   expect(s.session.contentVersion).not.toBe(oldPack.version);
