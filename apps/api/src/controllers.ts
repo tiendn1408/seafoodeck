@@ -33,6 +33,7 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { Db } from './db';
+import type { Prisma } from './generated/prisma/client';
 import {
   CatalogItemResponse,
   CatalogPageResponse,
@@ -184,10 +185,22 @@ export class AdminController {
     private catalog: Catalog,
     private media: Media,
   ) {}
-  @Get('overview') async overview(@Req() req: ActorRequest) {
+  @Get('overview') async overview(@Req() req: ActorRequest, @Query('q') query = '') {
     requireRole(req, ['editor', 'reviewer', 'publisher', 'admin']);
+    if (typeof query !== 'string' || query.length > 100)
+      throw new BadRequestException('Từ khóa tối đa 100 ký tự.');
+    const where: Prisma.RevisionWhereInput = query
+      ? {
+          OR: [
+            { item: { externalId: { contains: query, mode: 'insensitive' } } },
+            { names: { some: { searchText: { contains: query, mode: 'insensitive' } } } },
+          ],
+        }
+      : {};
     return {
+      revisionTotal: await this.db.revision.count({ where }),
       revisions: await this.db.revision.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         take: 100,
         include: { names: true, media: { include: { asset: true } } },

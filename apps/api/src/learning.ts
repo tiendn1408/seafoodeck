@@ -41,6 +41,37 @@ export function shuffled<T>(rows: T[]) {
   }
   return result;
 }
+export function distinctNames<T>(rows: T[], labels: (row: T) => string[]) {
+  const seen: Set<string>[] = [];
+  return rows.filter((row) => {
+    const keys = labels(row).map((label) => label.normalize('NFKC').trim().toLocaleLowerCase());
+    if (keys.some((key, i) => !key || seen[i]?.has(key))) return false;
+    keys.forEach((key, i) => (seen[i] ??= new Set()).add(key));
+    return true;
+  });
+}
+export function selectHsCases<
+  T extends { id: string; revisionId: string; tariffId: string | null; data: unknown },
+>(rows: T[], focusId?: string): T[] {
+  if (focusId) {
+    const focus = rows.find((row) => row.id === focusId);
+    if (!focus) throw new BadRequestException('Hồ sơ HS không còn trong bộ hiện hành.');
+    return [focus, ...rows.filter((row) => row.id !== focusId)].slice(0, 3);
+  }
+  const kind = (row: T) => (row.data as { kind?: string })?.kind;
+  const missing = rows.find((row) => kind(row) === 'insufficient');
+  const codes = rows.filter((row) => kind(row) === 'code' && row.tariffId);
+  for (const first of codes) {
+    const second = codes.find(
+      (row) =>
+        row.id !== first.id &&
+        row.revisionId === first.revisionId &&
+        row.tariffId !== first.tariffId,
+    );
+    if (second && missing) return [first, second, missing];
+  }
+  return rows.slice(0, 3);
+}
 export function canonical(value: unknown): string {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
   if (value && typeof value === 'object')
@@ -112,6 +143,7 @@ export class Learning {
     reviewOf?: string,
     reviewTargets?: { targetId: string; skill: string }[],
     focusTarget = false,
+    focusCaseId?: string,
   ) {
     if (
       !['flashcard', 'match', 'image', 'hs', 'full', 'review', 'listening'].includes(mode) ||
@@ -144,6 +176,7 @@ export class Learning {
           undefined,
           undefined,
           true,
+          category === 'hs' ? target.targetId : undefined,
         );
         const built = await this.db.question.findMany({ where: { sessionId: temporary.id } });
         const found = built
@@ -207,23 +240,10 @@ export class Learning {
           });
         }
       if (mode === 'match' || mode === 'full') {
-        const candidates = shuffled(rows).filter(
-          (r, i, a) =>
-            a.findIndex(
-              (other) =>
-                label(other, kind) === label(r, kind) || label(other, 'vi') === label(r, 'vi'),
-            ) === i,
-        );
-        const norm = (value: string) => value.normalize('NFKC').trim().toLocaleLowerCase();
-        const chosen = [
-          selected,
-          ...candidates.filter(
-            (r) =>
-              r.id !== selected.id &&
-              norm(label(r, kind)) !== norm(label(selected, kind)) &&
-              norm(label(r, 'vi')) !== norm(label(selected, 'vi')),
-          ),
-        ].slice(0, 3);
+        const chosen = distinctNames(
+          [selected, ...shuffled(rows.filter((r) => r.id !== selected.id))],
+          (r) => [label(r, 'vi'), label(r, kind)],
+        ).slice(0, 3);
         if (chosen.length < 3) throw new BadRequestException('Chưa đủ 3 cặp tên không mơ hồ.');
         const pairs: Record<string, string> = {};
         const targets: Record<string, string> = {};
@@ -251,12 +271,11 @@ export class Learning {
       }
       if (mode === 'listening') {
         const hashes = new Set<string>();
-        const eligible = (
-          focusTarget
+        const eligible = distinctNames(
+          (focusTarget
             ? [selected, ...shuffled(rows.filter((r) => r.id !== selected.id))]
             : shuffled(rows)
-        )
-          .flatMap((r) => {
+          ).flatMap((r) => {
             const asset = r.media.find(
               (m) =>
                 m.asset.role === 'pronunciation' &&
@@ -267,8 +286,9 @@ export class Learning {
             if (!asset || hashes.has(asset.hash)) return [];
             hashes.add(asset.hash);
             return [{ r, asset }];
-          })
-          .slice(0, 3);
+          }),
+          ({ r }) => [label(r, kind)],
+        ).slice(0, 3);
         if (eligible.length < 3)
           throw new BadRequestException(
             'Chưa đủ 3 bản thu khác nhau, đúng hướng ngôn ngữ. Có thể học Ghép tên.',
@@ -294,12 +314,11 @@ export class Learning {
       }
       if (mode === 'image') {
         const originals = new Set<string>();
-        const choices = (
-          focusTarget
+        const choices = distinctNames(
+          (focusTarget
             ? [selected, ...shuffled(rows.filter((r) => r.id !== selected.id))]
             : shuffled(rows)
-        )
-          .flatMap((r) => {
+          ).flatMap((r) => {
             const asset = r.media.find(
               (m) =>
                 m.asset.role === 'identification' &&
@@ -313,15 +332,23 @@ export class Learning {
             if (originals.has(original)) return [];
             originals.add(original);
             return [{ r, asset }];
-          })
-          .slice(0, 3);
+          }),
+          ({ r }) => [label(r, 'vi')],
+        ).slice(0, 3);
         if (choices.length < 3)
           throw new BadRequestException('Chưa đủ 3 ảnh gốc hợp lệ của 3 mục. Có thể học Ghép tên.');
         for (const { r, asset } of choices) {
-          const opts = shuffled([
-            r,
-            ...shuffled(rows.filter((s) => s.id !== r.id)).slice(0, 2),
-          ]).map((s) => ({ id: randomUUID(), label: label(s, 'vi'), revision: s.id }));
+          const namedOptions = distinctNames(
+            [r, ...shuffled(rows.filter((s) => s.id !== r.id))],
+            (s) => [label(s, 'vi')],
+          ).slice(0, 3);
+          if (namedOptions.length < 3)
+            throw new BadRequestException('Chưa đủ 3 tên Việt không mơ hồ. Có thể học Flashcard.');
+          const opts = shuffled(namedOptions).map((s) => ({
+            id: randomUUID(),
+            label: label(s, 'vi'),
+            revision: s.id,
+          }));
           questions.push({
             type: 'image',
             targetId: r.itemId,
@@ -336,15 +363,15 @@ export class Learning {
         }
       }
       if (mode === 'hs' || mode === 'full') {
-        const scenarios = await this.db.tradeScenario.findMany({
+        const availableScenarios = await this.db.tradeScenario.findMany({
           where: {
             revisionId: { in: rows.map((r) => r.id) },
             ...(!release.internal ? { status: 'approved' } : {}),
           },
           include: { tariff: true },
-          take: 3,
           orderBy: { id: 'asc' },
         });
+        const scenarios = selectHsCases(availableScenarios, focusCaseId);
         if (scenarios.length < 3) throw new BadRequestException('Chưa đủ 3 hồ sơ HS cho bộ này.');
         for (const s of scenarios) {
           const data = s.data as {

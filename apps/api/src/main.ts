@@ -67,6 +67,8 @@ async function main() {
   await mkdir('/tmp/seafoodeck-upload', { recursive: true });
   const server = express();
   server.disable('x-powered-by');
+  // API is private behind exactly one Caddy hop; do not group every learner under its IP.
+  server.set('trust proxy', 1);
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
     logger: ['error', 'warn'],
   });

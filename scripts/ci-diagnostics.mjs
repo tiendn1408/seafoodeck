@@ -2,7 +2,7 @@
 import {execFileSync} from 'node:child_process';
 const compose=['compose','--env-file','.local/pilot.env'];
 const run=args=>{try{return execFileSync('docker',args,{encoding:'utf8',stdio:['pipe','pipe','pipe']});}catch{return '';}};
-for(const service of ['storage','api','migrate']){
+for(const service of ['storage-config','storage','api','migrate']){
  const id=run([...compose,'ps','-aq',service]).trim();
  if(!/^[a-f0-9]{12,64}$/.test(id))continue;
  const state=run(['inspect','--format','{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}',id]).trim().split(' ');

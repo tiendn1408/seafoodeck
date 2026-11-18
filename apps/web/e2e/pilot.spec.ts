@@ -260,6 +260,17 @@ test('admin can preview CSV errors and publish/rollback a QA draft through the b
   try {
     await page.getByRole('link', { name: 'Quản trị', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Biên tập và xuất bản' })).toBeVisible();
+    await page.getByLabel('Tìm revision theo ID hoặc tên').fill('atlantic-cod');
+    await page.getByRole('button', { name: 'Tìm revision', exact: true }).click();
+    await expect(
+      page
+        .getByLabel('Chọn revision')
+        .locator('option')
+        .filter({ hasText: 'Cá tuyết Đại Tây Dương' }),
+    ).toHaveCount(1);
+    await page.getByLabel('Tìm revision theo ID hoặc tên').fill('');
+    await page.getByRole('button', { name: 'Tìm revision', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Tìm revision', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: 'Lấy mẫu CSV' }).click();
     await expect(page.getByLabel('Nội dung CSV')).toHaveValue(/^externalId,/);
     const csv = await page.getByLabel('Nội dung CSV').inputValue();

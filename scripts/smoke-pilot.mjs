@@ -63,5 +63,19 @@ pass('CSV atomicity/idempotence, draft ACL, media validation, internal publish w
 const clone=await admin.ok(`/admin/revisions/${revisionId}/clone`,{});assert.notEqual(clone.id,revisionId);
 await admin.ok(`/admin/media/${photo.data.id}/revoke`,{});assert.equal((await admin.req(`/media/${photo.data.id}/url`)).status,404);
 pass('media revision clone and revocation stop new signed URLs');
+// Regression: a due HS case beyond the normal three must be rebuilt by its own ID.
+const tunaSearch=await admin.ok('/admin/overview?q=yellowfin-tuna');
+assert.ok(tunaSearch.revisionTotal>0);
+const tuna=tunaSearch.revisions.sort((a,b)=>b.version-a.version)[0];
+const hsDraft=await admin.ok(`/admin/revisions/${tuna.id}/clone`,{});
+const sampleCase=overview.scenarios.find(s=>s.data.kind==='code');
+const laterCase=await admin.ok('/admin/scenarios',{revisionId:hsDraft.id,tariffId:sampleCase.tariffId,data:{...sampleCase.data,prompt:'QA HS late case — internal regression only'}});
+try {
+ await admin.ok('/admin/releases',{revisionIds:original.items.map(i=>i.revisionId===all.items.find(r=>r.externalId==='yellowfin-tuna').revisionId?hsDraft.id:i.revisionId),internal:true});
+ const directed=await learner.ok('/learning/sessions',{mode:'review',reviewTargets:[{targetId:laterCase.id,skill:'hs'}]});
+ assert.equal(directed.questions.length,1);assert.equal(directed.questions[0].prompt,'QA HS late case — internal regression only');
+ const round=await learner.ok('/learning/sessions',{mode:'hs'});assert.ok(round.questions.some(q=>q.prompt===overview.scenarios.find(s=>s.data.kind==='insufficient').data.prompt));
+ pass('HS retains missing-fact coverage and due review resolves the requested case among four or more');
+} finally {await admin.ok(`/admin/releases/${original.id}/rollback`,{});}
 writeFileSync('.local/smoke-evidence.json',JSON.stringify({at:new Date().toISOString(),origin,evidence,qa:{revisionId,photoId:photo.data.id,audioId,releaseId:published.id}},null,2)+'\n',{mode:0o600});
 console.log('All internal smoke checks passed. No real content was approved.');

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 # Run only after testing these exact two local images. Never changes the VPS.
-tag=${1:-pilot-internal-20261118}
+tag=${1:-pilot-internal-20261118-r2}
 case "$tag" in *[!a-zA-Z0-9_.-]*|'') echo 'Invalid tag' >&2; exit 2;; esac
 for service in api web; do
   local_ref="seafoodeck-$service:$tag"

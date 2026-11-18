@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readCsv, validateItem, csvHeader } from './catalog';
-import { canonical, grade, type PrivateQuestion } from './learning';
+import { canonical, grade, distinctNames, selectHsCases, type PrivateQuestion } from './learning';
 import { normalizeCode, validateHs } from './hs';
 import { passwordHash, passwordMatches } from './security';
 const item = {
@@ -103,4 +103,33 @@ test('administrator credentials are salted and compared with a memory-hard hash'
   assert.notEqual(a, b);
   assert.equal(passwordMatches('long-test-password', a), true);
   assert.equal(passwordMatches('wrong', a), false);
+});
+
+test('matching excludes case and Unicode variants in both name directions', () => {
+  const rows = [
+    { vi: 'Cá tuyết', en: 'Cod' },
+    { vi: 'Cá khác', en: 'ＣＯＤ' },
+    { vi: ' cá tuyết ', en: 'Other fish' },
+    { vi: 'Cá ngừ', en: 'Tuna' },
+    { vi: 'Vẹm xanh', en: 'Mussel' },
+  ];
+  assert.deepEqual(
+    distinctNames(rows, (r) => [r.vi, r.en]),
+    [rows[0], rows[3], rows[4]],
+  );
+});
+test('HS round includes its paired forms and missing facts; due review can target a later case', () => {
+  const rows = [
+    { id: '1', revisionId: 'other', tariffId: 'ref-other', data: { kind: 'code' } },
+    { id: '2', revisionId: 'tuna', tariffId: 'whole', data: { kind: 'code' } },
+    { id: '3', revisionId: 'tuna', tariffId: 'fillet', data: { kind: 'code' } },
+    { id: '4', revisionId: 'tuna', tariffId: null, data: { kind: 'insufficient' } },
+    { id: '5', revisionId: 'later-item', tariffId: 'late', data: { kind: 'code' } },
+  ];
+  assert.deepEqual(
+    selectHsCases(rows).map((r) => r.id),
+    ['2', '3', '4'],
+  );
+  assert.equal(selectHsCases(rows, '5')[0].id, '5');
+  assert.throws(() => selectHsCases(rows, 'missing'));
 });

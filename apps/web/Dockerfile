@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM node:24-alpine AS build
-ARG RELEASE_TAG=pilot-internal-20261118
+ARG RELEASE_TAG=pilot-internal-20261118-r2
 ENV VITE_RELEASE_TAG=$RELEASE_TAG
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -15,7 +15,7 @@ COPY apps/web/e2e ./e2e
 RUN npm run build
 
 FROM caddy:2-alpine AS runtime
-ARG RELEASE_TAG=pilot-internal-20261118
+ARG RELEASE_TAG=pilot-internal-20261118-r2
 LABEL org.opencontainers.image.title="Seafood Deck internal demo" \
       org.opencontainers.image.version=$RELEASE_TAG \
       io.seafoodeck.content-status="draft-internal-only"

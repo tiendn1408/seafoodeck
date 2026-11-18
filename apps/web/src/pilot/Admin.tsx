@@ -21,6 +21,7 @@ interface Revision {
   }[];
 }
 interface Overview {
+  revisionTotal: number;
   tariffs: AdminTariff[];
   revisions: Revision[];
   releases: { id: string; internal: boolean; items: { revisionId: string }[] }[];
@@ -41,12 +42,13 @@ export function Admin() {
       count: number;
       errors: { row: number; message: string }[];
     } | null>(null),
+    [revisionQuery, setRevisionQuery] = useState(''),
     [selected, setSelected] = useState(''),
     [edit, setEdit] = useState(''),
     [busy, setBusy] = useState(false),
     [checked, setChecked] = useState<string[]>([]);
   const refresh = () =>
-    api<Overview>('/admin/overview')
+    api<Overview>('/admin/overview?q=' + encodeURIComponent(revisionQuery))
       .then(setData)
       .catch((e) => setError(e.message));
   useEffect(() => {
@@ -175,6 +177,32 @@ export function Admin() {
       </section>
       <section>
         <h2>Revision và media</h2>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setSelected('');
+            setBusy(true);
+            void refresh().finally(() => setBusy(false));
+          }}
+        >
+          <label>
+            Tìm revision theo ID hoặc tên
+            <input
+              type="search"
+              maxLength={100}
+              value={revisionQuery}
+              disabled={busy}
+              onChange={(event) => setRevisionQuery(event.target.value)}
+            />
+          </label>
+          <button className="btn secondary" disabled={busy}>
+            Tìm revision
+          </button>
+        </form>
+        <p>
+          {data?.revisionTotal ?? 0} revision · Hiện tối đa 100 bản mới nhất, dùng tìm kiếm để mở
+          bản cũ.
+        </p>
         <label className="select-label">
           Chọn revision
           <select
