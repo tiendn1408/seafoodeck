@@ -70,3 +70,14 @@ Rollback nội dung dùng Quản trị → release cũ → quay lại; phiên h�
 Script backup xuất SQL, manifest object và bytes kèm SHA-256, image refs. Secrets/config phải lưu riêng cùng snapshot, vì dump không chứa khóa S3 hay env. Phục hồi vào project/volume mới: khởi động db/storage; `psql` SQL vào DB trống trước khi chạy migration; chạy `node dist/objects.js restore` trong API image với `BACKUP_DIR` trỏ thư mục backup đã bind mount; migrate, bootstrap nếu cần, up API/web. So sánh item count/release, manifest SHA-256, đọc ảnh qua signed URL và chơi thử. Không mở bản backup ra internet.
 
 Signed URL tồn tại tối đa TTL (mặc định 120 giây); revoke chặn cấp URL mới ngay, URL đã cấp có thể còn dùng tới hết TTL. Bản online không hứa khả năng offline. Cần phê duyệt nội dung, lưu trữ, retention/backup và smoke test tại hạ tầng thật trước pilot khách.
+
+## Demo kỹ thuật có fixture (tùy chọn riêng, chưa phải bộ khách)
+
+Chỉ trên deployment nội bộ được phép dùng fixture: khi khởi tạo env thêm `--internal-demo` vào lệnh init production. Nếu env đã tồn tại, đặt `ALLOW_INTERNAL_DEMO=true` bằng editor riêng, giữ nguyên secrets. Sau đó dùng chính API GHCR và bind bộ fixture repo cho **lệnh seed một lần**, không đưa fixture vào image:
+
+```sh
+sudo docker compose --env-file .local/pilot.env --project-directory . -f deploy/compose.pilot.ghcr.yaml run --rm --no-deps -v "$PWD/test-fixtures:/fixtures:ro" -e INTERNAL_SEED_DIR=/fixtures -e INTERNAL_SEED_COUNT=6 api node dist/seed.js
+sudo docker compose --env-file .local/pilot.env --project-directory . -f deploy/compose.pilot.ghcr.yaml up -d --force-recreate api
+```
+
+Seed giữ nguyên khi đã có release nội bộ, không ghi đè dữ liệu. Đăng nhập mã mời mới cho scope nội bộ. Để chuyển sang bộ khách, nhập/duyệt/publish public hợp lệ rồi tắt `ALLOW_INTERNAL_DEMO`, recreate API; phiên cũ mất quyền xem release nội bộ ngay. Không dùng sample để vượt duyệt public. Môi trường kiểm 1000 mục dùng `INTERNAL_SEED_COUNT=1000` thay 6 ở lần seed đầu, không dùng để trình bày danh mục hàng khách.

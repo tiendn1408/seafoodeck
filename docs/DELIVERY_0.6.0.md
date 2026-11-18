@@ -6,7 +6,7 @@ Ngày 18/11/2026. Thực thi hai tài liệu batch 2026-11-17-002 trong repo hi�
 
 - Baseline `7840e41`, tag `baseline-0.5.1`.
 - Mốc 1 `27f586f`, tag `milestone-1-web-migration`: dời FE nguyên hành vi, kiểm cùng origin và localStorage.
-- Mốc 2: commit/tag `milestone-2-pilot-api` trong lịch sử Git; báo cáo chốt sau khi ghi commit này.
+- Mốc 2 **`1c6b116`**, tag `milestone-2-pilot-api`; checkout sạch riêng đã `npm ci --ignore-scripts`, build và 72 unit pass.
 - Hai image **linux/amd64 đã push GHCR**, cùng tag `pilot-internal-20261118`:
 
 ```env
@@ -36,7 +36,7 @@ Audio pipeline: upload MP3 hợp lệ → ffprobe/chuẩn hóa bỏ metadata →
 
 Mobile đo localhost bằng Chromium CDP, cache tắt, cấu hình 1,5Mbps/150ms/CPU4×: từ reload tới thẻ đầu **2.415ms**, 17 request, 2.116.266 byte hoàn tất tại mốc đó. Đây là số đo môi trường local mô phỏng, không phải cam kết hiệu năng VPS/mạng thật. Bundle có ảnh minh họa 2D; dữ liệu catalog/media chuyên ngành không nằm trong JS. RAM snapshot: API 166,7MiB/320MiB, S3 82,67/256MiB, DB 23,07/192MiB, web 74,46/96MiB; VPS đang có workload khác nên cần kiểm lại tải đồng thời thật.
 
-`npm audit --omit=dev`: 0 advisory production tại lần kiểm. Audit toàn toolchain trước đó có 12 high ở dependency dev/build liên quan picomatch; không gọi đây là audit toàn bộ sạch, không tự nâng hạ cả frontend để che kết quả. CI chỉ test/build, không deploy; kết quả local không thay cho status CI GitHub.
+`npm audit --omit=dev`: 0 advisory production tại lần kiểm. Audit toàn toolchain trước đó có 12 high ở dependency dev/build liên quan picomatch; không gọi đây là audit toàn bộ sạch, không tự nâng hạ cả frontend để che kết quả. CI chỉ test/build, không deploy; kết quả local không thay cho status CI GitHub. [PR tổng hợp #1](https://github.com/tiendn1408/seafoodeck/pull/1), [CI](https://github.com/tiendn1408/seafoodeck/actions/runs/44271741393). Tại lúc chốt báo cáo CI đang chạy; xem status trực tiếp trên PR. Hai digest GHCR đã pull kiểm lại thành công, trùng image ID đã kiểm local.
 
 ## Tài sản và phần còn thiếu
 
