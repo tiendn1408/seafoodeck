@@ -19,8 +19,8 @@
 
 .shell-skip {
   position: fixed;
-  left: var(--space-4);
-  top: var(--space-2);
+  left: max(var(--space-4), env(safe-area-inset-left, 0px));
+  top: calc(var(--space-2) + env(safe-area-inset-top, 0px));
   z-index: 60;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
@@ -186,6 +186,9 @@
 .shell-main {
   flex: 1;
   min-width: 0;
+  /* Landscape phones: keep content clear of the notch and rounded corners. */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 .shell-main:focus {
   outline: none;
@@ -195,7 +198,9 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-5);
-  padding: 0 var(--space-7);
+  min-height: calc(var(--shell-header-h) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) max(var(--space-7), env(safe-area-inset-right, 0px)) 0
+    max(var(--space-7), env(safe-area-inset-left, 0px));
 }
 .shell[data-layout='desktop'] .shell-tabs {
   justify-self: center;
@@ -223,8 +228,10 @@
 
 /* Phone: compact header, fixed bottom tab bar inside the safe area. */
 .shell[data-layout='phone'] .shell-header {
-  min-height: 56px;
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-4);
+  min-height: calc(56px + env(safe-area-inset-top, 0px));
+  padding: calc(var(--space-1) + env(safe-area-inset-top, 0px))
+    max(var(--space-3), env(safe-area-inset-right, 0px)) var(--space-1)
+    max(var(--space-4), env(safe-area-inset-left, 0px));
 }
 .shell[data-layout='phone'] .shell-brand {
   flex-direction: column;
@@ -252,7 +259,8 @@
   z-index: 40;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
   background: var(--deep-950);
   border-top: 1px solid var(--deep-line);
   font-family: var(--font-sans);
