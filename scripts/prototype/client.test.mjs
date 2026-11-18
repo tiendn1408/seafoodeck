@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ApiClient, ApiError, withRetry } from './client.mjs';
+import {
+  ApiClient,
+  ApiError,
+  SUPPORTED_IMAGE_FORMATS,
+  detectImageFormat,
+  withRetry,
+} from './client.mjs';
 
 const fail = (status) => Object.assign(new ApiError(`HTTP ${status}`, status), {});
 
@@ -101,4 +107,18 @@ test('ApiClient sends FormData without content-type and throws ApiError', async 
   assert.equal(log[1].init.body, form);
   await assert.rejects(client.get('/missing'), (e) => e instanceof ApiError && e.status === 404);
   assert.equal(await client.getOptional('/missing'), null);
+});
+
+test('detectImageFormat recognises formats by magic bytes', () => {
+  assert.equal(detectImageFormat(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0])), 'jpeg');
+  assert.equal(
+    detectImageFormat(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0])),
+    'png',
+  );
+  assert.equal(detectImageFormat(Buffer.from('RIFF\0\0\0\0WEBPVP8 ', 'latin1')), 'webp');
+  assert.equal(detectImageFormat(Buffer.from('GIF87a\0\0')), 'gif');
+  assert.equal(detectImageFormat(Buffer.from('GIF89a\0\0')), 'gif');
+  assert.equal(detectImageFormat(Buffer.from('hello')), 'unknown');
+  assert.equal(detectImageFormat(Buffer.alloc(0)), 'unknown');
+  assert.ok(!SUPPORTED_IMAGE_FORMATS.includes('gif'));
 });

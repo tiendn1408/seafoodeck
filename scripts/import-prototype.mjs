@@ -3,7 +3,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
-import { ApiClient, withRetry } from './prototype/client.mjs';
+import {
+  ApiClient,
+  SUPPORTED_IMAGE_FORMATS,
+  detectImageFormat,
+  withRetry,
+} from './prototype/client.mjs';
 import {
   DUPLICATE_SCIENTIFIC,
   mediaInfo,
@@ -116,6 +121,7 @@ async function main() {
   const counts = {};
   const duplicates = [];
   const failures = [];
+  const unsupportedImages = [];
   const tally = { scenarios: 0, images: 0, imagesMissingFile: 0, imagesNoAttribution: 0 };
   const tariffIds = new Map();
 
@@ -166,18 +172,20 @@ async function main() {
       if (media && !state?.latest.hasProfileImage) {
         if (!existsSync(imagePath)) tally.imagesMissingFile += 1;
         else {
-          if (!dryRun) {
-            const form = new FormData();
-            form.append(
-              'file',
-              new Blob([readFileSync(imagePath)], { type: 'image/jpeg' }),
-              `${sp.id}.jpg`,
-            );
-            for (const [k, v] of Object.entries(media)) form.append(k, v);
-            await withRetry(() => client.post(`/admin/revisions/${revisionId}/media`, form));
+          const bytes = readFileSync(imagePath);
+          const format = detectImageFormat(bytes);
+          if (!SUPPORTED_IMAGE_FORMATS.includes(format)) {
+            unsupportedImages.push(`${sp.id} (${format})`);
+          } else {
+            if (!dryRun) {
+              const form = new FormData();
+              form.append('file', new Blob([bytes], { type: `image/${format}` }), `${sp.id}.jpg`);
+              for (const [k, v] of Object.entries(media)) form.append(k, v);
+              await withRetry(() => client.post(`/admin/revisions/${revisionId}/media`, form));
+            }
+            tally.images += 1;
+            tally.imagesNoAttribution += 1;
           }
-          tally.images += 1;
-          tally.imagesNoAttribution += 1;
         }
       }
 
@@ -205,6 +213,9 @@ async function main() {
   console.log(`  ảnh thiếu file: ${tally.imagesMissingFile}`);
   console.log(`  ảnh rights thiếu ghi công: ${tally.imagesNoAttribution}`);
   console.log(`  loài trùng (bỏ qua): ${duplicates.length ? duplicates.join('; ') : 'không có'}`);
+  console.log('Danh sách theo loài (tính riêng, không cộng vào tổng):');
+  console.log(`  skipped-unsupported-image (cảnh báo): ${unsupportedImages.length}`);
+  for (const u of unsupportedImages) console.log(`    - ${u}`);
   console.log(`  lỗi: ${failures.length}`);
   for (const f of failures) console.log(`    - ${f}`);
   return failures.length ? 1 : 0;
