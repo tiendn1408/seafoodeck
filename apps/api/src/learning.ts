@@ -270,9 +270,7 @@ export class Learning {
       if (mode === 'flashcard' || mode === 'full')
         for (const k of ['en', 'ja', 'scientific']) {
           const n = selected.names.find((n) => n.kind === k)!;
-          const audio = selected.media.find(
-            (m) => usableAudio(m.asset, k, release.internal),
-          );
+          const audio = selected.media.find((m) => usableAudio(m.asset, k, release.internal));
           questions.push({
             type: 'flashcard',
             targetId: selected.itemId,
@@ -325,9 +323,7 @@ export class Learning {
             ? [selected, ...shuffled(rows.filter((r) => r.id !== selected.id))]
             : shuffled(rows)
           ).flatMap((r) => {
-            const asset = r.media.find(
-              (m) => usableAudio(m.asset, kind, release.internal),
-            )?.asset;
+            const asset = r.media.find((m) => usableAudio(m.asset, kind, release.internal))?.asset;
             if (!asset || hashes.has(asset.hash)) return [];
             hashes.add(asset.hash);
             return [{ r, asset }];
@@ -364,9 +360,7 @@ export class Learning {
             ? [selected, ...shuffled(rows.filter((r) => r.id !== selected.id))]
             : shuffled(rows)
           ).flatMap((r) => {
-            const asset = r.media.find(
-              (m) => usableImage(m.asset, release.internal),
-            )?.asset;
+            const asset = r.media.find((m) => usableImage(m.asset, release.internal))?.asset;
             if (!asset) return [];
             const original =
               (asset.metadata as { originalImageId?: string }).originalImageId ?? asset.hash;
