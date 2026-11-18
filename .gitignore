@@ -16,3 +16,10 @@ test-results/
 !/_outbox/README.md
 /_archive/*
 !/_archive/README.md
+
+.local/
+_backups/
+**/node_modules/
+**/dist/
+
+/apps/api/src/generated/

@@ -1,0 +1,45 @@
+{
+  "name": "@seafoodeck/api",
+  "private": true,
+  "version": "0.6.0",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/*.test.js",
+    "start": "node dist/main.js",
+    "migrate": "prisma migrate deploy",
+    "seed:internal": "node dist/seed.js",
+    "lint": "eslint src/*.ts",
+    "format:check": "prettier --check src/*.ts prisma.config.ts *.json *.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.5.1",
+    "@nestjs/core": "12.5.1",
+    "@nestjs/platform-express": "12.5.1",
+    "@nestjs/swagger": "12.1.2",
+    "@prisma/client": "7.10.1",
+    "prisma": "7.10.1",
+    "@aws-sdk/client-s3": "3.1170.0",
+    "@aws-sdk/s3-request-presigner": "3.1170.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "^0.14.2",
+    "cookie-parser": "1.4.7",
+    "csv-parse": "7.0.3",
+    "multer": "^2.0.2",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "^7.8.2",
+    "sharp": "0.35.5",
+    "@prisma/adapter-pg": "7.10.1"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "eslint": "^10.15.0",
+    "typescript-eslint": "^8.73.0"
+  }
+}

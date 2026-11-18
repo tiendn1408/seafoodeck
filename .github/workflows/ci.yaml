@@ -1,0 +1,39 @@
+name: Internal acceptance
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      INTERNAL_SEED_COUNT: 1000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run contract:generate
+      - run: git diff --exit-code -- docs/api/openapi.json
+      - run: node scripts/init-pilot.mjs
+      - run: docker compose --env-file .local/pilot.env build api web
+      - run: docker compose --env-file .local/pilot.env up -d api web
+      - run: docker compose --env-file .local/pilot.env --profile internal-seed run --rm seed
+      - run: node scripts/wait-pilot.mjs
+      - run: npm run smoke:pilot
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: always()
+        run: node scripts/ci-diagnostics.mjs

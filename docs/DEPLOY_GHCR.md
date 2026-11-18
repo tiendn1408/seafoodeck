@@ -1,3 +1,5 @@
+> Bản online 0.6 hiện hành: xem [bàn giao](DELIVERY_0.6.0.md), [triển khai VPS](DEPLOY_PILOT.md) và hai tài liệu trong `docs/requirements/`. Nội dung dưới đây giữ làm lịch sử baseline; cấu hình một web HTML/static không đủ cho pilot API/DB/S3.
+
 # GHCR → VPS: seafoodeck.tiendn.io.vn
 
 Image đích: `ghcr.io/tiendn1408/seafoodeck:flat-illustrations-20261117`.

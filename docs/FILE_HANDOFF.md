@@ -80,3 +80,7 @@ Mặc định **di chuyển, không xóa vĩnh viễn**. Nếu người dùng y�
 - Ảnh chưa xác định loài/quyền: `needs_review`; không phát hành, không tự gán.
 
 App không import, quét, phục vụ hay đọc trực tiếp ba vùng giao nhận. Không thêm chúng vào `public/` hoặc build glob. Các thư mục này là vùng làm việc local, không nằm trong bản `dist/`; ứng dụng hiện vẫn đóng cổng public.
+
+## Đích runtime từ bản 0.6
+
+Các đường dẫn `public/media/...` ở trên mô tả baseline trước 0.6. Với pilot online mới, ảnh/audio khách sau duyệt đi vào **private S3**, DB lưu asset ID, object key và hồ sơ nguồn/quyền; web nhận signed URL ngắn hạn. Không sao chép media khách vào Git, DB byte hoặc bundle frontend. `test-fixtures/pilot-media/` chỉ chứa bộ tham chiếu cũ có NOTICE dùng cho seed kiểm thử nội bộ, không phải nơi nhận dữ liệu khách. Bằng chứng giao nhận vẫn lưu archive + sổ bền vững. Runtime không đọc vùng giao nhận.
