@@ -21,7 +21,8 @@ const text = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-export function extraRows(data: Record<string, unknown>): ExtraRow[] {
+export function extraRows(data: unknown): ExtraRow[] {
+  if (!isRecord(data)) return [];
   const rows: ExtraRow[] = [];
   const add = (label: string, value: string, unsourced = false) => {
     if (value) rows.push({ label, value, unsourced });

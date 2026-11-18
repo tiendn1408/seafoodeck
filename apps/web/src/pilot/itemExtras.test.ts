@@ -19,10 +19,15 @@ const proto = {
     sourced: false,
   },
   hsHints: [
-    { state: 'fresh', labelVi: 'Tươi', hs6: '030214' },
-    { state: 'frozen', labelVi: 'Đông lạnh', hs6: '030313' },
+    { state: 'fresh', labelVi: 'Tươi', hs6: '0302.14' },
+    { state: 'frozen', labelVi: 'Đông lạnh', hs6: '0303.13' },
   ],
-  provenance: { origin: 'prototype', prototypeId: 'p-1', digest: 'abc', verified: false },
+  provenance: {
+    origin: 'prototype:seafood-master-2',
+    prototypeId: 'p-1',
+    digest: 'abc',
+    verified: false,
+  },
 };
 
 describe('extraRows', () => {
@@ -38,16 +43,20 @@ describe('extraRows', () => {
       unsourced: true,
     });
     expect(rows.find((r) => r.label === 'Gợi ý HS')).toMatchObject({
-      value: 'Tươi: 030214; Đông lạnh: 030313',
+      value: 'Tươi: 0302.14; Đông lạnh: 0303.13',
       unsourced: true,
     });
     expect(rows.find((r) => r.label === 'Nguồn gốc')?.value).toBe(
-      'prototype · p-1 · chưa kiểm chứng',
+      'prototype:seafood-master-2 · p-1 · chưa kiểm chứng',
     );
     expect(rows.find((r) => r.label === 'Kanji')?.value).toBe('鮭');
     expect(rows.find((r) => r.label === 'Tên Anh khác')?.value).toBe('Atlantic salmon, Salmon');
     expect(rows.some((r) => r.label === 'Tên thương mại Nhật')).toBe(false);
     expect(rows.some((r) => r.label === 'Hạn chế thương mại')).toBe(false);
+  });
+
+  it('returns nothing for non-object data', () => {
+    for (const bad of [null, undefined, [], ['x'], 'text', 5]) expect(extraRows(bad)).toEqual([]);
   });
 
   it('returns nothing for legacy items', () => {

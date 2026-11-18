@@ -70,6 +70,7 @@ export function Admin() {
     }
   }
   const revision = data?.revisions.find((r) => r.id === selected);
+  const extras = extraRows(revision?.data);
   return (
     <div className="pilot-admin">
       <h1>Biên tập và xuất bản</h1>
@@ -306,9 +307,9 @@ export function Admin() {
                 </label>
               ))}
             </div>
-            {extraRows(revision.data).length > 0 && (
+            {extras.length > 0 && (
               <dl className="pilot-extra-fields">
-                {extraRows(revision.data).map((row) => (
+                {extras.map((row) => (
                   <div key={row.label}>
                     <dt>{row.label}</dt>
                     <dd>

@@ -346,7 +346,12 @@ export default function PilotApp() {
               />
             )}
             {route.startsWith('profile/') && (
-              <Profile key={route} id={route.split('/')[1]} onStart={start} />
+              <Profile
+                key={route}
+                id={route.split('/')[1]}
+                internal={auth.internal}
+                onStart={start}
+              />
             )}
             {route === 'study' &&
               (game ? (
@@ -666,7 +671,12 @@ function CatalogScreen({
               </label>
             </div>
             {data.items.filter((i) =>
-              i.media.some((m) => m.role === 'pronunciation' && m.nameKind === kind),
+              i.media.some(
+                (m) =>
+                  m.role === 'pronunciation' &&
+                  m.nameKind === kind &&
+                  (data.internal || m.approved),
+              ),
             ).length >= 3 && (
               <button
                 className="btn secondary"
@@ -828,9 +838,11 @@ function CatalogScreen({
 }
 function Profile({
   id,
+  internal,
   onStart,
 }: {
   id: string;
+  internal: boolean;
   onStart: (mode: string, id: string) => Promise<void>;
 }) {
   const [item, setItem] = useState<CatalogItem | null>(null),
@@ -881,7 +893,14 @@ function Profile({
             <p>{n.pronunciation || 'Hướng dẫn đọc đang bổ sung.'}</p>
             {n.kind !== 'vi' && (
               <Pronunciation
-                id={item.media.find((m) => m.role === 'pronunciation' && m.nameKind === n.kind)?.id}
+                id={
+                  item.media.find(
+                    (m) =>
+                      m.role === 'pronunciation' &&
+                      m.nameKind === n.kind &&
+                      (internal || m.approved),
+                  )?.id
+                }
               />
             )}
             <details>
