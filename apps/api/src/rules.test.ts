@@ -19,9 +19,51 @@ const item = {
   note: 'Not customer material',
   pronunciation: {},
 };
-test('catalog keeps unknown species as a draft SKU and rejects shrimp in customer scope', () => {
+test('catalog accepts shrimp and keeps unknown species as a draft', () => {
   assert.equal(validateItem({ ...item, scientific: '' }).scientific, '');
-  assert.throws(() => validateItem({ ...item, vi: 'Tôm sú' }));
+  assert.equal(validateItem({ ...item, vi: 'Tôm sú', en: 'Black tiger shrimp' }).vi, 'Tôm sú');
+});
+const extended = {
+  taxonomicGroup: 'crustacean',
+  family: 'Penaeidae',
+  familyVi: 'Họ Tôm he',
+  enAliases: ['Giant tiger prawn'],
+  jaKanji: '牛海老',
+  jaTrade: 'ブラックタイガー',
+  rarity: 'common',
+  tradeRestriction: null,
+  marketPrice: {
+    rangeUsd: '8.50 - 13.50 USD/kg',
+    rangeVnd: '180.000 - 320.000 đ/kg',
+    specRef: 'HOSO',
+    note: 'n',
+    sourced: false,
+  },
+  hsHints: [{ state: 'frozen', labelVi: 'Đông lạnh', hs6: '0306.17' }],
+  provenance: {
+    origin: 'prototype:seafood-master-2',
+    prototypeId: 'black_tiger_shrimp',
+    digest: 'abc',
+    verified: false,
+  },
+};
+test('extended prototype fields survive validation round-trip', () => {
+  assert.deepEqual(validateItem({ ...item, ...extended }), { ...item, ...extended });
+  assert.deepEqual(Object.keys(validateItem(item)).sort(), Object.keys(item).sort());
+});
+test('extended fields are type-checked', () => {
+  assert.throws(() => validateItem({ ...item, rarity: 'mythic' }));
+  assert.throws(() => validateItem({ ...item, taxonomicGroup: 'bird' }));
+  assert.throws(() => validateItem({ ...item, enAliases: [1] }));
+  assert.throws(() =>
+    validateItem({ ...item, marketPrice: { ...extended.marketPrice, sourced: true } }),
+  );
+  assert.throws(() =>
+    validateItem({ ...item, hsHints: [{ state: 'x', labelVi: 'y', hs6: '306' }] }),
+  );
+  assert.throws(() =>
+    validateItem({ ...item, provenance: { ...extended.provenance, verified: true } }),
+  );
 });
 test('CSV detects every invalid/duplicate row without accepting a partial import', () => {
   const line =

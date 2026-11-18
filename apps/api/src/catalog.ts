@@ -26,6 +26,96 @@ export interface ItemData {
   identification: string;
   note: string;
   pronunciation: Partial<Record<Kind, string>>;
+  taxonomicGroup?: 'fish' | 'crustacean' | 'mollusc' | 'other';
+  family?: string;
+  familyVi?: string;
+  enAliases?: string[];
+  jaKanji?: string | null;
+  jaTrade?: string | null;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'legendary';
+  tradeRestriction?: string | null;
+  marketPrice?: {
+    rangeUsd: string;
+    rangeVnd: string;
+    specRef: string;
+    note: string;
+    sourced: false;
+  };
+  hsHints?: { state: string; labelVi: string; hs6: string }[];
+  provenance?: Provenance;
+}
+export type Provenance = {
+  origin: 'prototype:seafood-master-2';
+  prototypeId: string;
+  digest: string;
+  verified: false;
+};
+export const extendedKeys: readonly string[] = [
+  'taxonomicGroup',
+  'family',
+  'familyVi',
+  'enAliases',
+  'jaKanji',
+  'jaTrade',
+  'rarity',
+  'tradeRestriction',
+  'marketPrice',
+  'hsHints',
+  'provenance',
+];
+const taxonomicGroups = ['fish', 'crustacean', 'mollusc', 'other'];
+const rarities = ['common', 'uncommon', 'rare', 'legendary'];
+const text = (v: unknown) => typeof v === 'string' && v.length <= 3000;
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === 'object' && !Array.isArray(v);
+function validateExtended(row: Record<string, unknown>) {
+  const bad = (key: string): never => {
+    throw new BadRequestException(`Sai ${key}.`);
+  };
+  const has = (key: string) => key in row;
+  if (has('taxonomicGroup') && !taxonomicGroups.includes(row.taxonomicGroup as string))
+    bad('taxonomicGroup');
+  if (has('rarity') && !rarities.includes(row.rarity as string)) bad('rarity');
+  for (const key of ['family', 'familyVi']) if (has(key) && !text(row[key])) bad(key);
+  for (const key of ['jaKanji', 'jaTrade', 'tradeRestriction'])
+    if (has(key) && row[key] !== null && !text(row[key])) bad(key);
+  if (
+    has('enAliases') &&
+    (!Array.isArray(row.enAliases) ||
+      row.enAliases.length > 50 ||
+      !row.enAliases.every((v) => typeof v === 'string' && v.length < 500))
+  )
+    bad('enAliases');
+  if (has('marketPrice')) {
+    const m = row.marketPrice;
+    if (
+      !isObject(m) ||
+      !['rangeUsd', 'rangeVnd', 'specRef', 'note'].every((k) => text(m[k])) ||
+      m.sourced !== false
+    )
+      bad('marketPrice');
+  }
+  if (
+    has('hsHints') &&
+    (!Array.isArray(row.hsHints) ||
+      row.hsHints.length > 10 ||
+      !row.hsHints.every(
+        (h) =>
+          isObject(h) && text(h.state) && text(h.labelVi) && /^\d{4}\.\d{2}$/.test(String(h.hs6)),
+      ))
+  )
+    bad('hsHints');
+  if (has('provenance')) {
+    const p = row.provenance;
+    if (
+      !isObject(p) ||
+      p.origin !== 'prototype:seafood-master-2' ||
+      !text(p.prototypeId) ||
+      !text(p.digest) ||
+      p.verified !== false
+    )
+      bad('provenance');
+  }
 }
 export function validateItem(input: unknown): ItemData {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -37,8 +127,6 @@ export function validateItem(input: unknown): ItemData {
   }
   if (!/^[a-zA-Z0-9_-]{1,100}$/.test(row.externalId as string) || !(row.vi as string).trim())
     throw new BadRequestException('externalId/tên Việt không hợp lệ.');
-  if (/tôm|shrimp|prawn/iu.test([row.group, row.vi, row.en, row.scientific].join(' ')))
-    throw new BadRequestException('Bộ khách hiện không bao gồm tôm.');
   for (const key of ['aliases', 'forms'])
     if (
       !Array.isArray(row[key]) ||
@@ -54,6 +142,7 @@ export function validateItem(input: unknown): ItemData {
     )
   )
     throw new BadRequestException('Sai pronunciation.');
+  validateExtended(row);
   return Object.fromEntries(
     [
       'externalId',
@@ -66,6 +155,7 @@ export function validateItem(input: unknown): ItemData {
       'aliases',
       'forms',
       'pronunciation',
+      ...extendedKeys.filter((k) => k in row),
     ].map((k) => [k, row[k]]),
   ) as unknown as ItemData;
 }
