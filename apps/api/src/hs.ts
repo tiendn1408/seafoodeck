@@ -49,3 +49,7 @@ export function validateHs(
       throw new BadRequestException('Đáp án không khớp dòng mã đã duyệt.');
   }
 }
+export function validateTariffScope(market: string, level: number) {
+  if (market === 'WCO' && level !== 6)
+    throw new BadRequestException('Danh mục WCO chỉ có cấp 6 số.');
+}

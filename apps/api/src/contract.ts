@@ -20,6 +20,12 @@ export class CatalogItemResponse {
   @ApiProperty({ type: [String] }) forms!: string[];
   @ApiProperty() identification!: string;
   @ApiProperty() note!: string;
+  @ApiProperty({ required: false, nullable: true, type: String }) taxonomicGroup!: string | null;
+  @ApiProperty({ required: false, nullable: true, type: String }) family!: string | null;
+  @ApiProperty({ required: false, nullable: true, type: String }) familyVi!: string | null;
+  @ApiProperty({ required: false, type: [String] }) enAliases!: string[];
+  @ApiProperty({ required: false, nullable: true, type: String }) jaKanji!: string | null;
+  @ApiProperty({ required: false, nullable: true, type: String }) jaTrade!: string | null;
   @ApiProperty({ type: [MediaResponse] }) media!: MediaResponse[];
 }
 export class CatalogPageResponse {

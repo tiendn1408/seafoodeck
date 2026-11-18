@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { extraRows } from './itemExtras';
 import { api, type CatalogItem } from './api';
 import { SignedImage, Pronunciation } from './Media';
 import { HsAdmin, type AdminTariff } from './HsAdmin';
@@ -69,6 +70,7 @@ export function Admin() {
     }
   }
   const revision = data?.revisions.find((r) => r.id === selected);
+  const extras = extraRows(revision?.data);
   return (
     <div className="pilot-admin">
       <h1>Biên tập và xuất bản</h1>
@@ -305,6 +307,24 @@ export function Admin() {
                 </label>
               ))}
             </div>
+            {extras.length > 0 && (
+              <dl className="pilot-extra-fields">
+                {extras.map((row) => (
+                  <div key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>
+                      {row.value}
+                      {row.unsourced && (
+                        <small className="pilot-unsourced">
+                          {' '}
+                          Chưa có nguồn — không hiển thị cho người học
+                        </small>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             <button
               className="btn secondary"
               disabled={busy}
@@ -406,8 +426,8 @@ export function Admin() {
       <section>
         <h2>Xuất bản một bộ revision</h2>
         <p>
-          Chọn tối đa một revision mỗi mục. Bộ public phải qua cổng tên, audio/hướng dẫn đọc, ảnh
-          identification và HS; không tự coi seed nội bộ là đã duyệt.
+          Chọn tối đa một revision mỗi mục. Bộ public phải qua cổng tên, ảnh identification và HS;
+          không tự coi seed nội bộ là đã duyệt.
         </p>
         <div className="pilot-release-items">
           {data?.revisions.map((r) => (

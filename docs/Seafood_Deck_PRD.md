@@ -2,7 +2,7 @@
 
 # Seafood Deck — Đặc tả sản phẩm MVP
 
-**Phạm vi hiện hành — 2026-11-17:** demo 6 loài cho người mới và nhân viên kinh doanh thủy hải sản quốc tế, không có tôm. Quyết định mới theo [PLAN_CUSTOMER_DEMO.md](PLAN_CUSTOMER_DEMO.md). Giữ Việt–Anh–Nhật–khoa học, bốn chế độ và cổng public đóng khi chưa đủ duyệt. Các ví dụ tôm cũ là fixtures lịch sử, không phải nội dung app hiện tại.
+**Phạm vi hiện hành — 2026-11-17:** demo 6 loài cho người mới và nhân viên kinh doanh thủy hải sản quốc tế, không có tôm (áp dụng cho bộ demo 6 loài; kho prototype nhập sau có thể gồm tôm, xem [docs/sources/prototype-import](sources/prototype-import/README.md)). Quyết định mới theo [PLAN_CUSTOMER_DEMO.md](PLAN_CUSTOMER_DEMO.md). Giữ Việt–Anh–Nhật–khoa học, bốn chế độ và cổng public đóng khi chưa đủ duyệt. Các ví dụ tôm cũ là fixtures lịch sử, không phải nội dung app hiện tại.
 
 **Đối tượng:** Product, Design, Engineering, QA và người duyệt nội dung.  
 **Mục tiêu:** người Việt mới làm trong ngành thủy sản, mua hàng hoặc xuất nhập khẩu có thể liên kết bốn tên gọi của một loài, nghe cách đọc và luyện phân loại HS theo mô tả hàng. Đây là công cụ học, không phải công cụ xác định mã khai báo cho lô hàng thật.
@@ -10,7 +10,7 @@
 ## 1. Quyết định sản phẩm
 
 - **Tách loài khỏi tình huống hàng hóa.** Hồ sơ loài lưu tên Việt, Anh, Nhật và khoa học. HS gắn với từng tình huống hàng hóa và phiên bản danh mục, không phải thuộc tính cố định của loài. Ở hồ sơ loài, ô thứ năm là **Xem HS theo dạng hàng**.
-- **Âm thanh và phiên âm bắt buộc khi phát hành nội dung học.** Tên chính Anh, Nhật, khoa học phải có file đã nghe duyệt và phiên âm/hướng dẫn đọc tương ứng. Audio tiếng Việt là tùy chọn.
+- **Âm thanh và phiên âm: audio đã duyệt bắt buộc cho bài nghe, không bắt buộc để xuất bản mục.** Bài nghe chỉ dùng tên có file audio đã duyệt cho đúng tên đó (Anh, Nhật, khoa học); phiên âm/hướng dẫn đọc là nội dung riêng, chưa được bài nghe kiểm tra. Mục chưa có audio vẫn xuất bản được cho các bài không cần nghe. Audio tiếng Việt là tùy chọn.
 - **Ảnh bổ sung sau.** Không chặn flashcard, ghép tên hoặc HS vì thiếu ảnh. Có thể dùng ảnh sinh làm minh họa, có nhãn và qua duyệt. Đoán hình ưu tiên ảnh thật có quyền sử dụng; chỉ dùng ảnh nếu người duyệt xác nhận đúng loài và đủ đặc điểm nhận diện.
 - **Phạm vi:** web mobile-first, giao diện Việt, không bắt đăng ký, lưu phiên và tiến độ trên thiết bị. Bộ hiện hành: 6 loài đại diện cho mực, bạch tuộc, cá thịt trắng/thịt đỏ, nghêu và vẹm; 3 tình huống HS dạng hàng. Dữ liệu mẫu không phải catalogue khách, sẽ cập nhật khi có dữ liệu khách.
 - **Ngoài MVP:** chấm phát âm qua mic, nhận diện ảnh tải lên, thuế và tư vấn khai báo, đồng bộ đa thiết bị, bảng xếp hạng. Học tên Nhật không có nghĩa là dùng biểu thuế Nhật; bài HS đầu tiên dùng danh mục Việt Nam được ghi trên đề.

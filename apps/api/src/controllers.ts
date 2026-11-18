@@ -104,6 +104,7 @@ export class CatalogController {
     @Query('q') q = '',
     @Query('group') group = '',
     @Query('learnable') learnable = 'false',
+    @Query('taxon') taxon = '',
   ) {
     return this.catalog.list(
       req.actor,
@@ -112,6 +113,7 @@ export class CatalogController {
       q,
       group,
       learnable === 'true',
+      taxon,
     );
   }
   @ApiOkResponse({ type: CatalogItemResponse })

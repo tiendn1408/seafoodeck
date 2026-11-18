@@ -9,9 +9,23 @@ import { parse } from 'csv-parse/sync';
 import { Db } from './db';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
+import { EXTERNAL_ID_PATTERN } from './import-state';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
+export function publicRowProblem(row: {
+  status: string;
+  reviewedBy: string | null;
+  names: { kind: string; source: string }[];
+}): string | null {
+  if (
+    row.status !== 'approved' ||
+    !row.reviewedBy ||
+    kinds.some((k) => !row.names.some((n) => n.kind === k && n.source))
+  )
+    return 'Mục học chưa đủ tên/nguồn/duyệt.';
+  return null;
+}
 export interface ItemData {
   externalId: string;
   group: string;
@@ -26,6 +40,96 @@ export interface ItemData {
   identification: string;
   note: string;
   pronunciation: Partial<Record<Kind, string>>;
+  taxonomicGroup?: 'fish' | 'crustacean' | 'mollusc' | 'other';
+  family?: string;
+  familyVi?: string;
+  enAliases?: string[];
+  jaKanji?: string | null;
+  jaTrade?: string | null;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'legendary';
+  tradeRestriction?: string | null;
+  marketPrice?: {
+    rangeUsd: string;
+    rangeVnd: string;
+    specRef: string;
+    note: string;
+    sourced: false;
+  };
+  hsHints?: { state: string; labelVi: string; hs6: string }[];
+  provenance?: Provenance;
+}
+export type Provenance = {
+  origin: 'prototype:seafood-master-2';
+  prototypeId: string;
+  digest: string;
+  verified: false;
+};
+export const extendedKeys: readonly string[] = [
+  'taxonomicGroup',
+  'family',
+  'familyVi',
+  'enAliases',
+  'jaKanji',
+  'jaTrade',
+  'rarity',
+  'tradeRestriction',
+  'marketPrice',
+  'hsHints',
+  'provenance',
+];
+const taxonomicGroups = ['fish', 'crustacean', 'mollusc', 'other'];
+const rarities = ['common', 'uncommon', 'rare', 'legendary'];
+const text = (v: unknown) => typeof v === 'string' && v.length <= 3000;
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === 'object' && !Array.isArray(v);
+function validateExtended(row: Record<string, unknown>) {
+  const bad = (key: string): never => {
+    throw new BadRequestException(`Sai ${key}.`);
+  };
+  const has = (key: string) => key in row;
+  if (has('taxonomicGroup') && !taxonomicGroups.includes(row.taxonomicGroup as string))
+    bad('taxonomicGroup');
+  if (has('rarity') && !rarities.includes(row.rarity as string)) bad('rarity');
+  for (const key of ['family', 'familyVi']) if (has(key) && !text(row[key])) bad(key);
+  for (const key of ['jaKanji', 'jaTrade', 'tradeRestriction'])
+    if (has(key) && row[key] !== null && !text(row[key])) bad(key);
+  if (
+    has('enAliases') &&
+    (!Array.isArray(row.enAliases) ||
+      row.enAliases.length > 50 ||
+      !row.enAliases.every((v) => typeof v === 'string' && v.length < 500))
+  )
+    bad('enAliases');
+  if (has('marketPrice')) {
+    const m = row.marketPrice;
+    if (
+      !isObject(m) ||
+      !['rangeUsd', 'rangeVnd', 'specRef', 'note'].every((k) => text(m[k])) ||
+      m.sourced !== false
+    )
+      bad('marketPrice');
+  }
+  if (
+    has('hsHints') &&
+    (!Array.isArray(row.hsHints) ||
+      row.hsHints.length > 10 ||
+      !row.hsHints.every(
+        (h) =>
+          isObject(h) && text(h.state) && text(h.labelVi) && /^\d{4}\.\d{2}$/.test(String(h.hs6)),
+      ))
+  )
+    bad('hsHints');
+  if (has('provenance')) {
+    const p = row.provenance;
+    if (
+      !isObject(p) ||
+      p.origin !== 'prototype:seafood-master-2' ||
+      !text(p.prototypeId) ||
+      !text(p.digest) ||
+      p.verified !== false
+    )
+      bad('provenance');
+  }
 }
 export function validateItem(input: unknown): ItemData {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -35,10 +139,8 @@ export function validateItem(input: unknown): ItemData {
     if (typeof row[key] !== 'string' || (row[key] as string).length > 3000)
       throw new BadRequestException(`Thiếu/sai ${key}.`);
   }
-  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(row.externalId as string) || !(row.vi as string).trim())
+  if (!EXTERNAL_ID_PATTERN.test(row.externalId as string) || !(row.vi as string).trim())
     throw new BadRequestException('externalId/tên Việt không hợp lệ.');
-  if (/tôm|shrimp|prawn/iu.test([row.group, row.vi, row.en, row.scientific].join(' ')))
-    throw new BadRequestException('Bộ khách hiện không bao gồm tôm.');
   for (const key of ['aliases', 'forms'])
     if (
       !Array.isArray(row[key]) ||
@@ -54,6 +156,7 @@ export function validateItem(input: unknown): ItemData {
     )
   )
     throw new BadRequestException('Sai pronunciation.');
+  validateExtended(row);
   return Object.fromEntries(
     [
       'externalId',
@@ -66,6 +169,7 @@ export function validateItem(input: unknown): ItemData {
       'aliases',
       'forms',
       'pronunciation',
+      ...extendedKeys.filter((k) => k in row),
     ].map((k) => [k, row[k]]),
   ) as unknown as ItemData;
 }
@@ -124,7 +228,15 @@ export class Catalog {
     if (release.internal && !actor.internal) throw new NotFoundException();
     return release;
   }
-  async list(actor: AuthSession, page = 1, limit = 12, query = '', group = '', learnable = false) {
+  async list(
+    actor: AuthSession,
+    page = 1,
+    limit = 12,
+    query = '',
+    group = '',
+    learnable = false,
+    taxon = '',
+  ) {
     if (
       !Number.isInteger(page) ||
       page < 1 ||
@@ -132,14 +244,18 @@ export class Catalog {
       limit < 1 ||
       limit > 50 ||
       query.length > 100 ||
-      group.length > 80
+      group.length > 80 ||
+      !['', 'fish', 'crustacean', 'mollusc', 'other'].includes(taxon)
     )
       throw new BadRequestException('Phân trang/bộ lọc không hợp lệ.');
     const release = await this.current(actor);
     const where: Prisma.RevisionWhereInput = {
-      ...(learnable
-        ? { AND: kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } })) }
-        : {}),
+      AND: [
+        ...(learnable
+          ? kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } }))
+          : []),
+        ...(taxon ? [{ data: { path: ['taxonomicGroup'], equals: taxon } }] : []),
+      ],
       releases: { some: { releaseId: release.id } },
       ...(query
         ? {
@@ -203,6 +319,12 @@ export class Catalog {
       forms: d.forms,
       identification: d.identification,
       note: d.note,
+      taxonomicGroup: d.taxonomicGroup ?? null,
+      family: d.family ?? null,
+      familyVi: d.familyVi ?? null,
+      enAliases: d.enAliases ?? [],
+      jaKanji: d.jaKanji ?? null,
+      jaTrade: d.jaTrade ?? null,
       media: row.media
         .filter((m) => !m.asset.revokedAt)
         .map((m) => ({
@@ -324,24 +446,8 @@ export class Catalog {
           throw new BadRequestException('Thiếu hoặc trùng mục học.');
         if (!internal) {
           for (const r of rows) {
-            if (
-              r.status !== 'approved' ||
-              !r.reviewedBy ||
-              kinds.some((k) => !r.names.some((n) => n.kind === k && n.source))
-            )
-              throw new BadRequestException('Mục học chưa đủ tên/nguồn/duyệt.');
-            for (const kind of ['en', 'ja', 'scientific'])
-              if (
-                !r.names.find((n) => n.kind === kind)?.pronunciation ||
-                !r.media.some(
-                  (m) =>
-                    m.asset.role === 'pronunciation' &&
-                    m.asset.nameKind === kind &&
-                    m.asset.status === 'approved' &&
-                    !m.asset.revokedAt,
-                )
-              )
-                throw new BadRequestException('Thiếu audio/hướng dẫn đọc được duyệt.');
+            const problem = publicRowProblem(r);
+            if (problem) throw new BadRequestException(problem);
           }
           if (
             rows.filter((r) =>
