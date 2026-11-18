@@ -4,7 +4,7 @@
 
 ## Chuẩn bị trên máy làm việc
 
-Image dành cho Ubuntu x86_64, hai package `ghcr.io/tiendn1408/seafoodeck-web` và `ghcr.io/tiendn1408/seafoodeck-api`, tag `pilot-internal-20261118`. Digest đã phát hành nằm trong `DELIVERY_0.6.0.md`. Để phát hành lại mã thay đổi phải dùng tag mới, build/test cả hai image rồi chạy `sh scripts/publish-pilot.sh <tag>`; không ghi đè tag đang bàn giao.
+Image dành cho Ubuntu x86_64, hai package `ghcr.io/tiendn1408/seafoodeck-web` và `ghcr.io/tiendn1408/seafoodeck-api`, tag `pilot-internal-20261118-r2`. Digest đã phát hành nằm trong `DELIVERY_0.6.0.md`. Để phát hành lại mã thay đổi phải dùng tag mới, build/test cả hai image rồi chạy `sh scripts/publish-pilot.sh <tag>`; không ghi đè tag đang bàn giao.
 
 Đăng nhập GHCR trên máy cần push bằng PAT classic `write:packages`; máy chỉ pull package private dùng `read:packages`. Tạo token tại GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic). Không đưa token vào file repo hoặc lệnh có lưu history. Dùng `docker login ghcr.io -u tiendn1408` rồi nhập token ở prompt Password. Trên VPS nếu chạy Docker qua sudo thì đăng nhập bằng `sudo docker login ghcr.io -u tiendn1408`.
 
@@ -14,7 +14,7 @@ Gửi repo/clone qua SSH terminal trên laptop để có thể copy/paste. Chỉ
 cd /opt
 sudo mkdir -p seafoodeck-pilot
 sudo chown shin:shin seafoodeck-pilot
-git clone --branch feat/pilot-monorepo https://github.com/tiendn1408/seafoodeck.git seafoodeck-pilot
+git clone --branch main https://github.com/tiendn1408/seafoodeck.git seafoodeck-pilot
 cd /opt/seafoodeck-pilot
 sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24-alpine node scripts/init-pilot.mjs --production --origin https://seafoodeck.tiendn.io.vn
 ```
@@ -81,3 +81,5 @@ sudo docker compose --env-file .local/pilot.env --project-directory . -f deploy/
 ```
 
 Seed giữ nguyên khi đã có release nội bộ, không ghi đè dữ liệu. Đăng nhập mã mời mới cho scope nội bộ. Để chuyển sang bộ khách, nhập/duyệt/publish public hợp lệ rồi tắt `ALLOW_INTERNAL_DEMO`, recreate API; phiên cũ mất quyền xem release nội bộ ngay. Không dùng sample để vượt duyệt public. Môi trường kiểm 1000 mục dùng `INTERNAL_SEED_COUNT=1000` thay 6 ở lần seed đầu, không dùng để trình bày danh mục hàng khách.
+
+Kho S3 dùng init service `storage-config` chép file IAM private vào volume riêng, file đích UID 1000/mode 600 để SeaweedFS đọc được trên Linux; không chmod world-readable file nguồn. Khi xoay khóa, giữ env/IAM đồng bộ rồi chạy lại init và recreate storage/API trong khoảng bảo trì. Health storage kiểm master và cổng S3, không chỉ master.
