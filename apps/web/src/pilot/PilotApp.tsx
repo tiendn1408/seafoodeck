@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Library, ArrowRight, Fish, Tags, ScanLine, PackageCheck } from 'lucide-react';
+import { ArrowRight, Fish } from 'lucide-react';
 import {
   api,
   setCsrf,
@@ -19,6 +19,8 @@ import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { Login } from '../learner/Login';
+import { Home, type Taxon } from '../learner/Home';
+import { groupTone } from '../learner/haul';
 import {
   LEDGER_KEY,
   loadLedger,
@@ -33,7 +35,6 @@ const modeNames: Record<string, string> = {
   image: 'Đoán hình nguyên liệu',
   hs: 'HS theo dạng hàng',
 };
-const icons = { flashcard: BookOpen, match: Tags, image: ScanLine, hs: PackageCheck };
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -47,10 +48,13 @@ export default function PilotApp() {
     [saved, setSaved] = useState(true);
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
-    [version, setVersion] = useState('');
+    [version, setVersion] = useState(''),
+    [libraryTaxon, setLibraryTaxon] = useState<Taxon | ''>('');
   useEffect(() => {
     const f = () => {
-      setRoute(currentRoute());
+      const next = currentRoute();
+      setRoute(next);
+      if (next !== 'library') setLibraryTaxon('');
       window.scrollTo(0, 0);
       setError('');
       stopAudio();
@@ -157,13 +161,19 @@ export default function PilotApp() {
   return (
     <AppShell
       route={route}
-      tone="ice"
+      tone={route === 'home' ? 'deep' : 'ice'}
       staff={!!staff}
       internal={!!auth?.internal}
       signedIn={signedIn}
       onLogout={logout}
     >
-      <div className={`content home-content ${route === 'study' ? 'pilot-study-content' : ''}`}>
+      <div
+        className={
+          route === 'home' && signedIn
+            ? 'home-stage'
+            : `content home-content ${route === 'study' ? 'pilot-study-content' : ''}`
+        }
+      >
         {warning && <ErrorNote message={warning} />}
         {!saved && (
           <ErrorNote message="Trình duyệt không lưu được tiến độ. Phiên trên máy chủ vẫn hoạt động, nhưng cần giữ trang này mở." />
@@ -180,14 +190,27 @@ export default function PilotApp() {
           />
         ) : (
           <>
-            {['home', 'library'].includes(route) && (
-              <CatalogScreen
-                key={route}
-                home={route === 'home'}
-                onVersion={setVersion}
-                onStart={start}
+            {route === 'home' && (
+              <Home
+                ledger={ledger}
+                now={now}
                 pending={pending}
+                onStart={start}
                 onResume={ledger.sessionId ? resume : undefined}
+                onVersion={setVersion}
+                onOpenLibrary={(taxon) => {
+                  setLibraryTaxon(taxon);
+                  location.hash = 'library';
+                }}
+              />
+            )}
+            {route === 'library' && (
+              <CatalogScreen
+                taxon={libraryTaxon}
+                onClearTaxon={() => {
+                  setLibraryTaxon('');
+                }}
+                onVersion={setVersion}
               />
             )}
             {route.startsWith('profile/') && (
@@ -313,194 +336,48 @@ function VersionLoader({ onVersion }: { onVersion: (id: string) => void }) {
   return null;
 }
 function CatalogScreen({
-  home,
+  taxon,
+  onClearTaxon,
   onVersion,
-  onStart,
-  pending,
-  onResume,
 }: {
-  home: boolean;
+  taxon: Taxon | '';
+  onClearTaxon: () => void;
   onVersion: (id: string) => void;
-  onStart: (mode: string, revisionId?: string, kind?: string) => Promise<void>;
-  pending: boolean;
-  onResume?: () => Promise<void>;
 }) {
   const [data, setData] = useState<CatalogPage | null>(null),
     [page, setPage] = useState(1),
     [query, setQuery] = useState(''),
     [group, setGroup] = useState(''),
     [error, setError] = useState(''),
-    [retry, setRetry] = useState(0),
-    [revision, setRevision] = useState(''),
-    [kind, setKind] = useState('en');
-  const requestKey = JSON.stringify([home, page, query, group, retry]);
+    [retry, setRetry] = useState(0);
+  const requestKey = JSON.stringify([page, query, group, taxon, retry]);
   const [loadedKey, setLoadedKey] = useState('');
   useEffect(() => {
     const c = new AbortController();
-    const timer = setTimeout(
-      () => {
-        api<CatalogPage>(
-          `/catalog/items?page=${page}&limit=${home ? 6 : 12}&learnable=${home}&q=${encodeURIComponent(query)}&group=${encodeURIComponent(group)}`,
-          undefined,
-          c.signal,
-        )
-          .then((d) => {
-            setData(d);
-            setError('');
+    const timer = setTimeout(() => {
+      api<CatalogPage>(
+        `/catalog/items?page=${page}&limit=12&learnable=false&q=${encodeURIComponent(query)}&group=${encodeURIComponent(group)}${taxon ? `&taxon=${taxon}` : ''}`,
+        undefined,
+        c.signal,
+      )
+        .then((d) => {
+          setData(d);
+          setError('');
+          setLoadedKey(requestKey);
+          onVersion(d.releaseId);
+        })
+        .catch((e) => {
+          if (e.name !== 'AbortError') {
+            setError(e.message);
             setLoadedKey(requestKey);
-            onVersion(d.releaseId);
-          })
-          .catch((e) => {
-            if (e.name !== 'AbortError') {
-              setError(e.message);
-              setLoadedKey(requestKey);
-            }
-          });
-      },
-      home ? 0 : 180,
-    );
+          }
+        });
+    }, 180);
     return () => {
       clearTimeout(timer);
       c.abort();
     };
-  }, [home, page, query, group, retry, onVersion, requestKey]);
-  if (home)
-    return (
-      <>
-        <section className="trade-intro">
-          <div className="trade-intro-copy">
-            <span className="course-label">Thủy hải sản thương mại</span>
-            <h1>
-              Hiểu loài.
-              <br />
-              Đọc đúng hàng.
-            </h1>
-            <p>Tên thương mại, nhận diện nguyên liệu và quy cách lô hàng.</p>
-            <div className="trade-pillars">
-              <span>Tên Việt · Anh · Nhật · Khoa học</span>
-            </div>
-          </div>
-          <div className="trade-intro-art" aria-hidden="true">
-            <img
-              src="/media/illustrations/seafood-assortment-2d-v2.png"
-              alt=""
-              width="1536"
-              height="1024"
-            />
-          </div>
-        </section>
-        <nav className="family-nav" aria-label="Nhóm hàng">
-          <a href="#library">Cá thịt trắng / đỏ</a>
-          <a href="#library">Mực & bạch tuộc</a>
-          <a href="#library">Nghêu & vẹm</a>
-        </nav>
-        {onResume && (
-          <button className="btn secondary" disabled={pending} onClick={() => void onResume()}>
-            Tiếp tục phiên học
-          </button>
-        )}
-        <h2 className="pilot-section-title">Luyện nghiệp vụ</h2>
-        {loadedKey === requestKey && error ? (
-          <ErrorNote message={error} retry={() => setRetry(retry + 1)} />
-        ) : !data || loadedKey !== requestKey ? (
-          <p role="status">Đang tải danh mục từ máy chủ…</p>
-        ) : !data.items.length ? (
-          <p>Chưa có mục học trong bộ đã xuất bản.</p>
-        ) : (
-          <>
-            <div className="learning-selection">
-              <label>
-                <span>Loài học tên</span>
-                <select
-                  aria-label="Chọn loài học tên"
-                  value={revision || data.items[0].revisionId}
-                  onChange={(e) => setRevision(e.target.value)}
-                >
-                  {data.items.map((i) => (
-                    <option key={i.revisionId} value={i.revisionId}>
-                      {vi(i)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Hướng ghép tên</span>
-                <select
-                  aria-label="Chọn hướng ghép tên"
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value)}
-                >
-                  <option value="en">Việt → Anh</option>
-                  <option value="ja">Việt → Nhật</option>
-                  <option value="scientific">Việt → Khoa học</option>
-                </select>
-              </label>
-            </div>
-            {data.items.filter((i) =>
-              i.media.some(
-                (m) =>
-                  m.role === 'pronunciation' &&
-                  m.nameKind === kind &&
-                  (data.internal || m.approved),
-              ),
-            ).length >= 3 && (
-              <button
-                className="btn secondary"
-                disabled={pending}
-                onClick={() =>
-                  void onStart('listening', revision || data.items[0].revisionId, kind)
-                }
-              >
-                Nghe và chọn tên
-              </button>
-            )}
-            <div className="mode-grid">
-              {Object.entries(modeNames).map(([mode, label]) => {
-                const Icon = icons[mode as keyof typeof icons];
-                return (
-                  <button
-                    className="mode-card"
-                    key={mode}
-                    disabled={pending}
-                    onClick={() => void onStart(mode, revision || data.items[0].revisionId, kind)}
-                  >
-                    <div className="mode-visual">
-                      <Icon size={25} />
-                    </div>
-                    <div className="mode-copy">
-                      <h2>{label}</h2>
-                      <p>
-                        {mode === 'hs'
-                          ? 'Đối chiếu quy cách, nhận biết dữ kiện còn thiếu.'
-                          : mode === 'image'
-                            ? '3 ảnh khác gốc. Có thể bỏ qua ảnh lỗi.'
-                            : mode === 'match'
-                              ? 'Ghép 3 cặp bằng chạm hoặc bàn phím.'
-                              : 'Tên Anh, Nhật và khoa học của một loài.'}
-                      </p>
-                      <div className="mode-footer">
-                        <span>
-                          {mode === 'match' ? '3 cặp' : mode === 'hs' ? '3 hồ sơ' : '3 câu'}
-                        </span>
-                        <ArrowRight size={17} />
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-        <a className="library-entry" href="#library">
-          <Library size={24} />
-          <span>
-            <strong>Sổ tay thủy hải sản</strong>
-            <small>Tra cứu nguồn, nhận diện và dạng hàng</small>
-          </span>
-          <ArrowRight size={17} />
-        </a>
-      </>
-    );
+  }, [page, query, group, taxon, retry, onVersion, requestKey]);
   return (
     <>
       <div className="page-heading library-heading">
@@ -529,6 +406,11 @@ function CatalogScreen({
           placeholder="Tên Việt, Anh, Nhật, khoa học hoặc bí danh…"
         />
       </label>
+      {taxon && (
+        <button className="btn secondary" onClick={onClearTaxon}>
+          Bỏ lọc nhóm {groupTone(taxon).label}
+        </button>
+      )}
       <div className="group-filters">
         {['', 'Cá', 'Mực & bạch tuộc', 'Nghêu & vẹm'].map((g) => (
           <button

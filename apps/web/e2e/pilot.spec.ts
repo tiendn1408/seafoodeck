@@ -151,6 +151,31 @@ test('all four modes: reload, double submit, keyboard match, skipped media, HS a
   await expect(page.locator('.pilot-review-list>div')).toHaveCount(9);
   expect(await page.locator('main').innerText()).not.toMatch(/name:en|match:en/);
 });
+test('Thả lưới mở được một phiên và về được trang chủ', async ({ page }) => {
+  await login(page);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /Mẻ lưới hôm nay: \d+ loài đang chờ/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Tiến độ mẻ lưới: 0 / 5' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tiếp tục phiên học' })).toHaveCount(0);
+  const response = page.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/learning/sessions') && r.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Thả lưới', exact: true }).click();
+  const game = (await (await response).json()) as Game;
+  expect(game.mode).toBe('flashcard');
+  await expect(page.locator('.pilot-question')).toBeVisible();
+  await page.getByRole('button', { name: 'Chạm để lật thẻ' }).click();
+  await page.getByRole('button', { name: 'Đã nhớ', exact: true }).click();
+  await expect(page.getByText('Đã lưu tự đánh giá', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Tạm dừng' }).click();
+  await expect(page).toHaveURL(/#home$/);
+  await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: `Tiến độ mẻ lưới: 1 / ${game.questions.length}` }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tiếp tục phiên học' })).toBeVisible();
+});
 test('corrupt browser progress is preserved until a new game is started', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('seafood-deck:pilot:v1', '{invalid'));
   await login(page);

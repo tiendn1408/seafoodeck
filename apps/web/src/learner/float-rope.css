@@ -1,0 +1,93 @@
+/* Float rope: haul progress. Lives on deep surfaces. */
+.float-rope {
+  --float-size: 46px;
+  position: relative;
+  min-height: calc(var(--float-size) + 18px);
+  display: flex;
+  align-items: center;
+}
+.float-rope-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  width: 100%;
+  height: 22px;
+  transform: translateY(-40%);
+  overflow: visible;
+}
+.float-rope-line path {
+  fill: none;
+  stroke: var(--rope);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.72;
+  vector-effect: non-scaling-stroke;
+}
+.float-rope-floats {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 clamp(4px, 3%, 40px);
+}
+.float {
+  display: grid;
+  place-items: center;
+  width: var(--float-size);
+  height: var(--float-size);
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  animation: float-bob 4.6s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * -0.7s);
+}
+.float.empty {
+  border: 3px solid rgb(232 217 181 / 0.55);
+  background: rgb(7 28 38 / 0.8);
+}
+.float.missed {
+  border: 3px dashed rgb(232 217 181 / 0.8);
+  background: rgb(7 28 38 / 0.35);
+}
+.float.caught {
+  background: var(--float-fill, var(--group-none));
+  color: var(--float-ink, var(--group-none-ink));
+  box-shadow:
+    0 0 0 5px rgb(255 255 255 / 0.08),
+    0 10px 22px rgb(0 0 0 / 0.38);
+  animation:
+    float-surface 620ms var(--ease-out) both,
+    float-bob 4.6s ease-in-out 620ms infinite;
+}
+@keyframes float-bob {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@keyframes float-surface {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.7);
+  }
+}
+.paused .float {
+  animation-play-state: paused;
+}
+@media (max-width: 599px) {
+  .float-rope {
+    --float-size: 38px;
+  }
+  .float {
+    font-size: 0.875rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .float.caught {
+    animation: none;
+  }
+}
