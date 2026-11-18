@@ -197,10 +197,10 @@ test('pickPool keeps the focus item even beyond the first 100', () => {
 - [ ] **Step 4:** chạy → PASS.
 - [ ] **Step 5:** Commit `fix(api): sample learning pool from the whole release`.
 
-### Task 5: Endpoint đọc cho importer
+### Task 5: Endpoint đọc cho importer, cho phép tariff WCO
 
 **Files:**
-- Modify: `apps/api/src/admin-extra.controller.ts`
+- Modify: `apps/api/src/admin-extra.controller.ts`, `apps/api/src/hs.ts`, `apps/web/src/pilot/HsAdmin.tsx` (chọn thị trường VN/WCO khi tạo tariff)
 - Create: `apps/api/src/import-state.ts`
 - Test: `apps/api/src/rules.test.ts`
 
@@ -225,9 +225,10 @@ export function summarizeImportState(item: {
   Quy ước: `fromImporter` = `data.provenance.origin === 'prototype:seafood-master-2'`; `scenarioCaseIds` = `scenario.data.provenance.prototypeCaseId` của revision mới nhất.
 
   Prisma: `Revision` chưa có quan hệ ngược tới `TradeScenario` trong schema. Dùng truy vấn riêng `tradeScenario.findMany({ where: { revisionId } })` rồi ghép vào, **không** sửa schema.
-- Produces: `GET /api/v1/admin/tariffs?code=030617&version=HS%202022` (role như trên). Trả `{ id, code, level, version, reviewedBy }[]`, `code` đã `normalizeCode(code, 6)`.
+- Produces: `TariffDto.market` nhận `'VN' | 'WCO'` (người dùng chọn WCO cho mã từ prototype). Luật mới trong `hs.ts`: `export function validateTariffScope(market: string, level: number): void`. `WCO` chỉ cho `level 6`, sai → 400 "Danh mục WCO chỉ có cấp 6 số.". Gọi trong `POST /admin/tariffs`. Nhãn đề HS (`learning.ts:404`) đã hiển thị `market` nên tự ra "WCO · HS 2022 · Cấp 6 số".
+- Produces: `GET /api/v1/admin/tariffs?code=030617&version=HS%202022&market=WCO` (role như trên). Trả `{ id, code, level, version, reviewedBy }[]`, `code` đã `normalizeCode(code, 6)`.
 
-- [ ] **Step 1: Test `summarizeImportState`:** chọn revision version cao nhất; `released` true khi `releases.length > 0`; ảnh `profile` đã revoke không tính; mục không có provenance → `fromImporter: false`.
+- [ ] **Step 1: Test** `validateTariffScope('WCO', 8)` throw, `('WCO', 6)` và `('VN', 8)` không throw. **Test `summarizeImportState`:** chọn revision version cao nhất; `released` true khi `releases.length > 0`; ảnh `profile` đã revoke không tính; mục không có provenance → `fromImporter: false`.
 - [ ] **Step 2:** chạy → FAIL.
 - [ ] **Step 3:** Viết hàm và 2 route; validate `externalId` bằng regex của `validateItem`.
 - [ ] **Step 4:** chạy → PASS. `npm run contract:generate` nếu snapshot gồm route admin (kiểm `scripts/export-contract.mjs`).
@@ -293,7 +294,7 @@ Tên khoa học trùng `DUPLICATE_SCIENTIFIC` được kiểm **trước** khi g
   - `GET /auth/me` lấy csrf; `POST /auth/login {username, credential}`;
   - `POST /admin/items {item}`;
   - `POST /admin/revisions/:id/media` (multipart: file, source, credit, rights, role, aiGenerated);
-  - `POST /admin/tariffs {code, level:6, market:'VN', version:'HS 2022', source}`;
+  - `POST /admin/tariffs {code, level:6, market:'WCO', version:'HS 2022', source}`;
   - `POST /admin/scenarios {revisionId, data, tariffId}`.
 - Produces:
   - `class ApiClient(baseUrl)`: `get(path)`, `post(path, body|FormData)`. Giữ cookie `seafoodeck_session` và header `X-CSRF-Token` giống `smoke-pilot.mjs`, prefix `/api/v1`.
@@ -307,9 +308,9 @@ Tên khoa học trùng `DUPLICATE_SCIENTIFIC` được kiểm **trước** khi g
 4. Với từng loài: lookup → `planItem`.
    - `create`: `POST /admin/items`.
    - `create`/`resume`: upload ảnh `<dir>/assets/images/<id>.jpg` nếu `!hasProfileImage` và file tồn tại.
-   - Tạo scenario cho case của loài nếu `prototypeCaseId` chưa có trong `scenarioCaseIds`. Tariff: tra `GET /admin/tariffs`, chưa có thì tạo với `source = 'Prototype seafood-master-2 data/hs_cases.js — chưa đối chiếu biểu thuế VN'`.
+   - Tạo scenario cho case của loài nếu `prototypeCaseId` chưa có trong `scenarioCaseIds`. Tariff: tra `GET /admin/tariffs`, chưa có thì tạo với `source = 'Prototype seafood-master-2 data/hs_cases.js — HS 2022 (WCO) cấp 6 số, chưa đối chiếu'`.
 
-   Ghi chú: DTO tariff chỉ nhận `market:'VN'`. Spec 5.5 ghi `WCO`; dùng `VN` + `version 'HS 2022'` và nói rõ trong source.
+   Tariff tạo với `market:'WCO'`, `level:6`, `version:'HS 2022'` (theo spec 5.5, người dùng xác nhận). Tra cứu kèm `market=WCO`.
 5. `--dry-run`: chỉ lookup và in kế hoạch, không POST nào ngoài đăng nhập.
 6. Báo cáo cuối ra stdout: đếm theo từng kết quả, danh sách loài trùng, số ảnh `rights` thiếu ghi công, lỗi theo loài. Lỗi một loài không dừng loài khác. Exit 1 nếu có lỗi.
 
@@ -365,7 +366,7 @@ node scripts/import-prototype.mjs --source ../seafood-master-2 --base-url http:/
 - 97 ảnh thiếu tác giả/link;
 - 4 loài trùng bị bỏ qua;
 - độ hiếm là "hiếm thị trường", chưa đánh dấu CITES;
-- tariff dùng `market VN`.
+- tariff dùng `market WCO`, cấp 6 số; không suy ra cấp 8 số Việt Nam.
 
 - [ ] **Step 1:** `node scripts/import-prototype.mjs --source ../seafood-master-2 --export docs/sources/prototype-import` → 2 file JSON; kiểm `jq length` = 100 và 5.
 - [ ] **Step 2:** Viết README nguồn và sửa PRD/README như trên.
