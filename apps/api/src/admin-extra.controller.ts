@@ -2,6 +2,9 @@ import {
   Body,
   Controller,
   Post,
+  Get,
+  Query,
+  NotFoundException,
   Param,
   Req,
   UseGuards,
@@ -21,11 +24,12 @@ import {
 } from 'class-validator';
 import { Db } from './db';
 import { AdminOnlyGuard, AccessGuard, ActorRequest, requireRole, passwordHash } from './security';
-import { normalizeCode } from './hs';
+import { normalizeCode, validateTariffScope } from './hs';
+import { EXTERNAL_ID_PATTERN, summarizeImportState } from './import-state';
 class TariffDto {
   @ApiProperty() @IsString() @MaxLength(30) code!: string;
   @ApiProperty({ enum: [6, 8] }) @IsIn([6, 8]) level!: number;
-  @ApiProperty({ enum: ['VN'] }) @IsIn(['VN']) market!: string;
+  @ApiProperty({ enum: ['VN', 'WCO'] }) @IsIn(['VN', 'WCO']) market!: string;
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(100) version!: string;
   @ApiProperty() @IsString() @MinLength(10) @MaxLength(4000) source!: string;
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() effectiveFrom?: string;
@@ -61,8 +65,56 @@ export class AdminExtraController {
     });
     return { id: row.id, username: row.username, role: row.role };
   }
+  @Get('items/by-external/:externalId') async byExternal(
+    @Req() req: ActorRequest,
+    @Param('externalId') externalId: string,
+  ) {
+    requireRole(req, ['editor', 'reviewer', 'publisher', 'admin']);
+    if (!EXTERNAL_ID_PATTERN.test(externalId))
+      throw new BadRequestException('externalId không hợp lệ.');
+    const item = await this.db.item.findUnique({
+      where: { externalId },
+      include: {
+        revisions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { releases: true, media: { include: { asset: true } } },
+        },
+      },
+    });
+    if (!item || !item.revisions.length) throw new NotFoundException('Không tìm thấy mục.');
+    const scenarios = await this.db.tradeScenario.findMany({
+      where: { revisionId: item.revisions[0].id },
+    });
+    return summarizeImportState({
+      externalId: item.externalId,
+      revisions: item.revisions.map((r) => ({ ...r, scenarios })),
+    });
+  }
+  @Get('tariffs') async findTariffs(
+    @Req() req: ActorRequest,
+    @Query('code') code: string,
+    @Query('version') version: string,
+    @Query('market') market: string,
+  ) {
+    requireRole(req, ['editor', 'reviewer', 'publisher', 'admin']);
+    if (!['VN', 'WCO'].includes(market) || !version)
+      throw new BadRequestException('Thiếu market hoặc version hợp lệ.');
+    const rows = await this.db.tariffReference.findMany({
+      where: { code: normalizeCode(code ?? '', 6), version, market },
+      orderBy: { id: 'asc' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      level: r.level,
+      version: r.version,
+      reviewedBy: r.reviewedBy,
+    }));
+  }
   @Post('tariffs') async tariff(@Req() req: ActorRequest, @Body() dto: TariffDto) {
     requireRole(req, ['editor', 'admin']);
+    validateTariffScope(dto.market, dto.level);
     const code = normalizeCode(dto.code, dto.level);
     if (dto.effectiveFrom && dto.effectiveTo && dto.effectiveFrom > dto.effectiveTo)
       throw new BadRequestException('Khoảng hiệu lực không hợp lệ.');

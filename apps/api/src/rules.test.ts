@@ -9,7 +9,8 @@ import {
   pickPool,
   type PrivateQuestion,
 } from './learning';
-import { normalizeCode, validateHs } from './hs';
+import { normalizeCode, validateHs, validateTariffScope } from './hs';
+import { summarizeImportState } from './import-state';
 import { passwordHash, passwordMatches } from './security';
 const item = {
   externalId: 'cod-test',
@@ -227,4 +228,65 @@ test('pickPool keeps the focus item even beyond the first 100', () => {
   assert.ok(pool.every((id) => ids.includes(id)));
   assert.equal(pickPool(ids.slice(0, 5), undefined).length, 5);
   assert.equal(pickPool(ids, 'missing')[0] === 'missing', false);
+});
+
+test('WCO tariffs are 6-digit only', () => {
+  assert.throws(() => validateTariffScope('WCO', 8), /WCO chỉ có cấp 6 số/);
+  assert.doesNotThrow(() => validateTariffScope('WCO', 6));
+  assert.doesNotThrow(() => validateTariffScope('VN', 8));
+});
+const rev = (over: Record<string, unknown>) => ({
+  id: 'r',
+  version: 1,
+  status: 'draft',
+  data: {},
+  releases: [] as unknown[],
+  media: [] as { asset: { role: string; revokedAt: Date | null } }[],
+  scenarios: [] as { data: unknown }[],
+  ...over,
+});
+test('summarizeImportState uses the latest revision', () => {
+  const state = summarizeImportState({
+    externalId: 'x',
+    revisions: [
+      rev({ id: 'a', version: 1, releases: [{}] }),
+      rev({
+        id: 'b',
+        version: 2,
+        status: 'approved',
+        data: { provenance: { origin: 'prototype:seafood-master-2' } },
+        media: [
+          { asset: { role: 'profile', revokedAt: new Date() } },
+          { asset: { role: 'reference', revokedAt: null } },
+        ],
+        scenarios: [{ data: { provenance: { prototypeCaseId: 'c1' } } }, { data: {} }],
+      }),
+    ],
+  });
+  assert.deepEqual(state, {
+    externalId: 'x',
+    latest: {
+      revisionId: 'b',
+      version: 2,
+      status: 'approved',
+      released: false,
+      fromImporter: true,
+      hasProfileImage: false,
+      scenarioCaseIds: ['c1'],
+    },
+  });
+});
+test('summarizeImportState flags released, live profile image, no provenance', () => {
+  const { latest } = summarizeImportState({
+    externalId: 'x',
+    revisions: [
+      rev({
+        releases: [{}],
+        media: [{ asset: { role: 'profile', revokedAt: null } }],
+      }),
+    ],
+  });
+  assert.equal(latest.released, true);
+  assert.equal(latest.hasProfileImage, true);
+  assert.equal(latest.fromImporter, false);
 });

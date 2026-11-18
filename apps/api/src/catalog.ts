@@ -9,6 +9,7 @@ import { parse } from 'csv-parse/sync';
 import { Db } from './db';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
+import { EXTERNAL_ID_PATTERN } from './import-state';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
@@ -138,7 +139,7 @@ export function validateItem(input: unknown): ItemData {
     if (typeof row[key] !== 'string' || (row[key] as string).length > 3000)
       throw new BadRequestException(`Thiếu/sai ${key}.`);
   }
-  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(row.externalId as string) || !(row.vi as string).trim())
+  if (!EXTERNAL_ID_PATTERN.test(row.externalId as string) || !(row.vi as string).trim())
     throw new BadRequestException('externalId/tên Việt không hợp lệ.');
   for (const key of ['aliases', 'forms'])
     if (

@@ -104,7 +104,16 @@ export function HsAdmin({
               <option value="8">8 số</option>
             </select>
           </label>
-          <p>Danh mục: Việt Nam</p>
+          <label className="select-label">
+            Danh mục
+            <select
+              value={reference.market}
+              onChange={(e) => setReference({ ...reference, market: e.target.value })}
+            >
+              <option value="VN">Việt Nam</option>
+              <option value="WCO">WCO (chỉ cấp 6 số)</option>
+            </select>
+          </label>
           <label>
             Phiên bản danh mục
             <input
