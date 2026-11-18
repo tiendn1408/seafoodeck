@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readCsv, validateItem, csvHeader, Catalog } from './catalog';
+import { readCsv, validateItem, csvHeader, Catalog, publicRowProblem } from './catalog';
 import { canonical, grade, distinctNames, selectHsCases, type PrivateQuestion } from './learning';
 import { normalizeCode, validateHs } from './hs';
 import { passwordHash, passwordMatches } from './security';
@@ -193,4 +193,20 @@ test('legacy item DTO has empty extended fields', () => {
   const dto = new Catalog(null as never).dto({ id: 'r1', data: item, names: [], media: [] });
   assert.equal(dto.family, null);
   assert.deepEqual(dto.enAliases, []);
+});
+
+const publicNames = ['vi', 'en', 'ja', 'scientific'].map((kind) => ({ kind, source: 'src' }));
+test('public publish no longer requires approved audio', () => {
+  assert.equal(
+    publicRowProblem({ status: 'approved', reviewedBy: 'u1', names: publicNames }),
+    null,
+  );
+  assert.match(
+    publicRowProblem({ status: 'draft', reviewedBy: null, names: publicNames })!,
+    /duyệt/,
+  );
+  assert.match(
+    publicRowProblem({ status: 'approved', reviewedBy: 'u1', names: publicNames.slice(1) })!,
+    /tên/,
+  );
 });

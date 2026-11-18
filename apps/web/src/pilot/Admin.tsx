@@ -406,8 +406,8 @@ export function Admin() {
       <section>
         <h2>Xuất bản một bộ revision</h2>
         <p>
-          Chọn tối đa một revision mỗi mục. Bộ public phải qua cổng tên, audio/hướng dẫn đọc, ảnh
-          identification và HS; không tự coi seed nội bộ là đã duyệt.
+          Chọn tối đa một revision mỗi mục. Bộ public phải qua cổng tên, ảnh identification và HS;
+          không tự coi seed nội bộ là đã duyệt.
         </p>
         <div className="pilot-release-items">
           {data?.revisions.map((r) => (

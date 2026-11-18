@@ -12,6 +12,19 @@ import { validateHs, type HsData } from './hs';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
+export function publicRowProblem(row: {
+  status: string;
+  reviewedBy: string | null;
+  names: { kind: string; source: string }[];
+}): string | null {
+  if (
+    row.status !== 'approved' ||
+    !row.reviewedBy ||
+    kinds.some((k) => !row.names.some((n) => n.kind === k && n.source))
+  )
+    return 'Mục học chưa đủ tên/nguồn/duyệt.';
+  return null;
+}
 export interface ItemData {
   externalId: string;
   group: string;
@@ -432,24 +445,8 @@ export class Catalog {
           throw new BadRequestException('Thiếu hoặc trùng mục học.');
         if (!internal) {
           for (const r of rows) {
-            if (
-              r.status !== 'approved' ||
-              !r.reviewedBy ||
-              kinds.some((k) => !r.names.some((n) => n.kind === k && n.source))
-            )
-              throw new BadRequestException('Mục học chưa đủ tên/nguồn/duyệt.');
-            for (const kind of ['en', 'ja', 'scientific'])
-              if (
-                !r.names.find((n) => n.kind === kind)?.pronunciation ||
-                !r.media.some(
-                  (m) =>
-                    m.asset.role === 'pronunciation' &&
-                    m.asset.nameKind === kind &&
-                    m.asset.status === 'approved' &&
-                    !m.asset.revokedAt,
-                )
-              )
-                throw new BadRequestException('Thiếu audio/hướng dẫn đọc được duyệt.');
+            const problem = publicRowProblem(r);
+            if (problem) throw new BadRequestException(problem);
           }
           if (
             rows.filter((r) =>
