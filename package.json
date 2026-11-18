@@ -1,21 +1,26 @@
 {
   "name": "seafood-deck",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "workspaces": [
     "apps/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspace @seafoodeck/web --",
-    "build": "npm run build --workspace @seafoodeck/web --",
-    "test": "npm run test --workspace @seafoodeck/web --",
-    "typecheck": "npm run typecheck --workspace @seafoodeck/web --",
-    "lint": "npm run lint --workspace @seafoodeck/web --",
+    "build": "npm run build --workspace @seafoodeck/api && npm run build --workspace @seafoodeck/web",
+    "test": "npm run test --workspace @seafoodeck/web && npm run test --workspace @seafoodeck/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
     "format": "npm run format --workspace @seafoodeck/web --",
-    "format:check": "npm run format:check --workspace @seafoodeck/web --",
+    "format:check": "npm run format:check --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspace @seafoodeck/web --",
     "preview": "npm run preview --workspace @seafoodeck/web --",
     "dev:web": "npm run dev --workspace @seafoodeck/web --",
-    "build:web": "npm run build --workspace @seafoodeck/web --"
+    "build:web": "npm run build --workspace @seafoodeck/web --",
+    "build:api": "npm run build --workspace @seafoodeck/api",
+    "dev:api": "npm run dev --workspace @seafoodeck/api",
+    "pilot:init": "node scripts/init-pilot.mjs",
+    "smoke:pilot": "node scripts/smoke-pilot.mjs",
+    "contract:generate": "node scripts/export-contract.mjs"
   }
 }

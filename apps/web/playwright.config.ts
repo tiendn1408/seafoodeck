@@ -1,9 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
-const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL;
+const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:18089';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  testMatch: 'pilot.spec.ts',
+  fullyParallel: false,
+  workers: 1,
+  timeout: 90000,
   retries: 0,
   reporter: 'list',
   use: { baseURL: externalBaseURL ?? 'http://127.0.0.1:43217', trace: 'off' },
@@ -14,11 +17,4 @@ export default defineConfig({
     },
     { name: 'mobile', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
   ],
-  webServer: externalBaseURL
-    ? undefined
-    : {
-        command: 'npm run dev -- --host 127.0.0.1 --port 43217 --strictPort',
-        url: 'http://127.0.0.1:43217',
-        reuseExistingServer: false,
-      },
 });

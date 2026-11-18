@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { customerPack } from '../src/data/customer';
+import { customerPack } from '../../../test-fixtures/legacy-web/data/customer';
 import { primaryName } from '../src/domain/content';
 export const pack = customerPack;
 export const names: Record<string, string> = Object.fromEntries(

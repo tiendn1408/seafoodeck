@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { customerPack as pack } from '../data/customer';
-import { demoPack as legacy } from '../data/demo';
+import { customerPack as pack } from '../../../../test-fixtures/legacy-web/data/customer';
+import { demoPack as legacy } from '../../../../test-fixtures/legacy-web/data/demo';
 import { imageQuestions, validateContent, canUseMedia, buildPairs } from './content';
 import { gradeHs } from './scoring';
 import { stateForPack } from './packState';
@@ -45,7 +45,7 @@ describe('customer trade demo evidence and scope', () => {
     for (const m of pack.media) {
       expect(
         createHash('sha256')
-          .update(readFileSync(`public${m.path}`))
+          .update(readFileSync(`../../test-fixtures/pilot-media/${m.path.split('/').pop()}`))
           .digest('hex'),
       ).toBe(m.sha256);
       expect(m.aiGenerated).toBe(false);

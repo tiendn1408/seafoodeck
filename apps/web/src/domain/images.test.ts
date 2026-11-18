@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { demoPack } from '../data/demo';
+import { demoPack } from '../../../../test-fixtures/legacy-web/data/demo';
 import { imageQuestions, usableImage, validateContent } from './content';
 import {
   createSession,

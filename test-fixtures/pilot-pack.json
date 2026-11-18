@@ -1,0 +1,906 @@
+{
+  "version": "seafood-trade-demo-1",
+  "audience": "demo",
+  "sources": [
+    {
+      "id": "vn-species",
+      "title": "Bộ NN&PTNT · VBHN 22/2024 — danh mục loài",
+      "url": "https://congbao.cdnchinhphu.vn/CongBaoCP/VanBan/2024/7/42515/51348-1-2024961-96222-vbhn-bnnptnt.pdf",
+      "location": "Đối chiếu tên Việt/khoa học của mực ống Trung Hoa, cá ngừ vây vàng, nghêu Bến Tre; không dùng làm nguồn xác nhận mã HS hiện hành.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "vn-mussel",
+      "title": "Bộ NN&PTNT · TT 24/2017 — vẹm xanh",
+      "url": "https://congbao.chinhphu.vn/tai-ve-van-ban-so-24-2017-tt-bnnptnt-25404-20413?format=pdf",
+      "location": "Tên Vẹm xanh — Perna viridis; nguồn tên lịch sử, không lấy mã HS trong văn bản này làm đáp án.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-caa",
+      "title": "Cơ quan Tiêu dùng Nhật · tên gọi thủy sản 2025",
+      "url": "https://www.caa.go.jp/policies/policy/food_labeling/food_labeling_act/assets/food_labeling_cms201_250328_1032.pdf",
+      "location": "マダコ — Octopus sinensis; tên Nhật đối chiếu, chưa nghe duyệt phát âm.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-squid",
+      "title": "Cơ quan Tiêu dùng Nhật · nhóm mực ống",
+      "url": "https://www.caa.go.jp/policies/policy/food_labeling/meeting_materials/assets/food_labeling_cms201_250123_05.pdf",
+      "location": "ヒラケンサキイカ — Uroteuthis (Photololigo) chinensis.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-cod",
+      "title": "MAFF Nhật · danh sách thủy sản",
+      "url": "https://www.maff.go.jp/j/syouan/suisan/suisan_yobo/export/attach/pdf/Vietnam-live-2.pdf",
+      "location": "Gadus morhua — タイセイヨウダラ; không ghép với マダラ (Gadus macrocephalus).",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-tuna",
+      "title": "JAMARC · mẫu cá ngừ vây vàng",
+      "url": "https://www.fra.go.jp/jamarc/archive/jyoho/hakusei/jr_kihada/jr_kihada.htm",
+      "location": "Thunnus albacares — キハダ.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-clam",
+      "title": "Cơ quan Tiêu dùng Nhật · tên gọi nhuyễn thể",
+      "url": "https://www.caa.go.jp/policies/policy/food_labeling/meeting_materials/assets/food_labeling_cms202_250731_08.pdf",
+      "location": "Meretrix lyrata — ミスハマグリ. ハマグリ là tên nhóm có thể bao gồm nhiều loài, không dùng làm đáp án loài ở bộ này.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "jp-mussel",
+      "title": "Viện Nghiên cứu Môi trường Nhật · Perna viridis",
+      "url": "https://www.nies.go.jp/biodiversity/invasive/DB/detail/70280.html",
+      "location": "Perna viridis — ミドリイガイ, Green mussel; dạng vỏ thuôn và mép xanh là gợi ý, không phải bằng chứng duy nhất.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "noaa-cod",
+      "title": "NOAA Fisheries · Atlantic cod",
+      "url": "https://www.fisheries.noaa.gov/species/atlantic-cod",
+      "location": "Gadus morhua; mô tả nhận diện và tên Anh.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "cod-white",
+      "title": "University of Maine Sea Grant · Cod",
+      "url": "https://seagrant.umaine.edu/maine-seafood-guide/cod/",
+      "location": "Atlantic cod thuộc nhóm cá thịt trắng theo mô tả sản phẩm, không phải một bậc phân loại sinh học.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "noaa-tuna",
+      "title": "NOAA Fisheries · Yellowfin tuna",
+      "url": "https://www.fisheries.noaa.gov/species/atlantic-yellowfin-tuna",
+      "location": "Thunnus albacares; tên Anh, các vây và vây phụ màu vàng.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "fao-squid",
+      "title": "FAO · Cephalopods of the world, tập 2",
+      "url": "https://www.fao.org/4/i1920e/i1920e.pdf",
+      "location": "Uroteuthis (Photololigo) chinensis — Mitre squid.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "octopus-revision",
+      "title": "Gleadall 2016 · định danh bạch tuộc Đông Á",
+      "url": "https://www.jstage.jst.go.jp/article/specdiv/21/1/21_31/_article",
+      "location": "Octopus sinensis là loài riêng của bạch tuộc thường Đông Á, không tự đồng nhất với Octopus vulgaris Đại Tây Dương/Địa Trung Hải.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "fao-clam",
+      "title": "FAO · tài nguyên biển Tây Trung Thái Bình Dương, tập 1",
+      "url": "https://www.vliz.be/imisdocs/publications/391449.pdf",
+      "location": "Meretrix lyrata — Lyrate hard clam.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "editorial-cod-vi",
+      "title": "Biên tập tên Việt — cá tuyết Đại Tây Dương",
+      "url": "https://www.vietnamtradeportal.gov.vn/index.php?id=4134&r=site/display",
+      "location": "Tên nhóm Cá tuyết/Gadus morhua trong nguồn Việt, kết hợp phạm vi Atlantic từ NOAA. Đây là tên Việt diễn giải trong bản nháp; cần duyệt cách gọi thương mại.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "editorial-octopus-vi",
+      "title": "Biên tập tên Việt — bạch tuộc Đông Á",
+      "url": "https://www.jstage.jst.go.jp/article/specdiv/21/1/21_31/_article",
+      "location": "Diễn giải East Asian common octopus thành Bạch tuộc Đông Á. Nguồn xác nhận tên Anh/khoa học, không xác nhận tên thương mại tiếng Việt; tên Việt chưa duyệt.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "tuna-red",
+      "title": "University of Hawaiʻi · Yellowfin tuna — đặc điểm sản phẩm",
+      "url": "https://manoa.hawaii.edu/ctahr/pacificfoodguide/index.php/chosen-from-the-sea/tuna-yellowfin-tuna/",
+      "location": "Mô tả thịt cá ngừ vây vàng hồng đến đỏ đậm; dùng làm ngữ cảnh nhóm thương mại, không dùng màu thịt để suy ra loài hoặc mã HS.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "vn-hs-2022",
+      "title": "Cổng Thông tin Thương mại Việt Nam · HS 2022 trong TT 01/2024/TT-BCT",
+      "url": "https://www.vietnamtradeportal.gov.vn/index.php?id=4134&r=site/display",
+      "location": "Phụ lục: 0303.42 cá ngừ vây vàng đông lạnh (không phải phi lê), 0304.87 phi lê cá ngừ đông lạnh, 0303.63 cá tuyết đông lạnh. Dùng đúng cấp 6 số của bản nguồn; chưa duyệt nghiệp vụ/hiệu lực hiện hành để khai báo.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "photo-r101",
+      "title": "File:Gadus morhua Cod-2b-Atlanterhavsparken-Norway.JPG",
+      "url": "https://commons.wikimedia.org/wiki/File:Gadus_morhua_Cod-2b-Atlanterhavsparken-Norway.JPG",
+      "location": "Ảnh nguồn đối chiếu mô tả loài; 2396×1312; JPEG nguyên byte theo nguồn",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "photo-r102",
+      "title": "File:Yellowfin tuna nurp.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg",
+      "location": "Ảnh nguồn đối chiếu mô tả loài; 1558×1106; JPEG nguyên byte theo nguồn",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "photo-r104",
+      "title": "File:Octopus sinensis.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Octopus_sinensis.jpg",
+      "location": "Ảnh nguồn đối chiếu mô tả loài; 2136×2135; JPEG nguyên byte theo nguồn",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "photo-r103",
+      "title": "File:Perna viridis 01.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Perna_viridis_01.jpg",
+      "location": "Ảnh nguồn đối chiếu mô tả loài; 960×720; Thumbnail 960px do Wikimedia cung cấp; không crop; không phải ảnh gốc mới.",
+      "checkedAt": "2026-11-17"
+    },
+    {
+      "id": "photo-r105",
+      "title": "File:Meretrix lyrata 01.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Meretrix_lyrata_01.jpg",
+      "location": "Ảnh nguồn đối chiếu mô tả loài; 960×403; Thumbnail 960px do Wikimedia cung cấp; không crop; không phải ảnh gốc mới.",
+      "checkedAt": "2026-11-17"
+    }
+  ],
+  "species": [
+    {
+      "status": "draft",
+      "id": "atlantic-cod",
+      "group": "Cá",
+      "tradeCategory": "Cá thịt trắng",
+      "tradeSourceId": "cod-white",
+      "scientificName": "Gadus morhua",
+      "sourceId": "noaa-cod",
+      "identification": "Râu dưới cằm, ba vây lưng và đường bên nhạt màu là các dấu hiệu cần quan sát cùng nhau.",
+      "commercialNote": "Đại diện nhóm thịt trắng trong bộ mẫu; màu thịt không tự xác định loài hay mã hàng.",
+      "productForms": [
+        "Nguyên con đông lạnh",
+        "Phi lê đông lạnh"
+      ],
+      "notes": "Tên Việt diễn giải theo tên nhóm Cá tuyết và phạm vi Atlantic; cần duyệt cách gọi thương mại.",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "yellowfin-tuna",
+      "group": "Cá",
+      "tradeCategory": "Cá thịt đỏ",
+      "tradeSourceId": "tuna-red",
+      "scientificName": "Thunnus albacares",
+      "sourceId": "noaa-tuna",
+      "identification": "Quan sát thân thuôn, vây lưng thứ hai, vây hậu môn và các vây phụ. Màu vàng có thể khó thấy trong ảnh dưới nước.",
+      "commercialNote": "Tên cá ngừ bao gồm nhiều loài; khi chào hàng cần đối chiếu cả tên khoa học. Nhãn thịt đỏ chỉ là nhóm thương mại trong bộ mẫu.",
+      "productForms": [
+        "Nguyên con đông lạnh",
+        "Phi lê đông lạnh"
+      ],
+      "notes": "Ví dụ dạng hàng để học nghiệp vụ; không suy ra quy cách hoặc chứng nhận của khách.",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "mitre-squid",
+      "group": "Mực & bạch tuộc",
+      "tradeCategory": "Mực ống",
+      "scientificName": "Uroteuthis chinensis",
+      "sourceId": "fao-squid",
+      "identification": "Thân dạng ống và vây là dấu hiệu nhóm mực ống; cần tài liệu chuyên môn để phân biệt các loài gần nhau.",
+      "commercialNote": "Loligo chinensis là tên khoa học cũ gặp trong hồ sơ; tên hiện dùng trong bộ là Uroteuthis chinensis.",
+      "productForms": [
+        "Nguyên con",
+        "Thân làm sạch",
+        "Khoanh mực"
+      ],
+      "notes": "Chưa có ảnh thật đủ điều kiện trong bộ hiện tại. Minh họa nhóm không được dùng thay ảnh định danh.",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "east-asian-octopus",
+      "group": "Mực & bạch tuộc",
+      "tradeCategory": "Bạch tuộc",
+      "scientificName": "Octopus sinensis",
+      "sourceId": "octopus-revision",
+      "identification": "Quan sát tay có giác bám và phần thân. Ảnh ngoài không đủ tự phân biệt mọi loài trong phức hợp bạch tuộc thường.",
+      "commercialNote": "マダコ đối chiếu theo Octopus sinensis trong tài liệu Nhật cập nhật; không dùng nguồn cũ để gán tự động thành O. vulgaris.",
+      "productForms": [
+        "Nguyên con",
+        "Làm sạch",
+        "Tay bạch tuộc"
+      ],
+      "notes": "Bạch tuộc Đông Á là tên Việt mô tả trong bản nháp, chưa phải tên thương mại Việt Nam đã duyệt.",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "lyrate-clam",
+      "group": "Nghêu & vẹm",
+      "tradeCategory": "Nghêu",
+      "scientificName": "Meretrix lyrata",
+      "sourceId": "vn-species",
+      "identification": "Vỏ tương đối tròn dạng tam giác và các đường tăng trưởng là gợi ý; cần đối chiếu mẫu/nguồn khi gần các loài Meretrix khác.",
+      "commercialNote": "Tên Nghêu Bến Tre trong bộ biểu thị tên loài phổ biến; không xác nhận lô hàng có xuất xứ Bến Tre.",
+      "productForms": [
+        "Nguyên vỏ",
+        "Thịt nghêu"
+      ],
+      "notes": "Tên nhóm ハマグリ không dùng làm đáp án riêng cho Meretrix lyrata.",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "green-mussel",
+      "group": "Nghêu & vẹm",
+      "tradeCategory": "Vẹm",
+      "scientificName": "Perna viridis",
+      "sourceId": "jp-mussel",
+      "identification": "Vỏ thuôn dài, phần mép xanh là gợi ý quan sát; màu vỏ có thể thay đổi, không dùng làm căn cứ duy nhất.",
+      "commercialNote": "Không đồng nhất Green mussel với mọi loài vẹm hoặc Perna canaliculus.",
+      "productForms": [
+        "Nguyên vỏ",
+        "Nửa mảnh vỏ",
+        "Thịt vẹm"
+      ],
+      "notes": "Các dạng hàng là ví dụ học tập, không phải mặt hàng khách đã xác nhận.",
+      "fixtureOnly": false
+    }
+  ],
+  "names": [
+    {
+      "status": "draft",
+      "id": "atlantic-cod:vi",
+      "speciesId": "atlantic-cod",
+      "kind": "vi",
+      "label": "Cá tuyết Đại Tây Dương",
+      "role": "primary",
+      "acceptedForms": [
+        "Cá tuyết Đại Tây Dương"
+      ],
+      "sourceId": "editorial-cod-vi"
+    },
+    {
+      "status": "draft",
+      "id": "atlantic-cod:en",
+      "speciesId": "atlantic-cod",
+      "kind": "en",
+      "label": "Atlantic cod",
+      "role": "primary",
+      "acceptedForms": [
+        "Atlantic cod"
+      ],
+      "sourceId": "noaa-cod"
+    },
+    {
+      "status": "draft",
+      "id": "atlantic-cod:ja",
+      "speciesId": "atlantic-cod",
+      "kind": "ja",
+      "label": "タイセイヨウダラ",
+      "role": "primary",
+      "acceptedForms": [
+        "タイセイヨウダラ"
+      ],
+      "sourceId": "jp-cod",
+      "pronunciation": {
+        "text": "たいせいようだら · taiseiyōdara",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "atlantic-cod:scientific",
+      "speciesId": "atlantic-cod",
+      "kind": "scientific",
+      "label": "Gadus morhua",
+      "role": "primary",
+      "acceptedForms": [
+        "Gadus morhua"
+      ],
+      "sourceId": "noaa-cod"
+    },
+    {
+      "status": "draft",
+      "id": "yellowfin-tuna:vi",
+      "speciesId": "yellowfin-tuna",
+      "kind": "vi",
+      "label": "Cá ngừ vây vàng",
+      "role": "primary",
+      "acceptedForms": [
+        "Cá ngừ vây vàng"
+      ],
+      "sourceId": "vn-species"
+    },
+    {
+      "status": "draft",
+      "id": "yellowfin-tuna:en",
+      "speciesId": "yellowfin-tuna",
+      "kind": "en",
+      "label": "Yellowfin tuna",
+      "role": "primary",
+      "acceptedForms": [
+        "Yellowfin tuna"
+      ],
+      "sourceId": "noaa-tuna"
+    },
+    {
+      "status": "draft",
+      "id": "yellowfin-tuna:ja",
+      "speciesId": "yellowfin-tuna",
+      "kind": "ja",
+      "label": "キハダ",
+      "role": "primary",
+      "acceptedForms": [
+        "キハダ"
+      ],
+      "sourceId": "jp-tuna",
+      "pronunciation": {
+        "text": "きはだ · kihada",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "yellowfin-tuna:scientific",
+      "speciesId": "yellowfin-tuna",
+      "kind": "scientific",
+      "label": "Thunnus albacares",
+      "role": "primary",
+      "acceptedForms": [
+        "Thunnus albacares"
+      ],
+      "sourceId": "noaa-tuna"
+    },
+    {
+      "status": "draft",
+      "id": "mitre-squid:vi",
+      "speciesId": "mitre-squid",
+      "kind": "vi",
+      "label": "Mực ống Trung Hoa",
+      "role": "primary",
+      "acceptedForms": [
+        "Mực ống Trung Hoa"
+      ],
+      "sourceId": "vn-species"
+    },
+    {
+      "status": "draft",
+      "id": "mitre-squid:en",
+      "speciesId": "mitre-squid",
+      "kind": "en",
+      "label": "Mitre squid",
+      "role": "primary",
+      "acceptedForms": [
+        "Mitre squid"
+      ],
+      "sourceId": "fao-squid"
+    },
+    {
+      "status": "draft",
+      "id": "mitre-squid:ja",
+      "speciesId": "mitre-squid",
+      "kind": "ja",
+      "label": "ヒラケンサキイカ",
+      "role": "primary",
+      "acceptedForms": [
+        "ヒラケンサキイカ"
+      ],
+      "sourceId": "jp-squid",
+      "pronunciation": {
+        "text": "ひらけんさきいか · hirakensakiika",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "mitre-squid:scientific",
+      "speciesId": "mitre-squid",
+      "kind": "scientific",
+      "label": "Uroteuthis chinensis",
+      "role": "primary",
+      "acceptedForms": [
+        "Uroteuthis chinensis"
+      ],
+      "sourceId": "fao-squid"
+    },
+    {
+      "status": "draft",
+      "id": "east-asian-octopus:vi",
+      "speciesId": "east-asian-octopus",
+      "kind": "vi",
+      "label": "Bạch tuộc Đông Á",
+      "role": "primary",
+      "acceptedForms": [
+        "Bạch tuộc Đông Á"
+      ],
+      "sourceId": "editorial-octopus-vi"
+    },
+    {
+      "status": "draft",
+      "id": "east-asian-octopus:en",
+      "speciesId": "east-asian-octopus",
+      "kind": "en",
+      "label": "East Asian common octopus",
+      "role": "primary",
+      "acceptedForms": [
+        "East Asian common octopus"
+      ],
+      "sourceId": "octopus-revision"
+    },
+    {
+      "status": "draft",
+      "id": "east-asian-octopus:ja",
+      "speciesId": "east-asian-octopus",
+      "kind": "ja",
+      "label": "マダコ",
+      "role": "primary",
+      "acceptedForms": [
+        "マダコ"
+      ],
+      "sourceId": "jp-caa",
+      "pronunciation": {
+        "text": "まだこ · madako",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "east-asian-octopus:scientific",
+      "speciesId": "east-asian-octopus",
+      "kind": "scientific",
+      "label": "Octopus sinensis",
+      "role": "primary",
+      "acceptedForms": [
+        "Octopus sinensis"
+      ],
+      "sourceId": "octopus-revision"
+    },
+    {
+      "status": "draft",
+      "id": "lyrate-clam:vi",
+      "speciesId": "lyrate-clam",
+      "kind": "vi",
+      "label": "Nghêu Bến Tre",
+      "role": "primary",
+      "acceptedForms": [
+        "Nghêu Bến Tre"
+      ],
+      "sourceId": "vn-species"
+    },
+    {
+      "status": "draft",
+      "id": "lyrate-clam:en",
+      "speciesId": "lyrate-clam",
+      "kind": "en",
+      "label": "Lyrate hard clam",
+      "role": "primary",
+      "acceptedForms": [
+        "Lyrate hard clam"
+      ],
+      "sourceId": "fao-clam"
+    },
+    {
+      "status": "draft",
+      "id": "lyrate-clam:ja",
+      "speciesId": "lyrate-clam",
+      "kind": "ja",
+      "label": "ミスハマグリ",
+      "role": "primary",
+      "acceptedForms": [
+        "ミスハマグリ"
+      ],
+      "sourceId": "jp-clam",
+      "pronunciation": {
+        "text": "みすはまぐり · misuhamaguri",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "lyrate-clam:scientific",
+      "speciesId": "lyrate-clam",
+      "kind": "scientific",
+      "label": "Meretrix lyrata",
+      "role": "primary",
+      "acceptedForms": [
+        "Meretrix lyrata"
+      ],
+      "sourceId": "vn-species"
+    },
+    {
+      "status": "draft",
+      "id": "green-mussel:vi",
+      "speciesId": "green-mussel",
+      "kind": "vi",
+      "label": "Vẹm xanh",
+      "role": "primary",
+      "acceptedForms": [
+        "Vẹm xanh"
+      ],
+      "sourceId": "vn-mussel"
+    },
+    {
+      "status": "draft",
+      "id": "green-mussel:en",
+      "speciesId": "green-mussel",
+      "kind": "en",
+      "label": "Green mussel",
+      "role": "primary",
+      "acceptedForms": [
+        "Green mussel"
+      ],
+      "sourceId": "jp-mussel"
+    },
+    {
+      "status": "draft",
+      "id": "green-mussel:ja",
+      "speciesId": "green-mussel",
+      "kind": "ja",
+      "label": "ミドリイガイ",
+      "role": "primary",
+      "acceptedForms": [
+        "ミドリイガイ"
+      ],
+      "sourceId": "jp-mussel",
+      "pronunciation": {
+        "text": "みどりいがい · midoriigai",
+        "system": "kana-romaji"
+      }
+    },
+    {
+      "status": "draft",
+      "id": "green-mussel:scientific",
+      "speciesId": "green-mussel",
+      "kind": "scientific",
+      "label": "Perna viridis",
+      "role": "primary",
+      "acceptedForms": [
+        "Perna viridis"
+      ],
+      "sourceId": "jp-mussel"
+    }
+  ],
+  "media": [
+    {
+      "id": "r101",
+      "speciesId": "atlantic-cod",
+      "path": "/media/customer/r101-v1.jpg",
+      "sha256": "b8738d2fbf45b9411f3a57693da3af96390efe2369b2ea89f52388ba4f73a1a1",
+      "credit": "Hans-Petter Fjeld",
+      "rights": "CC BY-SA 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gadus_morhua_Cod-2b-Atlanterhavsparken-Norway.JPG",
+      "originalImageId": "commons-8399498",
+      "status": "draft",
+      "aiGenerated": false,
+      "type": "species_photo",
+      "purposes": [
+        "profile",
+        "identification"
+      ],
+      "sourceId": "photo-r101",
+      "version": "1",
+      "explanation": "Ảnh nguồn mô tả Gadus morhua. Quan sát râu dưới cằm và các vây lưng; chưa được chuyên gia duyệt bài nhận diện."
+    },
+    {
+      "id": "r102",
+      "speciesId": "yellowfin-tuna",
+      "path": "/media/customer/r102-v1.jpg",
+      "sha256": "fa6d6fd98e4191e22c169d6d7c536cd7cda7d3f3352567d23dc46bdc27317798",
+      "credit": "OAR/National Undersea Research Program (NURP)",
+      "rights": "Public domain",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg#Licensing",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Yellowfin_tuna_nurp.jpg",
+      "originalImageId": "commons-10209454",
+      "status": "draft",
+      "aiGenerated": false,
+      "type": "species_photo",
+      "purposes": [
+        "profile",
+        "identification"
+      ],
+      "sourceId": "photo-r102",
+      "version": "1",
+      "explanation": "Ảnh NOAA mô tả cá ngừ vây vàng trong đàn. Không chấm bằng màu nền nước; màu vây có thể bị ảnh hưởng ánh sáng."
+    },
+    {
+      "id": "r104",
+      "speciesId": "east-asian-octopus",
+      "path": "/media/customer/r104-v1.jpg",
+      "sha256": "a98f36a8a33897caac3aa4a6257a6b25f89e581b304e5ed549136dd560f541c6",
+      "credit": "Daiju Azuma",
+      "rights": "CC BY-SA 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Octopus_sinensis.jpg",
+      "originalImageId": "commons-1552019",
+      "status": "draft",
+      "aiGenerated": false,
+      "type": "species_photo",
+      "purposes": [
+        "profile",
+        "identification"
+      ],
+      "sourceId": "photo-r104",
+      "version": "1",
+      "explanation": "Ảnh nguồn đối chiếu Octopus sinensis (マダコ), không tự đổi thành Octopus vulgaris. Hình ngoài không đủ phân biệt mọi loài gần nhau."
+    },
+    {
+      "id": "r103",
+      "speciesId": "green-mussel",
+      "path": "/media/customer/r103-v1.jpg",
+      "sha256": "0c29f6c5f5b13350fb288f100022ccc26af3a75d0334184f7c98d5ae3b3d4371",
+      "credit": "H. Zell",
+      "rights": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Perna_viridis_01.jpg",
+      "originalImageId": "commons-102348419",
+      "status": "draft",
+      "aiGenerated": false,
+      "type": "species_photo",
+      "purposes": [
+        "profile",
+        "identification"
+      ],
+      "sourceId": "photo-r103",
+      "version": "1",
+      "explanation": "Ảnh vỏ Perna viridis do H. Zell công bố. Mép và hình dạng vỏ là gợi ý; cần duyệt dấu hiệu phân biệt với các loài vẹm gần nhau."
+    },
+    {
+      "id": "r105",
+      "speciesId": "lyrate-clam",
+      "path": "/media/customer/r105-v1.jpg",
+      "sha256": "99e049f496f700cdb284a17bc659d8b31c5ec2631c3dfb9b307b88345514b33f",
+      "credit": "H. Zell",
+      "rights": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Meretrix_lyrata_01.jpg",
+      "originalImageId": "commons-127028024",
+      "status": "draft",
+      "aiGenerated": false,
+      "type": "species_photo",
+      "purposes": [
+        "profile",
+        "identification"
+      ],
+      "sourceId": "photo-r105",
+      "version": "1",
+      "explanation": "Ảnh vỏ Meretrix lyrata do H. Zell công bố. Vỏ và đường tăng trưởng là gợi ý; chưa duyệt khả năng phân biệt các loài Meretrix."
+    }
+  ],
+  "tariffs": [
+    {
+      "status": "draft",
+      "id": "vn-yft-whole-6",
+      "code": "0303.42",
+      "parentCode": "0303",
+      "citation": "HS 2022, nhánh cá đông lạnh trừ phi lê: 0303.42 — Thunnus albacares.",
+      "market": "VN",
+      "catalog": "Danh mục HS 2022 — bản nguồn Việt Nam",
+      "version": "HS 2022 · đối chiếu phụ lục TT 01/2024/TT-BCT",
+      "level": 6,
+      "sourceId": "vn-hs-2022",
+      "checkedAt": "2026-11-17",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "vn-yft-fillet-6",
+      "code": "0304.87",
+      "parentCode": "0304",
+      "citation": "HS 2022, nhánh phi lê đông lạnh: 0304.87 — cá ngừ. Đây là mã nhóm gồm nhiều loài, không phải mã riêng của loài.",
+      "market": "VN",
+      "catalog": "Danh mục HS 2022 — bản nguồn Việt Nam",
+      "version": "HS 2022 · đối chiếu phụ lục TT 01/2024/TT-BCT",
+      "level": 6,
+      "sourceId": "vn-hs-2022",
+      "checkedAt": "2026-11-17",
+      "fixtureOnly": false
+    },
+    {
+      "status": "draft",
+      "id": "vn-cod-whole-6",
+      "code": "0303.63",
+      "parentCode": "0303",
+      "citation": "HS 2022, nhánh cá tuyết đông lạnh: 0303.63 — Gadus morhua, G. ogac, G. macrocephalus.",
+      "market": "VN",
+      "catalog": "Danh mục HS 2022 — bản nguồn Việt Nam",
+      "version": "HS 2022 · đối chiếu phụ lục TT 01/2024/TT-BCT",
+      "level": 6,
+      "sourceId": "vn-hs-2022",
+      "checkedAt": "2026-11-17",
+      "fixtureOnly": false
+    }
+  ],
+  "scenarios": [
+    {
+      "status": "draft",
+      "speciesId": "yellowfin-tuna",
+      "expectedCodeLength": 6,
+      "options": [
+        {
+          "id": "030342",
+          "label": "0303.42",
+          "explanation": "Cá ngừ vây vàng đông lạnh trong nhánh không phải phi lê."
+        },
+        {
+          "id": "030487",
+          "label": "0304.87",
+          "explanation": "Phi lê cá ngừ đông lạnh; mã nhóm không chỉ dành cho cá ngừ vây vàng."
+        },
+        {
+          "id": "030363",
+          "label": "0303.63",
+          "explanation": "Nhánh cá tuyết, không phù hợp với cá ngừ vây vàng trong mô tả."
+        },
+        {
+          "id": "insufficient",
+          "label": "Chưa đủ thông tin",
+          "explanation": "Chỉ chọn khi thiếu dữ kiện quyết định và xác định đúng điều cần hỏi."
+        }
+      ],
+      "followUps": [
+        {
+          "id": "filleted",
+          "label": "Hàng nguyên con hay phi lê?"
+        },
+        {
+          "id": "packaging",
+          "label": "Thùng hàng có màu gì?"
+        },
+        {
+          "id": "origin",
+          "label": "Bên bán ở tỉnh nào?"
+        }
+      ],
+      "version": "seafood-trade-demo-1",
+      "fixtureOnly": true,
+      "id": "trade-yft-whole",
+      "title": "Cá ngừ nguyên con đông lạnh",
+      "description": "Cá ngừ vây vàng (Thunnus albacares) nguyên con, đông lạnh; không phải phi lê hoặc phụ phẩm, chưa nấu chín, không hun khói, không tẩm ướp. Bài yêu cầu mã 6 số trong bản nguồn HS 2022.",
+      "facts": {
+        "frozen": true,
+        "filleted": false,
+        "cooked": false,
+        "seasoned": false,
+        "smoked": false
+      },
+      "answerType": "code",
+      "tariffId": "vn-yft-whole-6",
+      "explanation": "Đối chiếu nhánh cá đông lạnh không phải phi lê và tên Thunnus albacares: 0303.42. Chỉ kết luận ở cấp 6 số của bài học, không tự nối thành mã 8 số để khai báo."
+    },
+    {
+      "status": "draft",
+      "speciesId": "yellowfin-tuna",
+      "expectedCodeLength": 6,
+      "options": [
+        {
+          "id": "030342",
+          "label": "0303.42",
+          "explanation": "Cá ngừ vây vàng đông lạnh trong nhánh không phải phi lê."
+        },
+        {
+          "id": "030487",
+          "label": "0304.87",
+          "explanation": "Phi lê cá ngừ đông lạnh; mã nhóm không chỉ dành cho cá ngừ vây vàng."
+        },
+        {
+          "id": "030363",
+          "label": "0303.63",
+          "explanation": "Nhánh cá tuyết, không phù hợp với cá ngừ vây vàng trong mô tả."
+        },
+        {
+          "id": "insufficient",
+          "label": "Chưa đủ thông tin",
+          "explanation": "Chỉ chọn khi thiếu dữ kiện quyết định và xác định đúng điều cần hỏi."
+        }
+      ],
+      "followUps": [
+        {
+          "id": "filleted",
+          "label": "Hàng nguyên con hay phi lê?"
+        },
+        {
+          "id": "packaging",
+          "label": "Thùng hàng có màu gì?"
+        },
+        {
+          "id": "origin",
+          "label": "Bên bán ở tỉnh nào?"
+        }
+      ],
+      "version": "seafood-trade-demo-1",
+      "fixtureOnly": true,
+      "id": "trade-yft-missing-form",
+      "title": "Hồ sơ chưa rõ dạng hàng",
+      "description": "Cá ngừ vây vàng (Thunnus albacares), đông lạnh; chưa nấu chín, không hun khói và không tẩm ướp. Hồ sơ chưa cho biết nguyên con hay phi lê. Bài phân biệt 0303.42 với 0304.87 ở cấp 6 số.",
+      "facts": {
+        "frozen": true,
+        "filleted": "unknown",
+        "cooked": false,
+        "seasoned": false,
+        "smoked": false
+      },
+      "answerType": "insufficient",
+      "missingFact": "filleted",
+      "tariffId": "vn-yft-whole-6",
+      "explanation": "Tên loài và trạng thái đông lạnh chưa quyết định được nhánh nguyên con/phi lê. Cần hỏi “Hàng nguyên con hay phi lê?”; unknown không phải là khẳng định hàng nguyên con."
+    },
+    {
+      "status": "draft",
+      "speciesId": "yellowfin-tuna",
+      "expectedCodeLength": 6,
+      "options": [
+        {
+          "id": "030342",
+          "label": "0303.42",
+          "explanation": "Cá ngừ vây vàng đông lạnh trong nhánh không phải phi lê."
+        },
+        {
+          "id": "030487",
+          "label": "0304.87",
+          "explanation": "Phi lê cá ngừ đông lạnh; mã nhóm không chỉ dành cho cá ngừ vây vàng."
+        },
+        {
+          "id": "030363",
+          "label": "0303.63",
+          "explanation": "Nhánh cá tuyết, không phù hợp với cá ngừ vây vàng trong mô tả."
+        },
+        {
+          "id": "insufficient",
+          "label": "Chưa đủ thông tin",
+          "explanation": "Chỉ chọn khi thiếu dữ kiện quyết định và xác định đúng điều cần hỏi."
+        }
+      ],
+      "followUps": [
+        {
+          "id": "filleted",
+          "label": "Hàng nguyên con hay phi lê?"
+        },
+        {
+          "id": "packaging",
+          "label": "Thùng hàng có màu gì?"
+        },
+        {
+          "id": "origin",
+          "label": "Bên bán ở tỉnh nào?"
+        }
+      ],
+      "version": "seafood-trade-demo-1",
+      "fixtureOnly": true,
+      "id": "trade-yft-fillet",
+      "title": "Cùng loài, chuyển sang phi lê",
+      "description": "Phi lê cá ngừ vây vàng (Thunnus albacares), đông lạnh; không phải thịt băm hoặc phụ phẩm, chưa nấu chín, không hun khói, không tẩm ướp. Bài yêu cầu mã 6 số trong bản nguồn HS 2022.",
+      "facts": {
+        "frozen": true,
+        "filleted": true,
+        "cooked": false,
+        "seasoned": false,
+        "smoked": false
+      },
+      "answerType": "code",
+      "tariffId": "vn-yft-fillet-6",
+      "explanation": "Cùng loài nhưng dạng phi lê đưa bài sang nhánh phi lê cá ngừ đông lạnh 0304.87 thay cho 0303.42. Đây là mã nhóm gồm nhiều loài cá ngừ. Phải đối chiếu phiên bản và cấp mã khi xử lý lô hàng thực tế."
+    }
+  ]
+}

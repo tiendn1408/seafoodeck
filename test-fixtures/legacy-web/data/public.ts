@@ -1,4 +1,4 @@
-import type { ContentPack } from '../domain/models';
+import type { ContentPack } from '../../../apps/web/src/domain/models';
 
 // Independent allowlist. Never derive this pack by copying demo fixtures.
 export const publicPack: ContentPack = {

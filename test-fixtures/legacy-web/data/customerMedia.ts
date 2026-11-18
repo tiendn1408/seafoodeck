@@ -1,4 +1,4 @@
-import type { MediaAsset, Source } from '../domain/models';
+import type { MediaAsset, Source } from '../../../apps/web/src/domain/models';
 
 export const customerImageSources: Source[] = [
   {

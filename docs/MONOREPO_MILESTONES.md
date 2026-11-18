@@ -13,3 +13,9 @@ Kiểm cùng origin 127.0.0.1:18087: mở flashcard/lật, giữ browser context
 Chạy từ root: npm ci; npm test; npm run build; npm run lint. Docker: docker build --platform linux/amd64 -f apps/web/Dockerfile -t seafoodeck:migration-fe-20261117 . . Preview migrated 18088. Quay về FE tĩnh baseline qua image ghcr.io/tiendn1408/seafoodeck:flat-illustrations-20261117; không liên quan schema DB ở mốc 1.
 
 Mốc 2 và các nhóm pilot tiếp tục sau mốc này, không gọi mốc dời FE là hoàn thành pilot.
+
+## Mốc 2 — API và pilot online
+
+Catalog, media và cả bốn chế độ chuyển sang Nest/Prisma/PostgreSQL/private S3; web không import fixtures, catalog hay đáp án. Shared DTO đủ qua OpenAPI snapshot, không thêm shared package/client chưa dùng. CSV tạo revision mới; release/rollback nguyên tử; API không fallback. Hai migration cộng thêm schema (`initial`, `alias_search`), không reset DB.
+
+Đã dựng stack mới từ volume trống và seed nội bộ chủ động 1000 mục. 63 unit web + 9 API, typecheck/build/lint/format pass; 15 E2E trên container +3 desktop skip viewport; cả bốn mode, API/media/CSRF/ACL/expiry, dừng DB/API, reload/idempotence/ôn lỗi và Flashcard 320px pass. Chi tiết, image digest và giới hạn nội dung tại [DELIVERY_0.6.0.md](DELIVERY_0.6.0.md). Root Dockerfile từ mốc này là web cần API, không còn là image HTML standalone. Baseline và tag mốc 1 giữ để rollback/đối chiếu.

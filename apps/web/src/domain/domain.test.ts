@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { demoPack } from '../data/demo';
-import { PUBLIC_CONTENT_ENABLED, publicPack } from '../data/public';
+import { demoPack } from '../../../../test-fixtures/legacy-web/data/demo';
+import {
+  PUBLIC_CONTENT_ENABLED,
+  publicPack,
+} from '../../../../test-fixtures/legacy-web/data/public';
 import type { AppState, Attempt, ContentPack, MediaAsset } from './models';
 import { buildPairs, canUseMedia, primaryName, validateContent } from './content';
 import { gradeHs, gradeName, normalizeHs, normalizeName } from './scoring';

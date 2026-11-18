@@ -1,4 +1,4 @@
-import type { ContentPack, NameEntry, NameKind, TradeScenario } from '../domain/models';
+import type { ContentPack, NameEntry, NameKind, TradeScenario } from '../../../apps/web/src/domain/models';
 import { imageMedia, imageSources } from './imageMedia';
 
 const draft = { status: 'draft' as const };

@@ -17,3 +17,12 @@ README.md
 AGENTS.md
 
 test-fixtures
+
+.local
+_backups
+**/node_modules
+**/dist
+**/test-results
+**/playwright-report
+
+apps/api/src/generated

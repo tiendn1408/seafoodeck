@@ -1,4 +1,4 @@
-import type { ContentPack, NameEntry, NameKind, Species, TradeScenario } from '../domain/models';
+import type { ContentPack, NameEntry, NameKind, Species, TradeScenario } from '../../../apps/web/src/domain/models';
 import { customerMedia, customerImageSources } from './customerMedia';
 
 export const CUSTOMER_VERSION = 'seafood-trade-demo-1';

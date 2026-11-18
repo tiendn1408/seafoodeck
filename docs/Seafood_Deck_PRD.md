@@ -1,3 +1,5 @@
+> Bản online 0.6 hiện hành: xem [bàn giao](DELIVERY_0.6.0.md), [triển khai VPS](DEPLOY_PILOT.md) và hai tài liệu trong `docs/requirements/`. Nội dung dưới đây giữ làm lịch sử baseline; cấu hình một web HTML/static không đủ cho pilot API/DB/S3.
+
 # Seafood Deck — Đặc tả sản phẩm MVP
 
 **Phạm vi hiện hành — 2026-11-17:** demo 6 loài cho người mới và nhân viên kinh doanh thủy hải sản quốc tế, không có tôm. Quyết định mới theo [PLAN_CUSTOMER_DEMO.md](PLAN_CUSTOMER_DEMO.md). Giữ Việt–Anh–Nhật–khoa học, bốn chế độ và cổng public đóng khi chưa đủ duyệt. Các ví dụ tôm cũ là fixtures lịch sử, không phải nội dung app hiện tại.

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { emptyState, createSession } from '../src/domain/session';
-import { demoPack as oldPack } from '../src/data/demo';
+import { demoPack as oldPack } from '../../../test-fixtures/legacy-web/data/demo';
 import { scheduleReview } from '../src/domain/review';
 import { saved } from './helpers';
 test('old shrimp session and reviews remain stored but never appear in the new pack statistics', async ({

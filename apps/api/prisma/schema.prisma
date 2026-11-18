@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+datasource db {
+  provider = "postgresql"
+}
+model Item {
+  id String @id @default(uuid())
+  externalId String @unique
+  revisions Revision[]
+  species ProductSpecies[]
+}
+model Species {
+  id String @id
+  scientificName String
+  source String
+  products ProductSpecies[]
+}
+model ProductSpecies {
+  itemId String
+  speciesId String
+  item Item @relation(fields: [itemId], references: [id])
+  species Species @relation(fields: [speciesId], references: [id])
+  @@id([itemId, speciesId])
+}
+model Revision {
+  id String @id @default(uuid())
+  itemId String
+  version Int
+  status String @default("draft")
+  data Json
+  digest String
+  createdBy String
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  item Item @relation(fields: [itemId], references: [id])
+  names NameEntry[]
+  media MediaLink[]
+  releases ReleaseItem[]
+  @@unique([itemId, version])
+  @@index([status])
+}
+model NameEntry {
+  id String @id @default(uuid())
+  revisionId String
+  kind String
+  label String
+  aliases String[]
+  acceptedForms String[]
+  searchText String @default("")
+  source String
+  pronunciation String?
+  revision Revision @relation(fields: [revisionId], references: [id])
+  @@unique([revisionId, kind])
+}
+model MediaAsset {
+  id String @id @default(uuid())
+  originalKey String @unique
+  deliveryKey String @unique
+  thumbnailKey String?
+  hash String
+  mime String
+  bytes Int
+  role String
+  nameKind String?
+  aiGenerated Boolean @default(false)
+  metadata Json
+  status String @default("draft")
+  reviewedBy String?
+  reviewedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  links MediaLink[]
+}
+model MediaLink {
+  revisionId String
+  assetId String
+  revision Revision @relation(fields: [revisionId], references: [id])
+  asset MediaAsset @relation(fields: [assetId], references: [id])
+  @@id([revisionId, assetId])
+}
+model TariffReference {
+  id String @id @default(uuid())
+  code String
+  level Int
+  market String
+  version String
+  source String
+  effectiveFrom DateTime?
+  effectiveTo DateTime?
+  reviewedBy String?
+  reviewedAt DateTime?
+  scenarios TradeScenario[]
+}
+model TradeScenario {
+  id String @id @default(uuid())
+  revisionId String
+  tariffId String?
+  data Json
+  status String @default("draft")
+  reviewedBy String?
+  reviewedAt DateTime?
+  tariff TariffReference? @relation(fields: [tariffId], references: [id])
+}
+model ContentRelease {
+  id String @id @default(uuid())
+  internal Boolean @default(false)
+  createdBy String
+  createdAt DateTime @default(now())
+  items ReleaseItem[]
+  sessions GameSession[]
+}
+model ReleaseItem {
+  releaseId String
+  revisionId String
+  release ContentRelease @relation(fields: [releaseId], references: [id])
+  revision Revision @relation(fields: [revisionId], references: [id])
+  @@id([releaseId, revisionId])
+}
+model Setting {
+  id String @id
+  value String
+}
+model User {
+  id String @id @default(uuid())
+  username String @unique
+  passwordHash String
+  role String
+}
+model AuthSession {
+  id String @id
+  userId String?
+  role String
+  csrf String
+  internal Boolean @default(false)
+  expiresAt DateTime
+  games GameSession[]
+}
+model GameSession {
+  id String @id @default(uuid())
+  actorId String
+  releaseId String
+  mode String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  actor AuthSession @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  release ContentRelease @relation(fields: [releaseId], references: [id])
+  questions Question[]
+}
+model Question {
+  id String @id @default(uuid())
+  sessionId String
+  position Int
+  private Json
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  attempt Attempt?
+  @@unique([sessionId, position])
+}
+model Attempt {
+  id String @id @default(uuid())
+  questionId String @unique
+  actorId String
+  idempotencyKey String
+  payloadHash String
+  answer Json
+  result Json
+  createdAt DateTime @default(now())
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@unique([actorId, idempotencyKey])
+}
+model Audit {
+  id String @id @default(uuid())
+  actorId String
+  action String
+  targetId String
+  detail Json
+  at DateTime @default(now())
+}
