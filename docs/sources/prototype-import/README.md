@@ -26,3 +26,11 @@ node scripts/import-prototype.mjs --source ../seafood-master-2 --export docs/sou
 - Tariff tạo với market `WCO`, phiên bản `HS 2022`, cấp 6 số; không suy ra mã Việt Nam 8 số.
 - API người học không trả độ hiếm, giá, gợi ý HS hay nguồn.
 - Chạy importer lên VPS là quyết định của người vận hành.
+
+## Ghi chú cho người duyệt
+
+- Văn bản `notes_vi` được nhập vào trường `identification` (hiển thị cho người học) của 4 loài có chứa mã HS, cần sửa trước khi duyệt:
+  - `striped_catfish`: 0304.62 (đây cũng là đáp án của chính tình huống HS của loài này).
+  - `atlantic_salmon`: 0305.41.
+  - `sea_cucumber`: 0308.19.
+  - `jellyfish`: 0308.30 / 1605.63.

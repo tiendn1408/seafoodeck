@@ -10,7 +10,7 @@
 ## 1. Quyết định sản phẩm
 
 - **Tách loài khỏi tình huống hàng hóa.** Hồ sơ loài lưu tên Việt, Anh, Nhật và khoa học. HS gắn với từng tình huống hàng hóa và phiên bản danh mục, không phải thuộc tính cố định của loài. Ở hồ sơ loài, ô thứ năm là **Xem HS theo dạng hàng**.
-- **Âm thanh và phiên âm: audio đã duyệt bắt buộc cho bài nghe, không bắt buộc để xuất bản mục.** Bài nghe chỉ dùng tên có file đã nghe duyệt và phiên âm/hướng dẫn đọc tương ứng (Anh, Nhật, khoa học). Mục chưa có audio vẫn xuất bản được cho các bài không cần nghe. Audio tiếng Việt là tùy chọn.
+- **Âm thanh và phiên âm: audio đã duyệt bắt buộc cho bài nghe, không bắt buộc để xuất bản mục.** Bài nghe chỉ dùng tên có file audio đã duyệt cho đúng tên đó (Anh, Nhật, khoa học); phiên âm/hướng dẫn đọc là nội dung riêng, chưa được bài nghe kiểm tra. Mục chưa có audio vẫn xuất bản được cho các bài không cần nghe. Audio tiếng Việt là tùy chọn.
 - **Ảnh bổ sung sau.** Không chặn flashcard, ghép tên hoặc HS vì thiếu ảnh. Có thể dùng ảnh sinh làm minh họa, có nhãn và qua duyệt. Đoán hình ưu tiên ảnh thật có quyền sử dụng; chỉ dùng ảnh nếu người duyệt xác nhận đúng loài và đủ đặc điểm nhận diện.
 - **Phạm vi:** web mobile-first, giao diện Việt, không bắt đăng ký, lưu phiên và tiến độ trên thiết bị. Bộ hiện hành: 6 loài đại diện cho mực, bạch tuộc, cá thịt trắng/thịt đỏ, nghêu và vẹm; 3 tình huống HS dạng hàng. Dữ liệu mẫu không phải catalogue khách, sẽ cập nhật khi có dữ liệu khách.
 - **Ngoài MVP:** chấm phát âm qua mic, nhận diện ảnh tải lên, thuế và tư vấn khai báo, đồng bộ đa thiết bị, bảng xếp hạng. Học tên Nhật không có nghĩa là dùng biểu thuế Nhật; bài HS đầu tiên dùng danh mục Việt Nam được ghi trên đề.
