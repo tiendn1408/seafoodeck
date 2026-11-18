@@ -1,0 +1,364 @@
+[
+  {
+    "speciesId": "black_tiger_shrimp",
+    "code": "1605.21",
+    "data": {
+      "prompt": "Doanh nghiệp nhập khẩu lô hàng tôm sú (Penaeus monodon) bóc vỏ, bỏ đầu, hấp chín, cấp đông IQF, đóng túi PE 1kg.",
+      "explanation": "Tôm đã bóc vỏ rồi mới làm chín bằng nhiệt (hấp/luộc). Quá trình này vượt quá phạm vi sơ chế của Chương 03, chuyển sang Chương 16.\n\nNhóm 16.05 áp dụng cho 'Động vật giáp xác, động vật thân mềm và động vật thủy sinh không xương sống khác, đã chế biến hoặc bảo quản'.\n\nĐóng gói trong túi PE 1kg là bao bì thông thường, không phải bao bì đóng hộp kín khí (airtight container) -> Phân nhóm 1605.21.",
+      "kind": "code",
+      "facts": {},
+      "options": [
+        {
+          "label": "1605.21",
+          "correct": true
+        },
+        {
+          "label": "1605.29",
+          "correct": false
+        }
+      ],
+      "steps": [
+        {
+          "question": "Mặt hàng này được phân loại vào Chương nào?",
+          "options": [
+            {
+              "label": "Chương 03 (Thủy sản tươi sống, sơ chế)",
+              "correct": false
+            },
+            {
+              "label": "Chương 16 (Chế phẩm từ thịt, cá, giáp xác)",
+              "correct": true
+            }
+          ],
+          "explanation": "Tôm đã bóc vỏ rồi mới làm chín bằng nhiệt (hấp/luộc). Quá trình này vượt quá phạm vi sơ chế của Chương 03, chuyển sang Chương 16."
+        },
+        {
+          "question": "Xác định nhóm 4 chữ số thích hợp:",
+          "options": [
+            {
+              "label": "03.06",
+              "correct": false
+            },
+            {
+              "label": "16.04",
+              "correct": false
+            },
+            {
+              "label": "16.05",
+              "correct": true
+            }
+          ],
+          "explanation": "Nhóm 16.05 áp dụng cho 'Động vật giáp xác, động vật thân mềm và động vật thủy sinh không xương sống khác, đã chế biến hoặc bảo quản'."
+        },
+        {
+          "question": "Xác định phân nhóm 6 chữ số:",
+          "options": [
+            {
+              "label": "1605.21 (Chưa đóng hộp kín khí)",
+              "correct": true
+            },
+            {
+              "label": "1605.29 (Loại khác / Đóng hộp kín khí)",
+              "correct": false
+            }
+          ],
+          "explanation": "Đóng gói trong túi PE 1kg là bao bì thông thường, không phải bao bì đóng hộp kín khí (airtight container) -> Phân nhóm 1605.21."
+        }
+      ],
+      "trapTag": "Giáp xác bóc vỏ nấu chín",
+      "provenance": {
+        "origin": "prototype:seafood-master-2",
+        "prototypeCaseId": "case_001",
+        "verified": false
+      }
+    }
+  },
+  {
+    "speciesId": "whiteleg_shrimp",
+    "code": "0306.17",
+    "data": {
+      "prompt": "Doanh nghiệp xuất khẩu lô hàng tôm thẻ chân trắng CÒN NGUYÊN VỎ, luộc chín trong nước sôi, sau đó cấp đông nguyên con.",
+      "explanation": "Bẫy quan trọng: Lời văn nhóm 03.06 nêu rõ bao gồm 'động vật giáp xác chưa bóc mai/vỏ, đã làm chín bằng cách luộc trong nước hoặc hấp'. Vì còn vỏ nên VẪN THUỘC CHƯƠNG 03!\n\nNhóm 03.06: Động vật giáp xác, đã hoặc chưa bóc mai, vỏ, sống, tươi, ướp lạnh, đông lạnh, làm khô, muối hoặc ngâm nước muối; hun khói; chưa bóc mai, vỏ, đã làm chín bằng cách luộc...\n\nHàng ở trạng thái đông lạnh (-17) và là tôm khác (trừ tôm hùm 11, tôm biển lạnh 16) -> 0306.17.",
+      "kind": "code",
+      "facts": {},
+      "options": [
+        {
+          "label": "0306.11",
+          "correct": false
+        },
+        {
+          "label": "0306.17",
+          "correct": true
+        },
+        {
+          "label": "0306.36",
+          "correct": false
+        }
+      ],
+      "steps": [
+        {
+          "question": "Tôm luộc chín nguyên con còn vỏ thuộc Chương nào?",
+          "options": [
+            {
+              "label": "Chương 03 (Thủy sản)",
+              "correct": true
+            },
+            {
+              "label": "Chương 16 (Chế phẩm thủy sản)",
+              "correct": false
+            }
+          ],
+          "explanation": "Bẫy quan trọng: Lời văn nhóm 03.06 nêu rõ bao gồm 'động vật giáp xác chưa bóc mai/vỏ, đã làm chín bằng cách luộc trong nước hoặc hấp'. Vì còn vỏ nên VẪN THUỘC CHƯƠNG 03!"
+        },
+        {
+          "question": "Nhóm 4 chữ số nào áp dụng?",
+          "options": [
+            {
+              "label": "03.06",
+              "correct": true
+            },
+            {
+              "label": "16.05",
+              "correct": false
+            }
+          ],
+          "explanation": "Nhóm 03.06: Động vật giáp xác, đã hoặc chưa bóc mai, vỏ, sống, tươi, ướp lạnh, đông lạnh, làm khô, muối hoặc ngâm nước muối; hun khói; chưa bóc mai, vỏ, đã làm chín bằng cách luộc..."
+        },
+        {
+          "question": "Phân nhóm 6 chữ số đông lạnh cho tôm thẻ:",
+          "options": [
+            {
+              "label": "0306.11",
+              "correct": false
+            },
+            {
+              "label": "0306.17",
+              "correct": true
+            },
+            {
+              "label": "0306.36",
+              "correct": false
+            }
+          ],
+          "explanation": "Hàng ở trạng thái đông lạnh (-17) và là tôm khác (trừ tôm hùm 11, tôm biển lạnh 16) -> 0306.17."
+        }
+      ],
+      "trapTag": "Bẫy 1: Giáp xác còn vỏ luộc chín",
+      "provenance": {
+        "origin": "prototype:seafood-master-2",
+        "prototypeCaseId": "case_002",
+        "verified": false
+      }
+    }
+  },
+  {
+    "speciesId": "blue_swimming_crab",
+    "code": "1605.10",
+    "data": {
+      "prompt": "Lô hàng thịt ghẹ xanh hấp chín, bóc tách hoàn toàn mai và vỏ, chỉ lấy thịt thân và đùi, đóng hộp nhựa bảo quản lạnh.",
+      "explanation": "Bẫy đối xứng: Khi giáp xác ĐÃ BÓC VỎ mà làm chín thì KHÔNG còn nằm ở 03.06 nữa, mà bắt buộc chuyển sang Chương 16.\n\nNhóm 16.05 áp dụng cho giáp xác đã chế biến hoặc bảo quản.\n\n1605.10 áp dụng cho các sản phẩm từ cua và ghẹ (Crab).",
+      "kind": "code",
+      "facts": {},
+      "options": [
+        {
+          "label": "1605.10",
+          "correct": true
+        },
+        {
+          "label": "1605.21",
+          "correct": false
+        }
+      ],
+      "steps": [
+        {
+          "question": "Thịt ghẹ đã bóc tách vỏ rồi làm chín thuộc Chương nào?",
+          "options": [
+            {
+              "label": "Chương 03",
+              "correct": false
+            },
+            {
+              "label": "Chương 16",
+              "correct": true
+            }
+          ],
+          "explanation": "Bẫy đối xứng: Khi giáp xác ĐÃ BÓC VỎ mà làm chín thì KHÔNG còn nằm ở 03.06 nữa, mà bắt buộc chuyển sang Chương 16."
+        },
+        {
+          "question": "Nhóm 4 chữ số:",
+          "options": [
+            {
+              "label": "03.06",
+              "correct": false
+            },
+            {
+              "label": "16.05",
+              "correct": true
+            }
+          ],
+          "explanation": "Nhóm 16.05 áp dụng cho giáp xác đã chế biến hoặc bảo quản."
+        },
+        {
+          "question": "Phân nhóm 6 chữ số cho cua, ghẹ chế biến:",
+          "options": [
+            {
+              "label": "1605.10 (Cua, ghẹ)",
+              "correct": true
+            },
+            {
+              "label": "1605.21 (Tôm)",
+              "correct": false
+            }
+          ],
+          "explanation": "1605.10 áp dụng cho các sản phẩm từ cua và ghẹ (Crab)."
+        }
+      ],
+      "trapTag": "Bẫy 2: Giáp xác đã bóc vỏ làm chín",
+      "provenance": {
+        "origin": "prototype:seafood-master-2",
+        "prototypeCaseId": "case_005",
+        "verified": false
+      }
+    }
+  },
+  {
+    "speciesId": "striped_catfish",
+    "code": "0304.62",
+    "data": {
+      "prompt": "Lô hàng phi lê cá tra (Pangasianodon hypophthalmus) cắt miếng không da, không xương, cấp đông mạ băng IQF.",
+      "explanation": "Phi lê chỉ là thao tác sơ chế cơ học (cắt/lọc thịt) chưa qua xử lý nhiệt hoặc tẩm ướp -> Thuộc Chương 03.\n\nNhóm 03.03 loại trừ phi lê và thịt cá khác thuộc 03.04. Mọi loại phi lê cá (tươi, lạnh, đông lạnh) đều bắt buộc vào 03.04.\n\nPhân nhóm 0304.62 được định danh riêng cho các loài cá nheo, cá tra (Pangasius spp., Silurus spp.).",
+      "kind": "code",
+      "facts": {},
+      "options": [
+        {
+          "label": "0304.62",
+          "correct": true
+        },
+        {
+          "label": "0304.87",
+          "correct": false
+        }
+      ],
+      "steps": [
+        {
+          "question": "Sản phẩm phi lê cá tra đông lạnh thuộc Chương nào?",
+          "options": [
+            {
+              "label": "Chương 03 (Cá và thủy sản)",
+              "correct": true
+            },
+            {
+              "label": "Chương 16 (Chế phẩm từ cá)",
+              "correct": false
+            }
+          ],
+          "explanation": "Phi lê chỉ là thao tác sơ chế cơ học (cắt/lọc thịt) chưa qua xử lý nhiệt hoặc tẩm ướp -> Thuộc Chương 03."
+        },
+        {
+          "question": "Xác định nhóm 4 chữ số (Lưu ý bẫy giữa 03.03 và 03.04):",
+          "options": [
+            {
+              "label": "03.03 (Cá đông lạnh, trừ phi lê)",
+              "correct": false
+            },
+            {
+              "label": "03.04 (Phi lê cá và thịt cá khác)",
+              "correct": true
+            }
+          ],
+          "explanation": "Nhóm 03.03 loại trừ phi lê và thịt cá khác thuộc 03.04. Mọi loại phi lê cá (tươi, lạnh, đông lạnh) đều bắt buộc vào 03.04."
+        },
+        {
+          "question": "Phân nhóm 6 chữ số cho phi lê cá tra (Pangasius) đông lạnh:",
+          "options": [
+            {
+              "label": "0304.62 (Phi lê cá nheo/cá tra đông lạnh)",
+              "correct": true
+            },
+            {
+              "label": "0304.87 (Phi lê cá ngừ đông lạnh)",
+              "correct": false
+            }
+          ],
+          "explanation": "Phân nhóm 0304.62 được định danh riêng cho các loài cá nheo, cá tra (Pangasius spp., Silurus spp.)."
+        }
+      ],
+      "trapTag": "Bẫy 5: Phi lê cá đông lạnh",
+      "provenance": {
+        "origin": "prototype:seafood-master-2",
+        "prototypeCaseId": "case_003",
+        "verified": false
+      }
+    }
+  },
+  {
+    "speciesId": "skipjack_tuna",
+    "code": "1604.14",
+    "data": {
+      "prompt": "Lô hàng cá ngừ vằn ngâm dầu ô liu, đóng hộp kim loại hàn kín khí 185g, đã qua xử lý nhiệt tiệt trùng.",
+      "explanation": "Đã nấu chín, đóng hộp kín và ngâm dầu -> Chế phẩm từ cá -> Thuộc Chương 16.\n\nCá ngừ là loài cá (Pisces) -> Phân loại vào nhóm 16.04.\n\nPhân nhóm 1604.14 dành riêng cho các loài cá ngừ (Thunnus spp., Euthynnus spp., Katsuwonus pelamis).",
+      "kind": "code",
+      "facts": {},
+      "options": [
+        {
+          "label": "1604.14",
+          "correct": true
+        },
+        {
+          "label": "1604.20",
+          "correct": false
+        }
+      ],
+      "steps": [
+        {
+          "question": "Cá đóng hộp tiệt trùng ngâm dầu thuộc Chương nào?",
+          "options": [
+            {
+              "label": "Chương 03",
+              "correct": false
+            },
+            {
+              "label": "Chương 16",
+              "correct": true
+            }
+          ],
+          "explanation": "Đã nấu chín, đóng hộp kín và ngâm dầu -> Chế phẩm từ cá -> Thuộc Chương 16."
+        },
+        {
+          "question": "Nhóm 4 chữ số nào áp dụng cho cá chế biến?",
+          "options": [
+            {
+              "label": "16.04 (Cá chế biến hoặc bảo quản)",
+              "correct": true
+            },
+            {
+              "label": "16.05 (Giáp xác, thân mềm chế biến)",
+              "correct": false
+            }
+          ],
+          "explanation": "Cá ngừ là loài cá (Pisces) -> Phân loại vào nhóm 16.04."
+        },
+        {
+          "question": "Phân nhóm 6 chữ số cho cá ngừ chế biến/đóng hộp:",
+          "options": [
+            {
+              "label": "1604.14 (Cá ngừ, cá ngừ sọc dưa và cá ngừ vằn)",
+              "correct": true
+            },
+            {
+              "label": "1604.20 (Chế phẩm cá khác)",
+              "correct": false
+            }
+          ],
+          "explanation": "Phân nhóm 1604.14 dành riêng cho các loài cá ngừ (Thunnus spp., Euthynnus spp., Katsuwonus pelamis)."
+        }
+      ],
+      "trapTag": "Bẫy 4: Đóng hộp kín khí",
+      "provenance": {
+        "origin": "prototype:seafood-master-2",
+        "prototypeCaseId": "case_004",
+        "verified": false
+      }
+    }
+  }
+]

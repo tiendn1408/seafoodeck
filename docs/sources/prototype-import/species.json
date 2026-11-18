@@ -1,0 +1,5997 @@
+[
+  {
+    "externalId": "black_tiger_shrimp",
+    "group": "Giáp xác",
+    "sku": "proto-black_tiger_shrimp",
+    "vi": "Tôm sú",
+    "en": "Black tiger shrimp",
+    "ja": "ウシエビ",
+    "scientific": "Penaeus monodon",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (còn vỏ hoặc đã bóc vỏ)",
+      "Đã chế biến, không đóng hộp kín khí (vd: hấp chín, tẩm bột)",
+      "Đã chế biến, đóng hộp kín khí"
+    ],
+    "identification": "Vỏ dày, có các dải vân ngang sẫm màu rõ rệt trên lưng. Kích thước lớn, thịt chắc.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "ushiebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Giant tiger prawn"
+    ],
+    "jaKanji": "牛海老",
+    "jaTrade": "ブラックタイガー",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.36"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (còn vỏ hoặc đã bóc vỏ)",
+        "hs6": "0306.17"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến, không đóng hộp kín khí (vd: hấp chín, tẩm bột)",
+        "hs6": "1605.21"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đã chế biến, đóng hộp kín khí",
+        "hs6": "1605.29"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "black_tiger_shrimp",
+      "digest": "fd784ff0595cd8655071d43715ee5bd5285742bc1e9b3451bceb9b1950c604b8",
+      "verified": false
+    },
+    "family": "Penaeidae",
+    "familyVi": "Họ Tôm he",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "8.50 - 13.50 USD/kg",
+      "rangeVnd": "180.000 - 320.000 đ/kg",
+      "specRef": "HOSO / HLSO đông lạnh block / IQF (size 10-30)",
+      "note": "Giá thay đổi mạnh theo kích cỡ (size càng lớn giá càng cao)",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "whiteleg_shrimp",
+    "group": "Giáp xác",
+    "sku": "proto-whiteleg_shrimp",
+    "vi": "Tôm thẻ chân trắng",
+    "en": "Whiteleg shrimp",
+    "ja": "バナメイエビ",
+    "scientific": "Litopenaeus vannamei",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (còn vỏ hoặc bóc vỏ)",
+      "Đã chế biến (hấp chín, tẩm bột chiên)",
+      "Đã chế biến đóng hộp kín khí"
+    ],
+    "identification": "Chân bò màu trắng ngà, vỏ mỏng hơn tôm sú, thịt mềm ngọt. Tiếng Nhật dùng Katakana chuẩn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "banameiebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Pacific white shrimp"
+    ],
+    "jaKanji": null,
+    "jaTrade": "バナメイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.36"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (còn vỏ hoặc bóc vỏ)",
+        "hs6": "0306.17"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến (hấp chín, tẩm bột chiên)",
+        "hs6": "1605.21"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đã chế biến đóng hộp kín khí",
+        "hs6": "1605.29"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "whiteleg_shrimp",
+      "digest": "c007e7e694dbf7d6a1ce944871d6534aa994c70a955b2c4f504cc5793090de62",
+      "verified": false
+    },
+    "family": "Penaeidae",
+    "familyVi": "Họ Tôm he",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "4.80 - 7.50 USD/kg",
+      "rangeVnd": "110.000 - 180.000 đ/kg",
+      "specRef": "HOSO, HLSO, PDTO đông lạnh (size 30-60)",
+      "note": "Sản lượng nuôi công nghiệp lớn nhất Việt Nam",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "ornate_spiny_lobster",
+    "group": "Giáp xác",
+    "sku": "proto-ornate_spiny_lobster",
+    "vi": "Tôm hùm bông",
+    "en": "Ornate spiny lobster",
+    "ja": "ニシキエビ",
+    "scientific": "Panulirus ornatus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nguyên con / đuôi)",
+      "Đã chế biến"
+    ],
+    "identification": "Vỏ có hoa văn đốm rực rỡ màu lam/vàng, chân có đốm đen trắng đặc trưng.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "nishikiebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Tropical rock lobster"
+    ],
+    "jaKanji": "錦海老",
+    "jaTrade": "ニシキエビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.31"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con / đuôi)",
+        "hs6": "0306.11"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.30"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "ornate_spiny_lobster",
+      "digest": "96c3a7e06519a18616814dfc9e117c434c33c4e00bd43b7d9e2a75da145cee81",
+      "verified": false
+    },
+    "family": "Palinuridae",
+    "familyVi": "Họ Tôm rồng",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "50.00 - 85.00 USD/kg",
+      "rangeVnd": "1.200.000 - 2.100.000 đ/kg",
+      "specRef": "Sống chọn lọc size 1kg+ xuất khẩu",
+      "note": "Hải sản cao cấp xuất khẩu mạnh sang Trung Quốc",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "mud_crab",
+    "group": "Giáp xác",
+    "sku": "proto-mud_crab",
+    "vi": "Cua biển (Cua bùn)",
+    "en": "Mud crab",
+    "ja": "ノコギリガザミ",
+    "scientific": "Scylla serrata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con hoặc mai",
+      "Thịt cua bóc sẵn đã hấp chín"
+    ],
+    "identification": "Cặp càng to khỏe, mai màu xanh rêu hoặc nâu xám; mép trán có 4 răng nhọn đều.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "nokogirigazami"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Mangrove crab",
+      "Giant mud crab"
+    ],
+    "jaKanji": null,
+    "jaTrade": "マッドクラブ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con hoặc mai",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Thịt cua bóc sẵn đã hấp chín",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "mud_crab",
+      "digest": "90b48035450f64df3e70037e427687eb07ed2c79d1ae0e3e5d5636632cca05ad",
+      "verified": false
+    },
+    "family": "Portunidae",
+    "familyVi": "Họ Cua bơi",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "12.00 - 22.00 USD/kg",
+      "rangeVnd": "280.000 - 550.000 đ/kg",
+      "specRef": "Cua sống Cà Mau (thịt / gạch size 300-600g)",
+      "note": "Cua gạch luôn có giá cao hơn cua thịt 30-50%",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "blue_swimming_crab",
+    "group": "Giáp xác",
+    "sku": "proto-blue_swimming_crab",
+    "vi": "Ghẹ xanh",
+    "en": "Blue swimming crab",
+    "ja": "タイワンガザミ",
+    "scientific": "Portunus pelagicus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con / xẻ đôi",
+      "Thịt ghẹ thanh trùng"
+    ],
+    "identification": "Con đực có mai và chân màu xanh lam rực rỡ đốm trắng; 2 gai nhọn ở góc mai rất dài.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "taiwangazami"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Flower crab"
+    ],
+    "jaKanji": null,
+    "jaTrade": "ガザミ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con / xẻ đôi",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Thịt ghẹ thanh trùng",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "blue_swimming_crab",
+      "digest": "f6f078abab208a655cb48ef928b4b16a1b21b05e9af10f9b86cdf84f2ef5419c",
+      "verified": false
+    },
+    "family": "Portunidae",
+    "familyVi": "Họ Cua bơi",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "9.50 - 16.50 USD/kg",
+      "rangeVnd": "250.000 - 450.000 đ/kg",
+      "specRef": "Ghẹ sống loại 1 (size 3-5 con/kg) hoặc thịt ghẹ tiệt trùng",
+      "note": "Nguyên liệu lớn làm đồ hộp xuất khẩu sang Mỹ",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "striped_catfish",
+    "group": "Cá",
+    "sku": "proto-striped_catfish",
+    "vi": "Cá tra",
+    "en": "Striped catfish",
+    "ja": "ストライプドキャットフィッシュ",
+    "scientific": "Pangasianodon hypophthalmus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Nguyên con đông lạnh",
+      "Phi lê đông lạnh",
+      "Đã chế biến"
+    ],
+    "identification": "Bẫy HS: Phi lê cá tra đông lạnh thuộc 0304.62, không phải nhóm 03.03!",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sutoraipudokyattofisshu"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Sutchi catfish",
+      "Pangasius"
+    ],
+    "jaKanji": null,
+    "jaTrade": "パンガシウス",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Nguyên con đông lạnh",
+        "hs6": "0303.24"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.62"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1604.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "striped_catfish",
+      "digest": "12b2d3338c984f6c50a9e605b11b29d4e9e47572152ba8575aabc08476ed2f32",
+      "verified": false
+    },
+    "family": "Pangasiidae",
+    "familyVi": "Họ Cá tra",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.20 - 3.40 USD/kg",
+      "rangeVnd": "55.000 - 75.000 đ/kg",
+      "specRef": "Phi lê đông lạnh mạ băng 10-20% FOB HCM",
+      "note": "Mặt hàng xuất khẩu tỉ đô chủ lực của ĐBSCL",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "basa_fish",
+    "group": "Cá",
+    "sku": "proto-basa_fish",
+    "vi": "Cá basa",
+    "en": "Basa fish",
+    "ja": "バサ",
+    "scientific": "Pangasius bocourti",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Nguyên con đông lạnh",
+      "Phi lê đông lạnh",
+      "Đã chế biến"
+    ],
+    "identification": "Đầu ngắn bè, bụng to chứa nhiều mỡ hơn cá tra, thớ thịt dày và trắng mịn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "basa"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Bocourti catfish"
+    ],
+    "jaKanji": null,
+    "jaTrade": "バサ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Nguyên con đông lạnh",
+        "hs6": "0303.24"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.62"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1604.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "basa_fish",
+      "digest": "5f3faaac5ed938247af78927bab42a9facf78262a7a8b0959b18b5d0f0f5bca2",
+      "verified": false
+    },
+    "family": "Pangasiidae",
+    "familyVi": "Họ Cá tra",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.50 - 3.80 USD/kg",
+      "rangeVnd": "60.000 - 85.000 đ/kg",
+      "specRef": "Phi lê cắt miếng đông lạnh IQF",
+      "note": "Thịt béo nhiều mỡ hơn cá tra, rất được thị trường Mỹ chuộng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "yellowfin_tuna",
+    "group": "Cá",
+    "sku": "proto-yellowfin_tuna",
+    "vi": "Cá ngừ vây vàng",
+    "en": "Yellowfin tuna",
+    "ja": "キハダ",
+    "scientific": "Thunnus albacares",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê / Loin đông lạnh",
+      "Đóng hộp kín khí"
+    ],
+    "identification": "Vây lưng thứ hai và vây hậu môn rất dài hình lưỡi liềm, màu vàng tươi rực rỡ.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kihada"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "黄肌",
+    "jaTrade": "キハダマグロ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.32"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.42"
+      },
+      {
+        "state": "frozen_fillet_loin",
+        "labelVi": "Phi lê / Loin đông lạnh",
+        "hs6": "0304.87"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đóng hộp kín khí",
+        "hs6": "1604.14"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "yellowfin_tuna",
+      "digest": "11a5935aef0be8fa32392a0239bb4f971223aa15c7cba44535882c3b8d060d1f",
+      "verified": false
+    },
+    "family": "Scombridae",
+    "familyVi": "Họ Cá thu ngừ",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "7.50 - 13.00 USD/kg",
+      "rangeVnd": "150.000 - 280.000 đ/kg",
+      "specRef": "Loin / Saku đông lạnh CO treated",
+      "note": "Mặt hàng ngừ xuất khẩu lớn nhất của miền Trung Việt Nam",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "bigeye_tuna",
+    "group": "Cá",
+    "sku": "proto-bigeye_tuna",
+    "vi": "Cá ngừ mắt to",
+    "en": "Bigeye tuna",
+    "ja": "メバチ",
+    "scientific": "Thunnus obesus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê / Loin đông lạnh",
+      "Đóng hộp kín khí"
+    ],
+    "identification": "Thân hình tròn béo bè, mắt to chiếm tỷ lệ lớn ở đầu cá; thịt đỏ sẫm giàu chất béo.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "mebachi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "目撥",
+    "jaTrade": "メバチマグロ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.34"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.44"
+      },
+      {
+        "state": "frozen_fillet_loin",
+        "labelVi": "Phi lê / Loin đông lạnh",
+        "hs6": "0304.87"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đóng hộp kín khí",
+        "hs6": "1604.14"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "bigeye_tuna",
+      "digest": "c7a40c7ae08432b1e4e689595b9b272924bc86b2c87ad753ea70e135585b31ef",
+      "verified": false
+    },
+    "family": "Scombridae",
+    "familyVi": "Họ Cá thu ngừ",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "8.50 - 15.00 USD/kg",
+      "rangeVnd": "180.000 - 320.000 đ/kg",
+      "specRef": "Loin cấp đông sâu -60°C Sashimi grade",
+      "note": "Thịt đỏ sẫm giàu chất béo hơn vây vàng, giá cao hơn",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "skipjack_tuna",
+    "group": "Cá",
+    "sku": "proto-skipjack_tuna",
+    "vi": "Cá ngừ vằn (Cá sọc dưa)",
+    "en": "Skipjack tuna",
+    "ja": "カツオ",
+    "scientific": "Katsuwonus pelamis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê / Loin đông lạnh",
+      "Đóng hộp kín khí"
+    ],
+    "identification": "Có 4-6 dải sọc vằn dọc sẫm màu rõ rệt dưới bụng. Nguyên liệu số 1 làm cá bào Katsuobushi.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "katsuo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Striped tuna"
+    ],
+    "jaKanji": "鰹",
+    "jaTrade": "カツオ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.33"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.43"
+      },
+      {
+        "state": "frozen_fillet_loin",
+        "labelVi": "Phi lê / Loin đông lạnh",
+        "hs6": "0304.87"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đóng hộp kín khí",
+        "hs6": "1604.14"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "skipjack_tuna",
+      "digest": "bf3ff6f1dfb89f2ed3fc17b956566e0e02d3efaacbfffffff7bfe4a98539ca55",
+      "verified": false
+    },
+    "family": "Scombridae",
+    "familyVi": "Họ Cá thu ngừ",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.40 - 2.10 USD/kg",
+      "rangeVnd": "35.000 - 55.000 đ/kg",
+      "specRef": "Đông lạnh nguyên con (WR) làm đồ hộp",
+      "note": "Sản lượng ngừ lớn nhất thế giới, nguyên liệu chính làm cá hộp",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-squid",
+    "vi": "Mực ống",
+    "en": "Swordtip squid",
+    "ja": "ヤリイカ",
+    "scientific": "Uroteuthis edulis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nguyên con / ống mực)",
+      "Đã chế biến (hấp chín, tẩm bột, khô nướng)"
+    ],
+    "identification": "Thân hình ống thon nhọn dần về đuôi, vây hình thoi ngắn, mai trong suốt mỏng dính.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "yariika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Mitre squid",
+      "Loligo squid"
+    ],
+    "jaKanji": "槍烏賊",
+    "jaTrade": "ヤリイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con / ống mực)",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến (hấp chín, tẩm bột, khô nướng)",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "squid",
+      "digest": "3c2239ce7bcc3b18b0cfe9842897822865d4eb043c3036725e10376e05a1c270",
+      "verified": false
+    },
+    "family": "Loliginidae",
+    "familyVi": "Họ Mực ống",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "6.50 - 10.50 USD/kg",
+      "rangeVnd": "160.000 - 260.000 đ/kg",
+      "specRef": "Cấp đông trên tàu (sea-frozen) size 20-25cm",
+      "note": "Thịt ngọt giòn, giá cao hơn hẳn mực bay và mực xà",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "cuttlefish",
+    "group": "Nhuyễn thể",
+    "sku": "proto-cuttlefish",
+    "vi": "Mực nang",
+    "en": "Pharaoh cuttlefish",
+    "ja": "コウイカ",
+    "scientific": "Sepia pharaonis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (phi lê / hoa mực / sushi cuttlefish)",
+      "Đã chế biến"
+    ],
+    "identification": "Thân bầu dục tròn bè, mai đá vôi dày cứng màu trắng xốp, thịt dày giòn ngọt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kouika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Broadclub cuttlefish"
+    ],
+    "jaKanji": "甲烏賊",
+    "jaTrade": "コウイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (phi lê / hoa mực / sushi cuttlefish)",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "cuttlefish",
+      "digest": "fb96247480275d564a6025b6993883efac8524ed60b03126f6abbf88fa7f8a4b",
+      "verified": false
+    },
+    "family": "Sepiidae",
+    "familyVi": "Họ Mực nang",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "5.80 - 9.80 USD/kg",
+      "rangeVnd": "140.000 - 240.000 đ/kg",
+      "specRef": "Phi lê làm sạch lột da / mực nút đông lạnh",
+      "note": "Thịt dày giòn, chuyên xuất khẩu cho chuỗi sushi Nhật",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "jumbo_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-jumbo_squid",
+    "vi": "Mực khổng lồ (Mực Humboldt)",
+    "en": "Jumbo flying squid",
+    "ja": "アメリカオオアカイカ",
+    "scientific": "Dosidicus gigas",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nguyên liệu phi lê / xúc tu)",
+      "Mực khô tẩm gia vị, xé sợi ăn liền"
+    ],
+    "identification": "Trọng lượng lên tới 20-50kg/con, đánh bắt chủ yếu ở vùng biển Peru / Chile.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "amerikaōakaika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Humboldt squid"
+    ],
+    "jaKanji": "大西洋アメリカオオアカイカ",
+    "jaTrade": "オオアカイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên liệu phi lê / xúc tu)",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Mực khô tẩm gia vị, xé sợi ăn liền",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "jumbo_squid",
+      "digest": "92ef43ae0edb280cbc59cb594cef82efc9b3743acf03b441a3c0bc0f97364022",
+      "verified": false
+    },
+    "family": "Ommastrephidae",
+    "familyVi": "Họ Mực bay",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.80 - 3.20 USD/kg",
+      "rangeVnd": "45.000 - 75.000 đ/kg",
+      "specRef": "Fillet lột da / cánh mực / râu mực đông lạnh",
+      "note": "Thịt dày nhưng chua nhẹ, phải xử lý khử chua làm mực xé tẩm vị",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "japanese_flying_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-japanese_flying_squid",
+    "vi": "Mực bay Nhật Bản (Surume Ika)",
+    "en": "Japanese flying squid",
+    "ja": "スルメイカ",
+    "scientific": "Todarodes pacificus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con (WR)",
+      "Mực khô nướng, mực muối Shiokara"
+    ],
+    "identification": "Thân dài thon, vây ngắn hình tam giác nhọn, gan mực rất béo làm món Shiokara.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "surumeika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Japanese common squid"
+    ],
+    "jaKanji": "鯣烏賊",
+    "jaTrade": "スルメイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con (WR)",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Mực khô nướng, mực muối Shiokara",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "japanese_flying_squid",
+      "digest": "85de22249e128ffbf1176da3b0e703c474a8dc249f86f5771c5c3d2610555a52",
+      "verified": false
+    },
+    "family": "Ommastrephidae",
+    "familyVi": "Họ Mực bay",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "4.80 - 7.80 USD/kg",
+      "rangeVnd": "120.000 - 190.000 đ/kg",
+      "specRef": "Sea-frozen nguyên con hoặc mực khô Surume",
+      "note": "Loài mực tiêu thụ số 1 tại thị trường nội địa Nhật Bản",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "argentine_shortfin_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-argentine_shortfin_squid",
+    "vi": "Mực bay Argentina (Mực Illex)",
+    "en": "Argentine shortfin squid",
+    "ja": "アルゼンチンマツイカ",
+    "scientific": "Illex argentinus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con",
+      "Ống mực sạch / khoanh mực đông lạnh",
+      "Mực tẩm bột, chế biến sẵn"
+    ],
+    "identification": "Đánh bắt tại vùng biển Tây Nam Đại Tây Dương (vùng biển Argentina / Falkland).",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "aruzenchinmatsuika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Illex squid"
+    ],
+    "jaKanji": null,
+    "jaTrade": "マツイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "frozen_tube",
+        "labelVi": "Ống mực sạch / khoanh mực đông lạnh",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Mực tẩm bột, chế biến sẵn",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "argentine_shortfin_squid",
+      "digest": "7d90a70f804d262cb6e276de098b858727aeb13f913cd30a7c977e8c448760aa",
+      "verified": false
+    },
+    "family": "Ommastrephidae",
+    "familyVi": "Họ Mực bay",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.20 - 5.50 USD/kg",
+      "rangeVnd": "80.000 - 140.000 đ/kg",
+      "specRef": "Block 12.5kg nguyên con (size 100-200g, 200-300g)",
+      "note": "Nguồn nguyên liệu nhập khẩu khổng lồ để nhà máy VN tái chế biến",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "purple_flying_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-purple_flying_squid",
+    "vi": "Mực xà (Mực ma)",
+    "en": "Purpleback flying squid",
+    "ja": "トビイカ",
+    "scientific": "Sthenoteuthis oualaniensis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con",
+      "Khô mực xà xẻ phơi nắng",
+      "Chế biến tẩm gia vị cay"
+    ],
+    "identification": "Khai thác nhiều tại vùng biển Hoàng Sa/Trường Sa, da lưng màu tím sẫm có đốm phát quang.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "tobiika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Purple squid"
+    ],
+    "jaKanji": "鳶烏賊",
+    "jaTrade": "トビイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "dried",
+        "labelVi": "Khô mực xà xẻ phơi nắng",
+        "hs6": "0307.49"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến tẩm gia vị cay",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "purple_flying_squid",
+      "digest": "42f1e89a04a9d16023f89809f283c707009e100a3a73c13e22276d31ea1a0174",
+      "verified": false
+    },
+    "family": "Ommastrephidae",
+    "familyVi": "Họ Mực bay",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.40 - 2.50 USD/kg",
+      "rangeVnd": "35.000 - 60.000 đ/kg",
+      "specRef": "Mực xà tươi xô hoặc khô mực xà xẻ phơi",
+      "note": "Giá rẻ nhất trong các dòng mực biển, vị hơi chát nên thường tẩm ướp cay",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "octopus",
+    "group": "Nhuyễn thể",
+    "sku": "proto-octopus",
+    "vi": "Bạch tuộc phổ thông",
+    "en": "Common octopus",
+    "ja": "マダコ",
+    "scientific": "Octopus vulgaris",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nguyên con / cắt khúc)",
+      "Đã luộc chín / tẩm ướp ăn liền"
+    ],
+    "identification": "Thân mềm không mai, có 8 xúc tu lớn với 2 hàng giác bám tròn, thịt dai giòn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "madako"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [],
+    "jaKanji": "真蛸",
+    "jaTrade": "タコ / マダコ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.51"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con / cắt khúc)",
+        "hs6": "0307.52"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã luộc chín / tẩm ướp ăn liền",
+        "hs6": "1605.55"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "octopus",
+      "digest": "10886284f13af54325c6f456d82cbee7559f9dfae4ac5ec24bbd4e03b5b102c0",
+      "verified": false
+    },
+    "family": "Octopodidae",
+    "familyVi": "Họ Bạch tuộc",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "4.50 - 7.80 USD/kg",
+      "rangeVnd": "110.000 - 190.000 đ/kg",
+      "specRef": "Làm sạch ruột (gutted/cleaned) đông lạnh size 0.5-1kg",
+      "note": "Thị trường Nhật nhập khẩu số lượng rất lớn để ăn sashimi & luộc",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "baby_octopus",
+    "group": "Nhuyễn thể",
+    "sku": "proto-baby_octopus",
+    "vi": "Bạch tuộc baby (Hai da / Đốm)",
+    "en": "Baby octopus",
+    "ja": "イイダコ",
+    "scientific": "Amphioctopus fangsiao",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con làm sạch IQF",
+      "Bạch tuộc sốt tương / tẩm gia vị"
+    ],
+    "identification": "Kích thước nhỏ nhắn dưới 10cm, giữa 2 mắt có đốm sáng hình nhẫn óng ánh.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "iidako"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Webfoot octopus",
+      "Whiparm octopus"
+    ],
+    "jaKanji": "飯蛸",
+    "jaTrade": "イイダコ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.51"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con làm sạch IQF",
+        "hs6": "0307.52"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Bạch tuộc sốt tương / tẩm gia vị",
+        "hs6": "1605.55"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "baby_octopus",
+      "digest": "6ff30bf9660a9402dfc9e6ecf5192f519c01f0761ac04760e9dbb3d03439f024",
+      "verified": false
+    },
+    "family": "Octopodidae",
+    "familyVi": "Họ Bạch tuộc",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "3.80 - 6.20 USD/kg",
+      "rangeVnd": "90.000 - 150.000 đ/kg",
+      "specRef": "Whole cleaned baby octopus size 15-25g, 25-40g/con",
+      "note": "Nguyên liệu số 1 cho món bánh nướng Takoyaki và xiên que nướng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "hard_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-hard_clam",
+    "vi": "Nghêu (Ngao Bến Tre)",
+    "en": "Hard clam",
+    "ja": "ハマグリ",
+    "scientific": "Meretrix lyrata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh còn vỏ",
+      "Đông lạnh (nguyên con / thịt nghêu luộc)",
+      "Đã chế biến, đóng hộp kín khí"
+    ],
+    "identification": "Hai mảnh vỏ dày hình tam giác tròn màu trắng ngà hoặc vàng nhạt, rãnh đồng tâm mịn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hamaguri"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Lyrate Asiatic hard clam"
+    ],
+    "jaKanji": "蛤",
+    "jaTrade": "ハマグリ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh còn vỏ",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con / thịt nghêu luộc)",
+        "hs6": "0307.72"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến, đóng hộp kín khí",
+        "hs6": "1605.56"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "hard_clam",
+      "digest": "7ead9524ad921675eea349022411aa566bf3ff9fe0b083af439161b5f27a019a",
+      "verified": false
+    },
+    "family": "Veneridae",
+    "familyVi": "Họ Ngao biển",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.30 - 2.40 USD/kg",
+      "rangeVnd": "35.000 - 65.000 đ/kg",
+      "specRef": "Nghêu sống rửa sạch cát size 40-60 con/kg",
+      "note": "Thịt nghêu luộc đông lạnh dao động 4.50 - 6.00 USD/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "manila_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-manila_clam",
+    "vi": "Nghêu lụa (Chíp chíp / Sò Asari)",
+    "en": "Manila clam",
+    "ja": "アサリ",
+    "scientific": "Ruditapes philippinarum",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh",
+      "Đóng hộp ngâm dịch"
+    ],
+    "identification": "Vỏ mỏng hơn nghêu trắng, có hoa văn rằn ri màu nâu xám đa dạng, thịt rất ngọt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "asari"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Short neck clam",
+      "Japanese carpet shell"
+    ],
+    "jaKanji": "浅蜊",
+    "jaTrade": "アサリ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.72"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đóng hộp ngâm dịch",
+        "hs6": "1605.56"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "manila_clam",
+      "digest": "8b9cc5c2a1d2921518d511d090570f23f05f2e0535c97a58a3d9933a8de6fa69",
+      "verified": false
+    },
+    "family": "Veneridae",
+    "familyVi": "Họ Ngao biển",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.80 - 3.20 USD/kg",
+      "rangeVnd": "45.000 - 80.000 đ/kg",
+      "specRef": "Sống chọn lọc hoặc thịt luộc đông lạnh IQF",
+      "note": "Món súp miso Asari shiru truyền thống Nhật Bản",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "oyster",
+    "group": "Nhuyễn thể",
+    "sku": "proto-oyster",
+    "vi": "Hàu Thái Bình Dương (Hàu sữa)",
+    "en": "Pacific oyster",
+    "ja": "カキ",
+    "scientific": "Crassostrea gigas",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nguyên con / bóc thịt)",
+      "Hun khói ngâm dầu, dầu hàu"
+    ],
+    "identification": "Vỏ sần sùi xếp lớp gợn sóng dày chắc, bám vào giá thể, thịt mềm béo giàu kẽm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kaki"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Rock oyster"
+    ],
+    "jaKanji": "牡蠣",
+    "jaTrade": "マガキ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.11"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con / bóc thịt)",
+        "hs6": "0307.12"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Hun khói ngâm dầu, dầu hàu",
+        "hs6": "1605.51"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "oyster",
+      "digest": "8b49c1dfb40dbc162bbb66b5597f7d3c5a5e6301a717b5a162e8644485f907b1",
+      "verified": false
+    },
+    "family": "Ostreidae",
+    "familyVi": "Họ Hàu",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.20 - 2.20 USD/kg",
+      "rangeVnd": "30.000 - 55.000 đ/kg",
+      "specRef": "Hàu sống còn vỏ (ruột hàu sữa bóc sẵn: 120.000 - 170.000 đ/kg)",
+      "note": "Nuôi lồng bè rất phát triển tại Quảng Ninh, Vân Đồn, Nha Trang",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "scallop",
+    "group": "Nhuyễn thể",
+    "sku": "proto-scallop",
+    "vi": "Sò điệp",
+    "en": "Noble scallop",
+    "ja": "ホタテガイ",
+    "scientific": "Mimachlamys nobilis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (cồi điệp / nửa mảnh vỏ)",
+      "Đã chế biến"
+    ],
+    "identification": "Vỏ hình quạt xòe tròn nhiều màu sắc, phần cồi thịt cơ khép vỏ hình trụ tròn màu trắng ngà giá trị cao.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hotategai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Sea scallop"
+    ],
+    "jaKanji": "帆立貝",
+    "jaTrade": "ホタテ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.21"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (cồi điệp / nửa mảnh vỏ)",
+        "hs6": "0307.22"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.52"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "scallop",
+      "digest": "ff0de42bff620fc15a9cd8167b055562a78f7c26ff761a7f1aca21b32268892b",
+      "verified": false
+    },
+    "family": "Pectinidae",
+    "familyVi": "Họ Điệp",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "11.00 - 18.00 USD/kg",
+      "rangeVnd": "250.000 - 450.000 đ/kg",
+      "specRef": "Cồi điệp đông lạnh size 20/30, 30/40 con/kg",
+      "note": "Hàng cồi điệp Nhật Hokkaido cao cấp có thể lên tới 25-35 USD/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "babylon_snail",
+    "group": "Nhuyễn thể",
+    "sku": "proto-babylon_snail",
+    "vi": "Ốc hương",
+    "en": "Spotted babylon",
+    "ja": "バイガイ",
+    "scientific": "Babylonia areolata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con",
+      "Đã chế biến"
+    ],
+    "identification": "Vỏ ốc xoắn hình thoi màu vàng ngà có các đốm vuông màu nâu đậm xếp đều tăm tắp, thịt giòn ngọt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "baigai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Areola babylon"
+    ],
+    "jaKanji": null,
+    "jaTrade": "バイガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.87"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0307.88"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.58"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "babylon_snail",
+      "digest": "fd6ab0081e9badeac616b43ef86de23e586aade07883a843b52dda4596eaf3c8",
+      "verified": false
+    },
+    "family": "Babyloniidae",
+    "familyVi": "Họ Ốc hương",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "9.50 - 19.50 USD/kg",
+      "rangeVnd": "220.000 - 480.000 đ/kg",
+      "specRef": "Ốc hương sống size 40-60 con/kg, 80-100 con/kg",
+      "note": "Ốc hương size lớn 30-40 con/kg giá nội địa thường vượt 450.000 đ/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "razor_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-razor_clam",
+    "vi": "Ốc móng tay",
+    "en": "Razor clam",
+    "ja": "マテガイ",
+    "scientific": "Solen grandis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh",
+      "Đã chế biến"
+    ],
+    "identification": "Vỏ dài thon thẳng như ngón tay hoặc cán dao cạo, màu vàng nâu nhạt, thịt giòn thơm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "mategai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Jackknife clam",
+      "Atlantic razor shell"
+    ],
+    "jaKanji": "馬刀貝",
+    "jaTrade": "マテガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.72"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.56"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "razor_clam",
+      "digest": "6ef03312871fcbcdbcf6e08055c83075e53c3140d4e712da142dac1652a1f058",
+      "verified": false
+    },
+    "family": "Solenidae",
+    "familyVi": "Họ Ốc móng tay",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "3.20 - 5.80 USD/kg",
+      "rangeVnd": "80.000 - 140.000 đ/kg",
+      "specRef": "Sống nguyên vỏ hoặc bóc ruột đông lạnh",
+      "note": "Hải sản quán nhậu và nhà hàng ven biển rất phổ biến",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "green_mussel",
+    "group": "Nhuyễn thể",
+    "sku": "proto-green_mussel",
+    "vi": "Vẹm xanh (Vẹm vỏ xanh)",
+    "en": "Asian green mussel",
+    "ja": "モエギイガイ",
+    "scientific": "Perna viridis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh (nửa mảnh vỏ half-shell / bóc thịt)",
+      "Đã chế biến, hấp chín đông lạnh"
+    ],
+    "identification": "Vỏ dài thuôn nhọn ở đầu cuống, mép ngoài vỏ có viền màu xanh lá cây ngọc bích đặc trưng.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "moegiigai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "New Zealand greenshell mussel"
+    ],
+    "jaKanji": "萌葱貽貝",
+    "jaTrade": "モエギイガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.31"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nửa mảnh vỏ half-shell / bóc thịt)",
+        "hs6": "0307.32"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến, hấp chín đông lạnh",
+        "hs6": "1605.53"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "green_mussel",
+      "digest": "1af0f5cd7a5ab1ea01b7751ddc2218e39ef79ae0d329c11d320bebc1e0c79c31",
+      "verified": false
+    },
+    "family": "Mytilidae",
+    "familyVi": "Họ Vẹm",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "2.40 - 4.50 USD/kg",
+      "rangeVnd": "60.000 - 110.000 đ/kg",
+      "specRef": "Sống nội địa VN (Hàng nửa mảnh vỏ New Zealand: 180.000 - 280.000 đ/kg)",
+      "note": "Vẹm xanh New Zealand nhập khẩu có giá cao gấp đôi vẹm nhiệt đới",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "blue_mussel",
+    "group": "Nhuyễn thể",
+    "sku": "proto-blue_mussel",
+    "vi": "Vẹm đen (Vẹm Địa Trung Hải / Vẹm xanh dương)",
+    "en": "Blue mussel",
+    "ja": "ムールガイ",
+    "scientific": "Mytilus edulis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh",
+      "Đã chế biến đóng hộp"
+    ],
+    "identification": "Vỏ ngoài màu tím đen hoặc xanh đen tuyền bóng loáng, thịt bên trong màu vàng cam mềm ngọt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "mūrugai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Common mussel"
+    ],
+    "jaKanji": "貽貝",
+    "jaTrade": "ムールガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0307.31"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.32"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến đóng hộp",
+        "hs6": "1605.53"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "blue_mussel",
+      "digest": "71a7abdb86045776d8cc5955a6ed58a2ac818035668ee500f3b4c0daff8efed2",
+      "verified": false
+    },
+    "family": "Mytilidae",
+    "familyVi": "Họ Vẹm",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "4.80 - 7.80 USD/kg",
+      "rangeVnd": "120.000 - 190.000 đ/kg",
+      "specRef": "Hấp sơ nguyên con làm sạch râu đông lạnh IQF",
+      "note": "Châu Âu và Nhật Bản dùng rất nhiều cho món nấu rượu vang",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "alaska_pollock",
+    "group": "Cá",
+    "sku": "proto-alaska_pollock",
+    "vi": "Cá minh thái Alaska",
+    "en": "Alaska pollock",
+    "ja": "スケトウダラ",
+    "scientific": "Gadus chalcogrammus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh block / IQF",
+      "Thịt cá nghiền Surimi đông lạnh",
+      "Chả cá, que tẩm bột rán"
+    ],
+    "identification": "Loài cá thịt trắng được khai thác nhiều nhất địa cầu, sống ở vùng nước lạnh Bắc Thái Bình Dương.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "suketoudara"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Walleye pollock"
+    ],
+    "jaKanji": "介党鱈",
+    "jaTrade": "スケソウダラ / スケソウ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.67"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh block / IQF",
+        "hs6": "0304.75"
+      },
+      {
+        "state": "surimi",
+        "labelVi": "Thịt cá nghiền Surimi đông lạnh",
+        "hs6": "0304.94"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chả cá, que tẩm bột rán",
+        "hs6": "1604.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "alaska_pollock",
+      "digest": "589c5bb7eb76f83e84f71b5a2b545aab1a20c04e8e4b8e2099cda21803828c37",
+      "verified": false
+    },
+    "family": "Gadidae",
+    "familyVi": "Họ Cá tuyết",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.70 - 2.90 USD/kg",
+      "rangeVnd": "45.000 - 70.000 đ/kg",
+      "specRef": "Cá H&G đông lạnh hoặc phi lê block (3.40 - 4.60 USD/kg)",
+      "note": "Nguồn nguyên liệu làm bột cá Surimi và trứng cá Tarako/Mentaiko nổi tiếng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sablefish_black_cod",
+    "group": "Cá",
+    "sku": "proto-sablefish_black_cod",
+    "vi": "Cá minh thái đen (Cá tuyết đen / Gindara)",
+    "en": "Sablefish",
+    "ja": "ギンダラ",
+    "scientific": "Anoplopoma fimbria",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh",
+      "Đông lạnh nguyên con bỏ đầu ruột",
+      "Phi lê đông lạnh"
+    ],
+    "identification": "Mặc dù gọi là Black cod nhưng thuộc họ Anoplopomatidae, thịt cực kỳ giàu omega-3.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "gindara"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Black cod",
+      "Butterfish"
+    ],
+    "jaKanji": "銀鱈",
+    "jaTrade": "ギンダラ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled",
+        "labelVi": "Tươi / ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con bỏ đầu ruột",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sablefish_black_cod",
+      "digest": "ae78c2a0d17c2b66458bd57003dd0963679f83d319050016b0f4aa9e96d5c619",
+      "verified": false
+    },
+    "family": "Anoplopomatidae",
+    "familyVi": "Họ Cá minh thái đen",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "18.00 - 35.00 USD/kg",
+      "rangeVnd": "450.000 - 850.000 đ/kg",
+      "specRef": "Head-off gutted hoặc Fillet đông lạnh cao cấp",
+      "note": "Cá tuyết đen đắt giá bậc nhất, thịt mềm béo như bơ trong ẩm thực Nhật",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "chum_salmon",
+    "group": "Cá",
+    "sku": "proto-chum_salmon",
+    "vi": "Cá hồi Chum (Cá hồi Keta)",
+    "en": "Chum salmon",
+    "ja": "シロザケ",
+    "scientific": "Oncorhynchus keta",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con bỏ đầu ruột",
+      "Phi lê đông lạnh",
+      "Trứng cá hồi đông lạnh / ướp muối"
+    ],
+    "identification": "Thịt màu hồng nhạt ít béo hơn cá hồi Đại Tây Dương, mùa thu về sông đẻ trứng gọi là Akisake.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shirozake"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Keta salmon",
+      "Dog salmon"
+    ],
+    "jaKanji": "白鮭",
+    "jaTrade": "サケ / 秋鮭 (Akiake)",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con bỏ đầu ruột",
+        "hs6": "0303.11"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.81"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "chum_salmon",
+      "digest": "ede4fa946853e4925cb762b82e02ed1b19f151fd2c70bb2daa6bf308b20b65a1",
+      "verified": false
+    },
+    "family": "Salmonidae",
+    "familyVi": "Họ Cá hồi",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "3.80 - 6.00 USD/kg",
+      "rangeVnd": "90.000 - 150.000 đ/kg",
+      "specRef": "H&G đông lạnh (Trứng cá hồi Ikura: 40 - 70 USD/kg)",
+      "note": "Trứng cá hồi Chum là loại trứng hạt to đẹp nhất để làm Ikura Nhật Bản",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "pink_salmon",
+    "group": "Cá",
+    "sku": "proto-pink_salmon",
+    "vi": "Cá hồi hồng (Cá hồi gù)",
+    "en": "Pink salmon",
+    "ja": "カラフトマス",
+    "scientific": "Oncorhynchus gorbuscha",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh",
+      "Cá hồi đóng hộp sốt"
+    ],
+    "identification": "Kích thước nhỏ nhất trong chi cá hồi Thái Bình Dương, con đực khi sinh sản lưng gù lên.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "karafutomasu"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Humpback salmon"
+    ],
+    "jaKanji": "樺太鱒",
+    "jaTrade": "マス / ピンクサーモン",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.11"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.81"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Cá hồi đóng hộp sốt",
+        "hs6": "1604.11"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "pink_salmon",
+      "digest": "81dac8ec6bd9f68b4889a1cfc9c87e215aa0f8174e25d93a59f72eeec5ec9d4a",
+      "verified": false
+    },
+    "family": "Salmonidae",
+    "familyVi": "Họ Cá hồi",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.80 - 4.80 USD/kg",
+      "rangeVnd": "70.000 - 120.000 đ/kg",
+      "specRef": "H&G đông lạnh block làm đồ hộp hoặc phi lê",
+      "note": "Loài cá hồi có sản lượng đánh bắt tự nhiên lớn nhất",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sockeye_salmon",
+    "group": "Cá",
+    "sku": "proto-sockeye_salmon",
+    "vi": "Cá hồi đỏ (Sockeye / Benizake)",
+    "en": "Sockeye salmon",
+    "ja": "ベニザケ",
+    "scientific": "Oncorhynchus nerka",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh",
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh",
+      "Hun khói"
+    ],
+    "identification": "Thịt có màu đỏ cam thắm rực rỡ và giữ nguyên màu khi nấu chín, vị béo thơm đậm đà.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "benizake"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Red salmon"
+    ],
+    "jaKanji": "紅鮭",
+    "jaTrade": "ベニザケ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled",
+        "labelVi": "Tươi / ướp lạnh",
+        "hs6": "0302.13"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.11"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.81"
+      },
+      {
+        "state": "smoked",
+        "labelVi": "Hun khói",
+        "hs6": "0305.41"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sockeye_salmon",
+      "digest": "a576a85d20935b599e3b666a299b43942b92dff10f99c27d55c09fce4b5c4088",
+      "verified": false
+    },
+    "family": "Salmonidae",
+    "familyVi": "Họ Cá hồi",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "10.50 - 17.50 USD/kg",
+      "rangeVnd": "250.000 - 420.000 đ/kg",
+      "specRef": "H&G hoặc Phi lê đông lạnh tự nhiên cao cấp",
+      "note": "Thịt đỏ đậm tự nhiên nhờ ăn vi sinh vật phù du, giá cao nhất dòng cá hồi tự nhiên",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "atlantic_salmon",
+    "group": "Cá",
+    "sku": "proto-atlantic_salmon",
+    "vi": "Cá hồi Đại Tây Dương",
+    "en": "Atlantic salmon",
+    "ja": "サケ",
+    "scientific": "Salmo salar",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con (đã mổ ruột)",
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh",
+      "Cá hồi hun khói (kể cả đã làm chín)"
+    ],
+    "identification": "Bẫy HS: Cá hồi hun khói (kể cả đã làm chín) vẫn thuộc nhóm 03.05 (0305.41), không vào Chương 16!",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sake"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "鮭",
+    "jaTrade": "アトランティックサーモン",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con (đã mổ ruột)",
+        "hs6": "0302.14"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.13"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.81"
+      },
+      {
+        "state": "smoked",
+        "labelVi": "Cá hồi hun khói (kể cả đã làm chín)",
+        "hs6": "0305.41"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "atlantic_salmon",
+      "digest": "2c86191e571fc890b27b54ec2424bd31cc492dbfc896d80d7d621dbf886686a9",
+      "verified": false
+    },
+    "family": "Salmonidae",
+    "familyVi": "Họ Cá hồi",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "9.00 - 14.50 USD/kg",
+      "rangeVnd": "230.000 - 320.000 đ/kg (nguyên con) / 350.000 - 500.000 đ/kg (fillet)",
+      "specRef": "HOG tươi nhập khẩu Na Uy / Úc qua đường hàng không",
+      "note": "Cá hồi nuôi công nghiệp phổ biến nhất thế giới cho món ăn sống Sashimi",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "spanish_mackerel",
+    "group": "Cá",
+    "sku": "proto-spanish_mackerel",
+    "vi": "Cá thu (Cá thu ngàng)",
+    "en": "Narrow-barred Spanish mackerel",
+    "ja": "サワラ",
+    "scientific": "Scomberomorus commerson",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh",
+      "Cá thu đóng hộp sốt cà chua"
+    ],
+    "identification": "Thân thon dài dẹt hai bên, da láng xám bạc có nhiều sọc vằn dọc gợn sóng sẫm màu.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sawara"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "King mackerel"
+    ],
+    "jaKanji": "鰆",
+    "jaTrade": "サワラ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.44"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.54"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.89"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Cá thu đóng hộp sốt cà chua",
+        "hs6": "1604.15"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "spanish_mackerel",
+      "digest": "e82d17e96dbd67948fafe91fa213c9ed360d0c7f30d2551801ded0423382cc9e",
+      "verified": false
+    },
+    "family": "Scombridae",
+    "familyVi": "Họ Cá thu ngừ",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "5.20 - 8.20 USD/kg",
+      "rangeVnd": "130.000 - 210.000 đ/kg",
+      "specRef": "Cắt khúc đông lạnh hoặc nguyên con 2-5kg",
+      "note": "Thịt nạc chắc đậm đà, rất được ưa chuộng tại thị trường nội địa và Nhật",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "barramundi",
+    "group": "Cá",
+    "sku": "proto-barramundi",
+    "vi": "Cá chẽm (Cá vược)",
+    "en": "Barramundi",
+    "ja": "バラマンディ",
+    "scientific": "Lates calcarifer",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê cá chẽm đông lạnh"
+    ],
+    "identification": "Thân dẹp màu xám bạc ánh lục, lưng hơi gồ cao, đuôi tròn, thịt trắng thơm lành tính.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "baramandi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Asian seabass",
+      "Giant seaperch"
+    ],
+    "jaKanji": null,
+    "jaTrade": "アカメ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "fresh_chilled",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê cá chẽm đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "barramundi",
+      "digest": "0b2bf13336e629fe245c1138cf9b41c12b19430e554a631fe30bf46d1f738770",
+      "verified": false
+    },
+    "family": "Latidae",
+    "familyVi": "Họ Cá chẽm",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "3.50 - 5.50 USD/kg",
+      "rangeVnd": "80.000 - 130.000 đ/kg",
+      "specRef": "Nguyên con làm sạch hoặc phi lê còn da đông lạnh (6.50 - 9.00 USD/kg)",
+      "note": "Cá nuôi nước lợ/biển có sản lượng xuất khẩu tăng trưởng mạnh",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "tilapia",
+    "group": "Cá",
+    "sku": "proto-tilapia",
+    "vi": "Cá rô phi (Rô phi vằn)",
+    "en": "Nile tilapia",
+    "ja": "ティラピア",
+    "scientific": "Oreochromis niloticus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Đông lạnh nguyên con",
+      "Phi lê rô phi đông lạnh"
+    ],
+    "identification": "Vây đuôi có các sọc đứng đen rõ rệt, vây lưng dài có gai cứng nhọn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "tirapia"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Mango fish"
+    ],
+    "jaKanji": null,
+    "jaTrade": "イズミダイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.23"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê rô phi đông lạnh",
+        "hs6": "0304.61"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "tilapia",
+      "digest": "8ca75d720f54503cb6d67d72006e27ebc97272a3eeca46c557c5fb71e8ad40ef",
+      "verified": false
+    },
+    "family": "Cichlidae",
+    "familyVi": "Họ Cá rô phi",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.80 - 3.90 USD/kg",
+      "rangeVnd": "35.000 - 50.000 đ/kg",
+      "specRef": "Phi lê đông lạnh IQF không da không xương",
+      "note": "Thị trường Mỹ tiêu thụ số lượng khổng lồ",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "red_tilapia",
+    "group": "Cá",
+    "sku": "proto-red_tilapia",
+    "vi": "Cá diêu hồng (Rô phi đỏ)",
+    "en": "Red tilapia",
+    "ja": "レッドティラピア",
+    "scientific": "Oreochromis sp.",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Đông lạnh nguyên con",
+      "Phi lê đông lạnh"
+    ],
+    "identification": "Dòng lai của cá rô phi có toàn thân màu đỏ hồng hoặc vàng cam tươi, thịt trắng thơm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "reddotirapia"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": null,
+    "jaTrade": "イズミダイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.23"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi lê đông lạnh",
+        "hs6": "0304.61"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "red_tilapia",
+      "digest": "81a3b674fff0d50c541895da1552a3a722da490d011b677caf73d1cc78781aa4",
+      "verified": false
+    },
+    "family": "Cichlidae",
+    "familyVi": "Họ Cá rô phi",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.80 - 2.80 USD/kg",
+      "rangeVnd": "45.000 - 65.000 đ/kg",
+      "specRef": "Cá sống nguyên con nuôi bè sông Tiền / sông Hậu",
+      "note": "Rất phổ biến trong các chợ đầu mối và nhà hàng Việt Nam",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "grouper",
+    "group": "Cá",
+    "sku": "proto-grouper",
+    "vi": "Cá mú (Cá song)",
+    "en": "Orange-spotted grouper",
+    "ja": "ハタ",
+    "scientific": "Epinephelus coioides",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá sống",
+      "Tươi / ướp lạnh",
+      "Đông lạnh nguyên con"
+    ],
+    "identification": "Miệng rộng răng nhọn, thân chắc khỏe có nhiều đốm màu cam nâu hoặc rạn đá.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hata"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Estuary cod"
+    ],
+    "jaKanji": "羽太",
+    "jaTrade": "クエ / ハタ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live",
+        "labelVi": "Cá sống",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "fresh_chilled",
+        "labelVi": "Tươi / ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "grouper",
+      "digest": "8d8f7ce88fec98c3f975d81fafab15e412b580585f9b05de1d13ac6807c22b36",
+      "verified": false
+    },
+    "family": "Serranidae",
+    "familyVi": "Họ Cá mú",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "7.80 - 13.50 USD/kg",
+      "rangeVnd": "190.000 - 320.000 đ/kg",
+      "specRef": "Cá sống size 1-1.5kg vận chuyển thuyền sống",
+      "note": "Xuất khẩu cá sống sang thị trường Hồng Kông, Quảng Châu",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "anchovy",
+    "group": "Cá",
+    "sku": "proto-anchovy",
+    "vi": "Cá cơm",
+    "en": "Anchovy",
+    "ja": "カタクチイワシ",
+    "scientific": "Stolephorus commersonii",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Cá cơm đông lạnh",
+      "Cá cơm khô / muối làm mắm",
+      "Cá cơm tẩm gia vị chiên giòn"
+    ],
+    "identification": "Thân hình thon nhỏ 5-10cm, dọc hai bên lườn có một dải ánh bạc lấp lánh.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "katakuchiiwashi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Commerson's anchovy"
+    ],
+    "jaKanji": "片口鰯",
+    "jaTrade": "カタクチイワシ / アンチョビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen",
+        "labelVi": "Cá cơm đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "salted_dried",
+        "labelVi": "Cá cơm khô / muối làm mắm",
+        "hs6": "0305.59"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Cá cơm tẩm gia vị chiên giòn",
+        "hs6": "1604.16"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "anchovy",
+      "digest": "48265757f37bac61e80af7af5dc1b107588c0cea81f5829abe18c92d814759c9",
+      "verified": false
+    },
+    "family": "Engraulidae",
+    "familyVi": "Họ Cá cơm",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.80 - 3.00 USD/kg (tươi) / 5.50 - 9.00 USD/kg (khô)",
+      "rangeVnd": "45.000 - 75.000 đ/kg (tươi) / 120.000 - 220.000 đ/kg (khô)",
+      "specRef": "Cá cơm sấy khô đóng thùng xuất khẩu Hàn Quốc / Trung Quốc",
+      "note": "Nguyên liệu vàng làm nước mắm truyền thống Phú Quốc, Phan Thiết",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "round_scad",
+    "group": "Cá",
+    "sku": "proto-round_scad",
+    "vi": "Cá nục (Cá nục hoa)",
+    "en": "Round scad",
+    "ja": "マルアジ",
+    "scientific": "Decapterus maruadsi",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh",
+      "Đông lạnh nguyên con",
+      "Cá nục sốt cà đóng hộp"
+    ],
+    "identification": "Thân hình thoi tròn lẳn, trên đường bên ở phần đuôi có hàng vảy lăng sắc nhọn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "maruaji"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Japanese scad"
+    ],
+    "jaKanji": "丸鯵",
+    "jaTrade": "アジ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled",
+        "labelVi": "Tươi / ướp lạnh",
+        "hs6": "0302.49"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.59"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Cá nục sốt cà đóng hộp",
+        "hs6": "1604.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "round_scad",
+      "digest": "a445709363ccb454f281f34907f49b6c8d3b60cef1a5d77edaabe860e556c03b",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.30 - 2.10 USD/kg",
+      "rangeVnd": "35.000 - 55.000 đ/kg",
+      "specRef": "Đông lạnh nguyên con (WR) block 10kg",
+      "note": "Sản lượng đánh bắt xa bờ lớn, tiêu thụ phổ thông",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "giant_freshwater_prawn",
+    "group": "Giáp xác",
+    "sku": "proto-giant_freshwater_prawn",
+    "vi": "Tôm càng xanh",
+    "en": "Giant freshwater prawn",
+    "ja": "オニテナガエビ",
+    "scientific": "Macrobrachium rosenbergii",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh nguyên con / bỏ đầu",
+      "Đã chế biến"
+    ],
+    "identification": "Cặp càng thứ hai của con đực phát triển cực kỳ dài, có màu xanh lam óng ánh.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "onitenagaebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Malaysian prawn"
+    ],
+    "jaKanji": "鬼手長海老",
+    "jaTrade": "オニテナガエビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.36"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con / bỏ đầu",
+        "hs6": "0306.17"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.21"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "giant_freshwater_prawn",
+      "digest": "9b70d7058c0fd78a67e7498b17db8f23ca22b3a5cca37e996b1f6b3dac4f5c43",
+      "verified": false
+    },
+    "family": "Palaemonidae",
+    "familyVi": "Họ Tôm gai",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "7.50 - 14.00 USD/kg",
+      "rangeVnd": "180.000 - 340.000 đ/kg",
+      "specRef": "Tôm sống bơi oxy (size 5-15 con/kg)",
+      "note": "Nuôi trồng nhiều ở Bến Tre, Đồng Tháp, Cà Mau",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "spanner_crab",
+    "group": "Giáp xác",
+    "sku": "proto-spanner_crab",
+    "vi": "Cua huỳnh đế",
+    "en": "Spanner crab",
+    "ja": "アサヒガニ",
+    "scientific": "Ranina ranina",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh",
+      "Thịt cua đã chế biến"
+    ],
+    "identification": "Mai dài hình chữ U nở rộng ở đầu màu đỏ cam sặc sỡ, chân bò dẹt như mái chèo chuyên đào cát.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "asahigani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Red frog crab"
+    ],
+    "jaKanji": "旭蟹",
+    "jaTrade": "アサヒガニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Thịt cua đã chế biến",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "spanner_crab",
+      "digest": "ecaf66f9c801865436b625612ccc32133bc7a8def3a2b1f40ace9c7dcc1b0124",
+      "verified": false
+    },
+    "family": "Raninidae",
+    "familyVi": "Họ Cua huỳnh đế",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "28.00 - 45.00 USD/kg",
+      "rangeVnd": "650.000 - 1.100.000 đ/kg",
+      "specRef": "Cua sống size 500g - 1kg/con",
+      "note": "Đặc sản vùng biển Sa Huỳnh (Quảng Ngãi), Bình Định, Phú Quý",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sea_cucumber",
+    "group": "Khác",
+    "sku": "proto-sea_cucumber",
+    "vi": "Hải sâm",
+    "en": "Sea cucumber",
+    "ja": "ナマコ",
+    "scientific": "Holothuroidea",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / tươi / ướp lạnh",
+      "Đông lạnh",
+      "Khô hoặc muối (rất có giá trị)",
+      "Đã chế biến"
+    ],
+    "identification": "Bẫy HS: Hải sâm khô thuộc Chương 03 nhóm 03.08 (0308.19), không sang Chương 16!",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "namako"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [
+      "Trepang"
+    ],
+    "jaKanji": "海鼠",
+    "jaTrade": "ナマコ / キンコ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / tươi / ướp lạnh",
+        "hs6": "0308.11"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0308.12"
+      },
+      {
+        "state": "dried_salted",
+        "labelVi": "Khô hoặc muối (rất có giá trị)",
+        "hs6": "0308.19"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1605.61"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sea_cucumber",
+      "digest": "663d8ecfa28310056d59346d773cda067eb6bdaed2aecff232da06e3c9651852",
+      "verified": false
+    },
+    "family": "Holothuriidae",
+    "familyVi": "Họ Hải sâm",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "55.00 - 160.00 USD/kg",
+      "rangeVnd": "1.200.000 - 3.800.000 đ/kg (khô)",
+      "specRef": "Khô sạch độ ẩm < 12% xuất khẩu",
+      "note": "Hải sâm gai, hải sâm cát khô là mặt hàng xuất khẩu giá trị cực cao",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "jellyfish",
+    "group": "Khác",
+    "sku": "proto-jellyfish",
+    "vi": "Sứa (Sứa ăn được)",
+    "en": "Edible jellyfish",
+    "ja": "クラゲ",
+    "scientific": "Rhopilema esculentum",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi, đông lạnh hoặc khô muối",
+      "Đã chế biến, ăn liền tẩm gia vị"
+    ],
+    "identification": "Sứa ngâm muối phèn truyền thống thuộc 0308.30. Sứa ăn liền kèm gia vị thuộc 1605.63.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kurage"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [],
+    "jaKanji": "水母",
+    "jaTrade": "クラゲ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_frozen",
+        "labelVi": "Sống, tươi, đông lạnh hoặc khô muối",
+        "hs6": "0308.30"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến, ăn liền tẩm gia vị",
+        "hs6": "1605.63"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "jellyfish",
+      "digest": "da6f968cc17c0a7d8eb1696fe57072a8dbc09c6d10a4d87d41732c0bdf510efb",
+      "verified": false
+    },
+    "family": "Rhizostomatidae",
+    "familyVi": "Họ Sứa rễ",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.10 - 2.20 USD/kg",
+      "rangeVnd": "25.000 - 45.000 đ/kg",
+      "specRef": "Sứa muối thùng phèn chua xô 10-20kg",
+      "note": "Hải sản vụ xuân hè ở Nam Định, Thái Bình, Quảng Ninh",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "swordfish",
+    "group": "Cá",
+    "sku": "proto-swordfish",
+    "vi": "Cá kiếm",
+    "en": "Swordfish",
+    "ja": "メカジキ",
+    "scientific": "Xiphias gladius",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi / ướp lạnh nguyên con",
+      "Đông lạnh nguyên con",
+      "Phi lê / Steak cá kiếm đông lạnh",
+      "Đã chế biến"
+    ],
+    "identification": "Mỏ hàm trên kéo dài thành một thanh kiếm phẳng nhọn đặc trưng dài tới 1/3 thân cá.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "mekajiki"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Broadbill"
+    ],
+    "jaKanji": "旗魚",
+    "jaTrade": "メカジキ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "fresh_chilled_whole",
+        "labelVi": "Tươi / ướp lạnh nguyên con",
+        "hs6": "0302.47"
+      },
+      {
+        "state": "frozen_whole",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.57"
+      },
+      {
+        "state": "frozen_fillet_steak",
+        "labelVi": "Phi lê / Steak cá kiếm đông lạnh",
+        "hs6": "0304.84"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến",
+        "hs6": "1604.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "swordfish",
+      "digest": "b343d4b4145af637f9e657c5a2ca87e4fb993d465698318f1d0c6d206f5506c3",
+      "verified": false
+    },
+    "family": "Xiphiidae",
+    "familyVi": "Họ Cá kiếm",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "7.50 - 13.50 USD/kg",
+      "rangeVnd": "180.000 - 320.000 đ/kg",
+      "specRef": "Steak / Loin đông lạnh CO treated",
+      "note": "Thịt cá màu trắng ngà chắc nạc, chuyên làm món nướng bít tết cá",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "abalone",
+    "group": "Nhuyễn thể",
+    "sku": "proto-abalone",
+    "vi": "Bào ngư",
+    "en": "Abalone",
+    "ja": "アワビ",
+    "scientific": "Haliotis discus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Đã chế biến, đóng hộp kín khí"
+    ],
+    "identification": "Thuộc nhóm nhuyễn thể cao cấp nhất, vỏ có lớp xà cừ ngũ sắc óng ánh.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "awabi"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Ear shell"
+    ],
+    "jaKanji": "鮑",
+    "jaTrade": "アワビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.81"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.83"
+      },
+      {
+        "state": "prepared_airtight",
+        "labelVi": "Đã chế biến, đóng hộp kín khí",
+        "hs6": "1605.57"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "abalone",
+      "digest": "ba1988e2f03b366f862938a2182184d3f847c6c91c53621485b994ca44e21968",
+      "verified": false
+    },
+    "family": "Haliotidae",
+    "familyVi": "Họ Bào ngư",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "28.00 - 65.00 USD/kg",
+      "rangeVnd": "650.000 - 1.500.000 đ/kg",
+      "specRef": "Sống nguyên con / Cấp đông lạnh IQF (size 10-20 con/kg)",
+      "note": "Hàng Úc/Hàn Quốc nhập khẩu tươi sống có giá cao nhất",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "blood_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-blood_clam",
+    "vi": "Sò huyết",
+    "en": "Blood clam",
+    "ja": "ハイガイ",
+    "scientific": "Tegillarca granosa",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Đã chế biến hoặc đóng hộp"
+    ],
+    "identification": "Đặc trưng có dịch huyết sắc tố màu đỏ tươi như máu (hemoglobin).",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "haigai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Blood cockle"
+    ],
+    "jaKanji": "灰貝",
+    "jaTrade": "アカガイ / ハイガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.72"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Đã chế biến hoặc đóng hộp",
+        "hs6": "1605.56"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "blood_clam",
+      "digest": "567f5174aa38294a90a6f2cd79b9167248bd5ac7c9715cb045cff4c80e6bb667",
+      "verified": false
+    },
+    "family": "Arcidae",
+    "familyVi": "Họ Sò",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "4.00 - 8.00 USD/kg",
+      "rangeVnd": "90.000 - 180.000 đ/kg",
+      "specRef": "Sống nguyên con vỏ (size 60-100 con/kg)",
+      "note": "Đặc sản đầm Ô Loan (Phú Yên) và Kiên Giang",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "ark_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-ark_clam",
+    "vi": "Sò lông",
+    "en": "Half-crenated ark",
+    "ja": "サルボウガイ",
+    "scientific": "Anadara subcrenata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến"
+    ],
+    "identification": "Vỏ có nhiều rãnh và lớp lông mịn màu nâu sẫm phủ bên ngoài.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sarubogai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Ark clam"
+    ],
+    "jaKanji": "猿坊貝",
+    "jaTrade": "サルボウ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.72"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến",
+        "hs6": "1605.56"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "ark_clam",
+      "digest": "3f1f06049c53930a92a8e2d4152e920110b62cdd5ce29234ad1f9b9336ed297c",
+      "verified": false
+    },
+    "family": "Arcidae",
+    "familyVi": "Họ Sò",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "1.80 - 3.50 USD/kg",
+      "rangeVnd": "40.000 - 80.000 đ/kg",
+      "specRef": "Sống nguyên con (size 30-50 con/kg)",
+      "note": "Giá bình dân, dùng phổ biến trong nướng mỡ hành",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sweet_snail",
+    "group": "Nhuyễn thể",
+    "sku": "proto-sweet_snail",
+    "vi": "Ốc len",
+    "en": "Obtuse horn shell",
+    "ja": "フトヘナタリ",
+    "scientific": "Cerithidea obtusa",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Sống bám trên thân rễ cây đước ở rừng ngập mặn Cà Mau.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "futohenatari"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Mud creeper"
+    ],
+    "jaKanji": "フトヘナタリ",
+    "jaTrade": "マッドスネイル",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.87"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.88"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sweet_snail",
+      "digest": "14953434f952bba3e71f43a316ed4a78875e6ba4f4dec9bdbee4d55809a18f9e",
+      "verified": false
+    },
+    "family": "Potamididae",
+    "familyVi": "Họ Ốc dạ",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "5.00 - 8.50 USD/kg",
+      "rangeVnd": "120.000 - 200.000 đ/kg",
+      "specRef": "Sống nguyên con thu hoạch rừng ngập mặn Cà Mau",
+      "note": "Món ốc len xào dừa trứ danh Nam Bộ",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "giant_clam",
+    "group": "Nhuyễn thể",
+    "sku": "proto-giant_clam",
+    "vi": "Sò tai tượng khổng lồ",
+    "en": "Giant clam",
+    "ja": "シャコガイ",
+    "scientific": "Tridacna gigas",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống (yêu cầu CITES)",
+      "Đông lạnh"
+    ],
+    "identification": "Loài thân mềm 2 mảnh vỏ lớn nhất hành tinh, chiều dài tới 1.2m, nặng trên 200kg.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shakogai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [],
+    "jaKanji": "硨磲",
+    "jaTrade": "オオシャコガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống (yêu cầu CITES)",
+        "hs6": "0307.71"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.72"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "giant_clam",
+      "digest": "bab0d2000738e8ee2a873ac9c0a2cdd2a9741f497f8ca441a0ae418a5a47b5f5",
+      "verified": false
+    },
+    "family": "Cardiidae",
+    "familyVi": "Họ Vỏ tim",
+    "rarity": "legendary",
+    "marketPrice": {
+      "rangeUsd": "CITES II RESTRICTED",
+      "rangeVnd": "CẤM THƯƠNG MẠI TỰ NHIÊN",
+      "specRef": "Động vật quý hiếm nhóm bảo vệ nghiêm ngặt",
+      "note": "Hóa thạch hoặc tiêu bản cần giấy phép CITES quốc tế",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "geoduck",
+    "group": "Nhuyễn thể",
+    "sku": "proto-geoduck",
+    "vi": "Tu hài / Ốc vòi voi",
+    "en": "Pacific geoduck",
+    "ja": "ミルクイ / シロミル",
+    "scientific": "Panopea generosa",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Vòi hút cực lớn không thể rút lại vào trong vỏ hai mảnh, tuổi thọ có thể vượt 140 năm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shiromiru"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "King clam"
+    ],
+    "jaKanji": "白海松貝",
+    "jaTrade": "ミルガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.91"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.92"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "geoduck",
+      "digest": "b3e34df70aab17c8d3db583e27b3eee3e39b9d0e7d4f927f2c02318ec7a9cd9d",
+      "verified": false
+    },
+    "family": "Hiatellidae",
+    "familyVi": "Họ Tu hài",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "32.00 - 55.00 USD/kg",
+      "rangeVnd": "750.000 - 1.250.000 đ/kg",
+      "specRef": "Sống nguyên con nhập khẩu Canada / Mỹ (1-2kg/con)",
+      "note": "Đặc sản ăn sống sashimi giòn ngọt thượng hạng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "pen_shell",
+    "group": "Nhuyễn thể",
+    "sku": "proto-pen_shell",
+    "vi": "Sò mai / Bắp chuối",
+    "en": "Pen shell",
+    "ja": "タイラギ",
+    "scientific": "Atrina pectinata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Hình dáng thuôn dài như bắp chuối hoặc đầu ngòi bút máy.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "tairagi"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Comb pen shell"
+    ],
+    "jaKanji": "平貝",
+    "jaTrade": "タイラガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.91"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.92"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "pen_shell",
+      "digest": "c7e0ba87166cc18337cb658175629f0777a471e1faeec850bf29dc83641aa9bb",
+      "verified": false
+    },
+    "family": "Pinnidae",
+    "familyVi": "Họ Sò mai",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "6.00 - 10.50 USD/kg",
+      "rangeVnd": "140.000 - 240.000 đ/kg",
+      "specRef": "Cồi sò mai tươi cấp đông / Sống",
+      "note": "Cồi hình quạt giòn, thơm ngon chuyên làm sushi tairagi",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "nautilus",
+    "group": "Nhuyễn thể",
+    "sku": "proto-nautilus",
+    "vi": "Ốc anh vũ",
+    "en": "Chambered nautilus",
+    "ja": "オウムガイ",
+    "scientific": "Nautilus pompilius",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống / Tiêu bản kiểm soát CITES",
+      "Đông lạnh"
+    ],
+    "identification": "Hóa thạch sống tồn tại suốt 500 triệu năm với các vách ngăn khí đối xứng xoắn ốc tỷ lệ vàng.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "oumugai"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [],
+    "jaKanji": "鸚鵡貝",
+    "jaTrade": "オウムガイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống / Tiêu bản kiểm soát CITES",
+        "hs6": "0307.91"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.92"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "nautilus",
+      "digest": "5ecf9ce5cc86f9ffddb64820e67b2385d65e75b75a2eeaa99c67376c0db868f1",
+      "verified": false
+    },
+    "family": "Nautilidae",
+    "familyVi": "Họ Ốc anh vũ",
+    "rarity": "legendary",
+    "marketPrice": {
+      "rangeUsd": "CITES II PROTECTED",
+      "rangeVnd": "CẤM ĐÁNH BẮT TỰ NHIÊN",
+      "specRef": "Hóa thạch sống / Mẫu vật bảo tàng",
+      "note": "Bị đe dọa do khai thác lấy vỏ mỹ nghệ xoắn ốc Fibonacci",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sea_snail_melo",
+    "group": "Nhuyễn thể",
+    "sku": "proto-sea_snail_melo",
+    "vi": "Ốc giác / Ốc hoàng đế",
+    "en": "Indian volute",
+    "ja": "ヤシボラ",
+    "scientific": "Melo melo",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Thịt cùi giòn ngọt, vỏ từng được ngư dân xưa dùng làm gáo tát nước thuyền buồm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "yashibora"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Baler snail"
+    ],
+    "jaKanji": "ハルカゼヤシボラ",
+    "jaTrade": "メロメロ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.87"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.88"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sea_snail_melo",
+      "digest": "41c8259c50c6177d1e73770fe23ed7e99ba4f5e287f86758608cc96a846228d1",
+      "verified": false
+    },
+    "family": "Volutidae",
+    "familyVi": "Họ Ốc dừa",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "8.00 - 14.00 USD/kg",
+      "rangeVnd": "180.000 - 320.000 đ/kg",
+      "specRef": "Sống nguyên con (1-3kg/con)",
+      "note": "Có thể sản sinh ngọc Melo (ngọc ốc giác cam) cực kỳ quý giá",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "apple_snail",
+    "group": "Nhuyễn thể",
+    "sku": "proto-apple_snail",
+    "vi": "Ốc bươu đen / Ốc nhồi",
+    "en": "Apple snail",
+    "ja": "アップルスネイル",
+    "scientific": "Pila polita",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Loài nước ngọt bản địa, nguyên liệu làm món chả ốc lá lốt và bún ốc Hà Nội truyền thống.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "appurusuneiru"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Pila snail"
+    ],
+    "jaKanji": "アップルスネイル",
+    "jaTrade": "タニシ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0307.87"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.88"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "apple_snail",
+      "digest": "67f5315d8a4440103a82642245584cd4ba901e940e7b33c6fca64e2358cd7f3e",
+      "verified": false
+    },
+    "family": "Ampullariidae",
+    "familyVi": "Họ Ốc bươu",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.20 - 4.00 USD/kg",
+      "rangeVnd": "50.000 - 90.000 đ/kg",
+      "specRef": "Sống nguyên con nước ngọt đồng bằng",
+      "note": "Phân biệt với ốc bươu vàng xâm hại (Pomacea canaliculata)",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "firefly_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-firefly_squid",
+    "vi": "Mực đom đóm",
+    "en": "Firefly squid",
+    "ja": "ホタルイカ",
+    "scientific": "Watasenia scintillans",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Luộc chín hoặc ướp gia vị"
+    ],
+    "identification": "Có hàng ngàn cơ quan phát quang sinh học màu xanh biển lấp lánh trong đêm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hotaruika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Sparkling enope squid"
+    ],
+    "jaKanji": "螢烏賊",
+    "jaTrade": "ホタルイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Luộc chín hoặc ướp gia vị",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "firefly_squid",
+      "digest": "e678df38b83cdf10ee048fd93f3c6aa304d3ee42c7e4e869c5e203f186f2ecf4",
+      "verified": false
+    },
+    "family": "Enoploteuthidae",
+    "familyVi": "Họ Mực đom đóm",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "15.00 - 24.00 USD/kg",
+      "rangeVnd": "350.000 - 550.000 đ/kg",
+      "specRef": "Hấp chín IQF / Tươi sống xuất khẩu từ vịnh Toyama",
+      "note": "Mùa săn bắt từ tháng 3 - tháng 5 tại Nhật Bản",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "bigfin_reef_squid",
+    "group": "Nhuyễn thể",
+    "sku": "proto-bigfin_reef_squid",
+    "vi": "Mực lá",
+    "en": "Bigfin reef squid",
+    "ja": "アオリイカ",
+    "scientific": "Sepioteuthis lessoniana",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi, sống hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến"
+    ],
+    "identification": "Vây dày hình bầu dục viền gần như suốt dọc thân, thịt ngọt dày và giòn bậc nhất.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "aoriika"
+    },
+    "taxonomicGroup": "mollusc",
+    "enAliases": [
+      "Oval squid"
+    ],
+    "jaKanji": "障子烏賊",
+    "jaTrade": "アオリイカ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi, sống hoặc ướp lạnh",
+        "hs6": "0307.42"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0307.43"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến",
+        "hs6": "1605.54"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "bigfin_reef_squid",
+      "digest": "ddd55643a69c33584e202e99c41a2c2363f7a1cca52547b58b6a0911986abc7b",
+      "verified": false
+    },
+    "family": "Loliginidae",
+    "familyVi": "Họ Mực ống",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "11.00 - 19.50 USD/kg",
+      "rangeVnd": "260.000 - 450.000 đ/kg",
+      "specRef": "Câu sống / Cấp đông trên tàu (size 0.5 - 1.5kg/con)",
+      "note": "Vua của các loài mực cho món sashimi mực cao cấp",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "king_crab",
+    "group": "Giáp xác",
+    "sku": "proto-king_crab",
+    "vi": "Cua hoàng đế đỏ",
+    "en": "Red king crab",
+    "ja": "タラバガニ",
+    "scientific": "Paralithodes camtschaticus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh (nguyên con hoặc chân bẻ)",
+      "Hấp chín đóng khay"
+    ],
+    "identification": "Thực chất về mặt sinh học thuộc nhánh cua giả (Anomura), chỉ có 6 chân đi và 2 càng.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "tarabagani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Kamchatka crab"
+    ],
+    "jaKanji": "鱈場蟹",
+    "jaTrade": "タラバガニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con hoặc chân bẻ)",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Hấp chín đóng khay",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "king_crab",
+      "digest": "4f89aef98b6f71b57460b00fb39f95d3434fea4548205ed3c8715e6f51d31609",
+      "verified": false
+    },
+    "family": "Lithodidae",
+    "familyVi": "Họ Cua đá Lithodidae",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "68.00 - 110.00 USD/kg",
+      "rangeVnd": "1.600.000 - 2.500.000 đ/kg",
+      "specRef": "Sống nguyên con (2-4kg/con) nhập Alaska/Nga",
+      "note": "Chân cua đông lạnh bẻ sẵn có giá khoảng 1.200.000 đ/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "snow_crab",
+    "group": "Giáp xác",
+    "sku": "proto-snow_crab",
+    "vi": "Cua tuyết",
+    "en": "Snow crab",
+    "ja": "ズワイガニ",
+    "scientific": "Chionoecetes opilio",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến chín"
+    ],
+    "identification": "Thịt chân thon dài ngọt thanh dịu, gạch cua màu nâu xanh đậm vị béo umami.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "zuwaigani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Queen crab"
+    ],
+    "jaKanji": "楚蟹",
+    "jaTrade": "ズワイガニ / エチゼンガニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến chín",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "snow_crab",
+      "digest": "40a434c5a330f633bc6f663e16f58dcbc2a7beda395dce50265f4c88e700ded6",
+      "verified": false
+    },
+    "family": "Oregoniidae",
+    "familyVi": "Họ Cua nhện Oregoniidae",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "50.00 - 80.00 USD/kg",
+      "rangeVnd": "1.200.000 - 1.900.000 đ/kg",
+      "specRef": "Sống / Cụm chân hấp đông lạnh Section L-3L",
+      "note": "Đặc sản mùa đông biển Nhật Bản (Echizen-gani / Matsuba-gani)",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "mantis_shrimp",
+    "group": "Giáp xác",
+    "sku": "proto-mantis_shrimp",
+    "vi": "Tôm tít / Bề bề",
+    "en": "Mantis shrimp",
+    "ja": "シャコ",
+    "scientific": "Oratosquilla oratoria",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Nõn hấp chín"
+    ],
+    "identification": "Càng búa hoặc càng gai tấn công cực mạnh xé toạc vỏ ốc và làm vỡ kính bể cá.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shako"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "蝦蛄",
+    "jaTrade": "シャコ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.39"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.19"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Nõn hấp chín",
+        "hs6": "1605.40"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "mantis_shrimp",
+      "digest": "db91d8f57a0c03787daaa5b91978b42d35a5ceefb42acf5196b3c0af97a7f660",
+      "verified": false
+    },
+    "family": "Squillidae",
+    "familyVi": "Họ Tôm tít",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "9.50 - 19.00 USD/kg",
+      "rangeVnd": "220.000 - 450.000 đ/kg",
+      "specRef": "Sống bơi oxy / Thịt nõn bóc vỏ hấp chín",
+      "note": "Tôm tít chúa (Lysiosquillina maculata) size khủng giá trên 1 triệu đ/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "american_lobster",
+    "group": "Giáp xác",
+    "sku": "proto-american_lobster",
+    "vi": "Tôm hùm Alaska / Bắc Mỹ",
+    "en": "American lobster",
+    "ja": "オマールエビ",
+    "scientific": "Homarus americanus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh (nguyên con hoặc đuôi)",
+      "Chế biến chín"
+    ],
+    "identification": "Thuộc nhóm tôm càng có vuốt thực sự, khác biệt với họ tôm hùm gai nhiệt đới.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "oma-ruebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Maine lobster"
+    ],
+    "jaKanji": "アメリカウミザリガニ",
+    "jaTrade": "ロブスター / オマール",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.32"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh (nguyên con hoặc đuôi)",
+        "hs6": "0306.12"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến chín",
+        "hs6": "1605.30"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "american_lobster",
+      "digest": "0582204be70d49ced2a3cd5127f593f497f1aeafa4426bec6bf7964c45c4768c",
+      "verified": false
+    },
+    "family": "Nephropidae",
+    "familyVi": "Họ Tôm càng có vuốt",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "36.00 - 58.00 USD/kg",
+      "rangeVnd": "850.000 - 1.350.000 đ/kg",
+      "specRef": "Sống nguyên con (1-3kg/con) nhập khẩu Maine/Canada",
+      "note": "Có hai càng to khổng lồ đặc trưng của chi Homarus",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "dungeness_crab",
+    "group": "Giáp xác",
+    "sku": "proto-dungeness_crab",
+    "vi": "Cua Dungeness",
+    "en": "Dungeness crab",
+    "ja": "アメリカイチョウガニ",
+    "scientific": "Metacarcinus magister",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến"
+    ],
+    "identification": "Đặc sản bờ tây Bắc Mỹ từ bờ biển Washington, Oregon tới California.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "amerikaichougani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "ダンジネスクラブ",
+    "jaTrade": "ダンジネスクラブ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "dungeness_crab",
+      "digest": "1ff096c35627ff67945bbda32c786aa98610da7c902d239001b7898c8cf68778",
+      "verified": false
+    },
+    "family": "Cancridae",
+    "familyVi": "Họ Cua Cancridae",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "32.00 - 48.00 USD/kg",
+      "rangeVnd": "750.000 - 1.100.000 đ/kg",
+      "specRef": "Sống nguyên con nhập khẩu Bờ Tây Bắc Mỹ",
+      "note": "Thịt ngọt dịu, chắc và tỷ lệ thịt trên trọng lượng cao",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "brown_crab",
+    "group": "Giáp xác",
+    "sku": "proto-brown_crab",
+    "vi": "Cua nâu Ireland",
+    "en": "Brown crab",
+    "ja": "イチョウガニ",
+    "scientific": "Cancer pagurus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến chín"
+    ],
+    "identification": "Mai hình chiếc bánh nướng với các khía viền gợn sóng đặc trưng.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "ichougani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Edible crab"
+    ],
+    "jaKanji": "イチョウガニ",
+    "jaTrade": "ブラウンクラブ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.14"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến chín",
+        "hs6": "1605.10"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "brown_crab",
+      "digest": "f88953d13cfc166a243d90911a3c4e32701f730c3e0ae6a248f544eaff733c56",
+      "verified": false
+    },
+    "family": "Cancridae",
+    "familyVi": "Họ Cua Cancridae",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "23.00 - 36.00 USD/kg",
+      "rangeVnd": "550.000 - 850.000 đ/kg",
+      "specRef": "Sống nguyên con / Cấp đông hấp chín nhập Ireland/Scotland",
+      "note": "Nổi tiếng với lượng gạch béo ngậy đầy tràn trong mai",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "crawfish",
+    "group": "Giáp xác",
+    "sku": "proto-crawfish",
+    "vi": "Tôm hùm đất / Tôm càng đỏ",
+    "en": "Red swamp crayfish",
+    "ja": "アメリカザリガニ",
+    "scientific": "Procambarus clarkii",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi (kiểm dịch sinh vật ngoại lai)",
+      "Đông lạnh",
+      "Chế biến sốt Cajun"
+    ],
+    "identification": "Món ăn đường phố và lễ hội sôi động ở Louisiana (Mỹ) và Trung Quốc.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "amerikazarigani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Crawfish"
+    ],
+    "jaKanji": "アメリカザリガニ",
+    "jaTrade": "ザリガニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi (kiểm dịch sinh vật ngoại lai)",
+        "hs6": "0306.39"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.19"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến sốt Cajun",
+        "hs6": "1605.40"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "crawfish",
+      "digest": "16d7351f0b0327c24259bcc78aeb7cbaace04dac0e0b3fba07f337e664ab802b",
+      "verified": false
+    },
+    "family": "Cambaridae",
+    "familyVi": "Họ Tôm nước ngọt Cambaridae",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "10.00 - 16.00 USD/kg",
+      "rangeVnd": "250.000 - 380.000 đ/kg",
+      "specRef": "Đông lạnh nguyên con sốt Cajun nhập khẩu",
+      "note": "Việt Nam quản lý chặt chẽ vì nguy cơ loài ngoại lai xâm hại",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "mitten_crab",
+    "group": "Giáp xác",
+    "sku": "proto-mitten_crab",
+    "vi": "Cua lông Thượng Hải",
+    "en": "Chinese mitten crab",
+    "ja": "チュウゴクモクズガニ",
+    "scientific": "Eriocheir sinensis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Cặp càng phủ lớp lông rậm rạp như chiếc găng tay len giữ ấm mùa đông.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "chuugokumokuzugani"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "上海蟹",
+    "jaTrade": "シャンハイガニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.33"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.14"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "mitten_crab",
+      "digest": "7ce08bb39bfe705f9195f761e05b3d1331202cb3bac3c251dc8306fd6ce7b689",
+      "verified": false
+    },
+    "family": "Varunidae",
+    "familyVi": "Họ Cua Varunidae",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "38.00 - 95.00 USD/kg",
+      "rangeVnd": "900.000 - 2.200.000 đ/kg",
+      "specRef": "Sống buộc dây hồ Dương Trừng (size 150-250g/con)",
+      "note": "Thời điểm thưởng thức ngon nhất vào tháng 9-10 âm lịch",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "giant_isopod",
+    "group": "Giáp xác",
+    "sku": "proto-giant_isopod",
+    "vi": "Bọ biển sâu",
+    "en": "Giant isopod",
+    "ja": "ダイオウグソクムシ",
+    "scientific": "Bathynomus giganteus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh"
+    ],
+    "identification": "Sinh vật kỳ dị sống dưới đáy biển sâu hàng trăm mét, có thể nhịn ăn nhiều năm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "daiougusokumushi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "大王具足虫",
+    "jaTrade": "オオグソクムシ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0306.39"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.19"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "giant_isopod",
+      "digest": "c15862e8e24a594d72c2c3829d131fa3344575982a0a7e055ad8ad6d9ed9c59f",
+      "verified": false
+    },
+    "family": "Cirolanidae",
+    "familyVi": "Họ Chân đều Cirolanidae",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "50.00 - 105.00 USD/kg",
+      "rangeVnd": "1.200.000 - 2.500.000 đ/kg",
+      "specRef": "Sống đánh bắt tầng đáy sâu vùng biển Quy Nhơn / Quảng Ngãi",
+      "note": "Thịt thơm như cua hoàng đế, gạch vàng ngậy",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "slipper_lobster",
+    "group": "Giáp xác",
+    "sku": "proto-slipper_lobster",
+    "vi": "Tôm mũ ni",
+    "en": "Slipper lobster",
+    "ja": "ウチワエビ",
+    "scientific": "Thenus orientalis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Đầu dẹp bè ra như chiếc mũ ni hoặc cánh quạt mo, không có càng kẹp.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "uchiwaebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [
+      "Flathead lobster"
+    ],
+    "jaKanji": "団扇海老",
+    "jaTrade": "ウチワエビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.31"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.11"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "slipper_lobster",
+      "digest": "b07b95d0a4d929f94b8c820abe1d32da308a54ed101f5f6ca7385670db88e9e6",
+      "verified": false
+    },
+    "family": "Scyllaridae",
+    "familyVi": "Họ Tôm mũ ni",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "28.00 - 52.00 USD/kg",
+      "rangeVnd": "650.000 - 1.200.000 đ/kg",
+      "specRef": "Sống bơi oxy (mũ ni trắng / đỏ / nhung)",
+      "note": "Thịt ngọt dai, thơm đậm hơn tôm hùm thông thường",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "japanese_spiny_lobster",
+    "group": "Giáp xác",
+    "sku": "proto-japanese_spiny_lobster",
+    "vi": "Tôm rồng Nhật Bản / Ise-ebi",
+    "en": "Japanese spiny lobster",
+    "ja": "イセエビ",
+    "scientific": "Panulirus japonicus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Loài tôm hùm danh giá nhất xứ sở hoa anh đào với màu đỏ sậm rực rỡ.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "iseebi"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "伊勢海老",
+    "jaTrade": "イセエビ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0306.31"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.11"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "japanese_spiny_lobster",
+      "digest": "9cb36c789f868eb5853714fa845a7ba8229cb66dfa6df895801aeba4484e22c9",
+      "verified": false
+    },
+    "family": "Palinuridae",
+    "familyVi": "Họ Tôm rồng",
+    "rarity": "legendary",
+    "marketPrice": {
+      "rangeUsd": "120.00 - 190.00 USD/kg",
+      "rangeVnd": "2.800.000 - 4.500.000 đ/kg",
+      "specRef": "Sống nguyên con chuyển máy bay từ vịnh Ise",
+      "note": "Biểu tượng may mắn trường thọ trong mâm cỗ Tết Osechi Nhật Bản",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "krill",
+    "group": "Giáp xác",
+    "sku": "proto-krill",
+    "vi": "Nhuyễn thể Nam Cực / Krill",
+    "en": "Antarctic krill",
+    "ja": "オキアミ",
+    "scientific": "Euphausia superba",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh",
+      "Chế biến / Bột nhuyễn thể"
+    ],
+    "identification": "Nền tảng của chuỗi thức ăn Nam Cực, cung cấp dầu giàu phospholipid và astaxanthin.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "okiami"
+    },
+    "taxonomicGroup": "crustacean",
+    "enAliases": [],
+    "jaKanji": "オキアミ",
+    "jaTrade": "ナンキョクオキアミ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0306.19"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến / Bột nhuyễn thể",
+        "hs6": "1605.40"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "krill",
+      "digest": "b567c6408a61701b789ecf428d7cc141d166bf9b3acb416cc1fb542fbc15ae1e",
+      "verified": false
+    },
+    "family": "Euphausiidae",
+    "familyVi": "Họ Nhuyễn thể Euphausiidae",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.00 - 3.80 USD/kg",
+      "rangeVnd": "45.000 - 85.000 đ/kg",
+      "specRef": "Đông lạnh khối block / Tinh dầu Krill Oil nguyên liệu dược",
+      "note": "Sinh khối lớn nhất đại dương, làm thức ăn nuôi tôm và chiết xuất Omega-3",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "pacific_bluefin_tuna",
+    "group": "Cá",
+    "sku": "proto-pacific_bluefin_tuna",
+    "vi": "Cá ngừ vây xanh Thái Bình Dương",
+    "en": "Pacific bluefin tuna",
+    "ja": "クロマグロ / ホンマグロ",
+    "scientific": "Thunnus orientalis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh nguyên con",
+      "Phi-lê hoặc thịt cá ngừ đông lạnh"
+    ],
+    "identification": "Vua tối cao của các loại cá cho sushi & sashimi, thớ thịt đỏ sẫm và vân mỡ ngậy tan.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kuromaguro"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "本鮪",
+    "jaTrade": "ホンマグロ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.35"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.45"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê hoặc thịt cá ngừ đông lạnh",
+        "hs6": "0304.87"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "pacific_bluefin_tuna",
+      "digest": "90d58489f6d7b957a923b346d514293e4504e9b4a31e5bf3e1745a375ef09db8",
+      "verified": false
+    },
+    "family": "Scombridae",
+    "familyVi": "Họ Cá thu ngừ",
+    "rarity": "legendary",
+    "marketPrice": {
+      "rangeUsd": "100.00 - 280.00 USD/kg",
+      "rangeVnd": "2.500.000 - 6.500.000 đ/kg",
+      "specRef": "Thịt bụng béo Otoro / Chutoro hàng đấu giá Toyosu",
+      "note": "Phiên đấu giá đầu năm mới ở Tokyo có thể đạt hàng triệu USD/con",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "atlantic_cod",
+    "group": "Cá",
+    "sku": "proto-atlantic_cod",
+    "vi": "Cá tuyết Đại Tây Dương",
+    "en": "Atlantic cod",
+    "ja": "マダラ",
+    "scientific": "Gadus morhua",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Loài cá làm thay đổi lịch sử kinh tế thế giới qua các cuộc 'Chiến tranh cá tuyết'.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "madara"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "真鱈",
+    "jaTrade": "タラ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.51"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.63"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.71"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "atlantic_cod",
+      "digest": "9bc5764c0e9d927e0a6c5cb5ca3de25c327a9bc50864028119064f97a4626150",
+      "verified": false
+    },
+    "family": "Gadidae",
+    "familyVi": "Họ Cá tuyết",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "16.00 - 28.00 USD/kg",
+      "rangeVnd": "380.000 - 650.000 đ/kg",
+      "specRef": "Phi-lê rút xương không da đông lạnh IQF",
+      "note": "Nguyên liệu truyền thống của món Fish and Chips nước Anh",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "pacific_halibut",
+    "group": "Cá",
+    "sku": "proto-pacific_halibut",
+    "vi": "Cá bơn lưỡi ngựa Halibut",
+    "en": "Pacific halibut",
+    "ja": "オヒョウ",
+    "scientific": "Hippoglossus stenolepis",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Loài cá bơn lớn nhất thế giới, cá thể khổng lồ có thể dài trên 2.5m và nặng hơn 200kg.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "ohyou"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "大鮃",
+    "jaTrade": "オヒョウ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.21"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.31"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.83"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "pacific_halibut",
+      "digest": "b76fd6ce76c7a7d48ba872346bc223012e7752fdb65e6694b75cb3fe472ff616",
+      "verified": false
+    },
+    "family": "Pleuronectidae",
+    "familyVi": "Họ Cá bơn mắt phải",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "25.00 - 41.00 USD/kg",
+      "rangeVnd": "580.000 - 950.000 đ/kg",
+      "specRef": "Thân cắt khúc steak đông lạnh nhập Alaska",
+      "note": "Thịt trắng ngần, thớ nạc dày và rất giàu khoáng chất",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "olive_flounder",
+    "group": "Cá",
+    "sku": "proto-olive_flounder",
+    "vi": "Cá bơn vỉ / Hirame",
+    "en": "Olive flounder",
+    "ja": "ヒラメ",
+    "scientific": "Paralichthys olivaceus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Hai mắt nằm hoàn toàn bên trái đầu (quy tắc 'Tả Hirame, Hữu Karei' trong ẩm thực Nhật).",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hirame"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Bastard halibut"
+    ],
+    "jaKanji": "平目",
+    "jaTrade": "ヒラメ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0302.29"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.39"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.83"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "olive_flounder",
+      "digest": "d596d1445e77d13331b96689284f4aa3d7e763d7192114f811383a7f52fa2afe",
+      "verified": false
+    },
+    "family": "Paralichthyidae",
+    "familyVi": "Họ Cá bơn mắt trái",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "28.00 - 48.00 USD/kg",
+      "rangeVnd": "650.000 - 1.100.000 đ/kg",
+      "specRef": "Sống bơi trong bể nhập khẩu Hàn Quốc / Nhật Bản",
+      "note": "Phần viền vây Engawa có giá trị thưởng thức cao nhất",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "turbot",
+    "group": "Cá",
+    "sku": "proto-turbot",
+    "vi": "Cá bơn châu Âu Turbot",
+    "en": "Turbot",
+    "ja": "ターボット",
+    "scientific": "Scophthalmus maximus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Thân hình tròn như cái đĩa, bề mặt da có các nốt củ cứng không vảy.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "ta-botto"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "大西洋大鮃",
+    "jaTrade": "ターボット",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.24"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.34"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.83"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "turbot",
+      "digest": "e748a219f56747d662e73613646ca7e211b78185aa36d5e75f639cd87bbf7ed1",
+      "verified": false
+    },
+    "family": "Scophthalmidae",
+    "familyVi": "Họ Cá bơn Scophthalmidae",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "24.00 - 37.00 USD/kg",
+      "rangeVnd": "550.000 - 850.000 đ/kg",
+      "specRef": "Sống bơi oxy nhập Pháp / Tây Ban Nha",
+      "note": "Món cá quý phái trong ẩm thực hoàng gia và nhà hàng Fine Dining",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "japanese_eel",
+    "group": "Cá",
+    "sku": "proto-japanese_eel",
+    "vi": "Cá chình Nhật / Unagi",
+    "en": "Japanese eel",
+    "ja": "ウナギ",
+    "scientific": "Anguilla japonica",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh",
+      "Chế biến nướng sốt Kabayaki"
+    ],
+    "identification": "Món ăn tẩm bổ truyền thống vào ngày hạ chí Doyo no Ushi no Hi tại Nhật.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "unagi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "鰻",
+    "jaTrade": "ウナギ / ニホンウナギ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0301.92"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến nướng sốt Kabayaki",
+        "hs6": "1604.17"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "japanese_eel",
+      "digest": "2c97e6b56b8402867961a0c7b1f7f77b3f8844f11dd5acbdf0f42cb9fad50f61",
+      "verified": false
+    },
+    "family": "Anguillidae",
+    "familyVi": "Họ Cá chình nước ngọt",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "21.00 - 37.00 USD/kg",
+      "rangeVnd": "480.000 - 850.000 đ/kg",
+      "specRef": "Cá chình nướng sốt Kabayaki đông lạnh chân không",
+      "note": "Cá chình giống tự nhiên (Kabayaki) khan hiếm, giá con giống rất đắt",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "conger_eel",
+    "group": "Cá",
+    "sku": "proto-conger_eel",
+    "vi": "Cá lạc / Cá dưa / Anago",
+    "en": "Whitespotted conger",
+    "ja": "アナゴ",
+    "scientific": "Conger myriaster",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Cá chình biển sống vùi trong cát bùn đáy biển, có hàng đốm trắng dọc thân.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "anago"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Conger eel"
+    ],
+    "jaKanji": "穴子",
+    "jaTrade": "マアナゴ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "conger_eel",
+      "digest": "6ca1a27752dbb552cbb17486f5d393f75f064539358552c53a568680d63f495a",
+      "verified": false
+    },
+    "family": "Congridae",
+    "familyVi": "Họ Cá lạc",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "8.00 - 14.00 USD/kg",
+      "rangeVnd": "180.000 - 320.000 đ/kg",
+      "specRef": "Tươi nguyên con / Phi-lê xẻ bướm đông lạnh",
+      "note": "Thịt mềm bùi, ít béo hơn Unagi và chuyên dùng làm sushi anago",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "red_snapper",
+    "group": "Cá",
+    "sku": "proto-red_snapper",
+    "vi": "Cá hồng",
+    "en": "Northern red snapper",
+    "ja": "フエダイ",
+    "scientific": "Lutjanus campechanus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Màu đỏ hồng rực rỡ đặc trưng của vùng rạn san hô nước ấm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "fuedai"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "アメリカフエダイ",
+    "jaTrade": "レッドスナッパー",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "red_snapper",
+      "digest": "80417245315eaf1f9f75992c002fd1ac102c8ff7eff873b602c329bc562bc1d1",
+      "verified": false
+    },
+    "family": "Lutjanidae",
+    "familyVi": "Họ Cá hồng",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "6.50 - 12.00 USD/kg",
+      "rangeVnd": "150.000 - 280.000 đ/kg",
+      "specRef": "Nguyên con tươi ướp đá / Phi-lê còn da đông lạnh",
+      "note": "Hương vị ngọt thanh, nạc mềm hấp gừng hành hoặc nướng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "seabream",
+    "group": "Cá",
+    "sku": "proto-seabream",
+    "vi": "Cá tráp đỏ / Madai",
+    "en": "Red seabream",
+    "ja": "マダイ",
+    "scientific": "Pagrus major",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Được mệnh danh là vua của các loài cá trắng nước biển trong văn hóa Nhật.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "madai"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "真鯛",
+    "jaTrade": "タイ / マダイ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0302.85"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "seabream",
+      "digest": "c1426aa3ed2fbde765e39039a849bd435ceb936d7a2a2a5334f655885bdbee8a",
+      "verified": false
+    },
+    "family": "Sparidae",
+    "familyVi": "Họ Cá tráp",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "14.00 - 24.00 USD/kg",
+      "rangeVnd": "320.000 - 550.000 đ/kg",
+      "specRef": "Sống bơi oxy nhập khẩu / Cấp đông sashimi grade",
+      "note": "Âm 'Tai' đồng âm với 'Medetai' (chúc mừng hạnh phúc) tại Nhật",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "pompano",
+    "group": "Cá",
+    "sku": "proto-pompano",
+    "vi": "Cá chim vây vàng",
+    "en": "Golden pompano",
+    "ja": "コバンアジ",
+    "scientific": "Trachinotus carolinus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Thịt trắng thơm, béo ngậy, ít xương dăm, thích hợp nướng muối ớt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kobanaji"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Florida pompano"
+    ],
+    "jaKanji": "丸小判鰺",
+    "jaTrade": "ポンパノ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "pompano",
+      "digest": "e8da31f7050cd82919e5f44cfe82ebadc8d4d46383dab0edd2e0e839e0c34002",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "6.00 - 9.50 USD/kg",
+      "rangeVnd": "140.000 - 220.000 đ/kg",
+      "specRef": "Tươi sống nuôi lồng biển / Cấp đông nguyên con",
+      "note": "Loài cá biển nuôi kinh tế trọng điểm tại miền Trung Việt Nam",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "silver_pomfret",
+    "group": "Cá",
+    "sku": "proto-silver_pomfret",
+    "vi": "Cá chim trắng",
+    "en": "Silver pomfret",
+    "ja": "マナガツオ",
+    "scientific": "Pampus argenteus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Thân dẹt hình thoi, da ánh bạc lấp lánh, thịt mềm tinh tế.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "managatsuo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "真魚鰹",
+    "jaTrade": "マナガツオ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "silver_pomfret",
+      "digest": "e5cd805ea2e585d49ca447da7f9f6aee8011aeea1b626c4e62f287da5d1baab3",
+      "verified": false
+    },
+    "family": "Stromateidae",
+    "familyVi": "Họ Cá chim",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "12.00 - 19.50 USD/kg",
+      "rangeVnd": "280.000 - 450.000 đ/kg",
+      "specRef": "Tươi ướp đá tàu cá đánh bắt tự nhiên (size 0.5-1kg/con)",
+      "note": "Thuộc câu 'Chim, Thu, Nhụ, Đé' tứ đại hải sản danh tiếng Việt Nam",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "black_pomfret",
+    "group": "Cá",
+    "sku": "proto-black_pomfret",
+    "vi": "Cá chim đen",
+    "en": "Black pomfret",
+    "ja": "クロアジモドキ",
+    "scientific": "Parastromateus niger",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Toàn thân có màu xám đen pha nâu sẫm, vảy nhỏ dễ bong.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kuroajimodoki"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "黒真魚鰹",
+    "jaTrade": "ブラックポムフレット",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "black_pomfret",
+      "digest": "854468a492e8cbbbd6dd15bc2bc1409d7dc2781d8892bae49d480aa85785385e",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "5.20 - 8.20 USD/kg",
+      "rangeVnd": "120.000 - 190.000 đ/kg",
+      "specRef": "Tươi nguyên con / Đông lạnh tàu biển",
+      "note": "Phân loại học thuộc họ Cá khế (Carangidae), không cùng họ với chim trắng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "cobia",
+    "group": "Cá",
+    "sku": "proto-cobia",
+    "vi": "Cá bớp / Cá giò",
+    "en": "Cobia",
+    "ja": "スギ",
+    "scientific": "Rachycentron canadum",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Loài cá duy nhất trong họ Rachycentridae, thân thon dài giống cá ép Remora.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sugi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Black kingfish"
+    ],
+    "jaKanji": "杉",
+    "jaTrade": "スギ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "cobia",
+      "digest": "1dcdc1a78f57c999f5b8f10d244736cd2462a274577129853d51780e6eb15851",
+      "verified": false
+    },
+    "family": "Rachycentridae",
+    "familyVi": "Họ Cá bớp",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "8.00 - 14.00 USD/kg",
+      "rangeVnd": "190.000 - 320.000 đ/kg",
+      "specRef": "Sống bơi lồng bè / Cắt khúc steak đông lạnh (con 4-8kg)",
+      "note": "Thịt béo ngậy giòn ngọt, nổi tiếng trong các món lẩu chua",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "amberjack_hamachi",
+    "group": "Cá",
+    "sku": "proto-amberjack_hamachi",
+    "vi": "Cá cam Nhật Bản / Hamachi / Buri",
+    "en": "Japanese amberjack",
+    "ja": "ブリ / ハマチ",
+    "scientific": "Seriola quinqueradiata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh sashimi"
+    ],
+    "identification": "Vào mùa đông thịt tích trữ lượng mỡ dồi dào, thớ thịt hồng nhạt tan ngay đầu lưỡi.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "buri"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Yellowtail"
+    ],
+    "jaKanji": "鰤",
+    "jaTrade": "ハマチ / ブリ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh sashimi",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "amberjack_hamachi",
+      "digest": "f7a595f514fb9fd896d0d430d9870aa1e8b266495b38a76a9897ed80ea787579",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "24.00 - 41.00 USD/kg",
+      "rangeVnd": "550.000 - 950.000 đ/kg",
+      "specRef": "Phi-lê sashimi đông sâu / Nguyên con ướp đá Kagoshima",
+      "note": "Tên gọi thay đổi theo kích thước lớn lên: Wakashi -> Inada -> Warasa -> Buri",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "greater_amberjack",
+    "group": "Cá",
+    "sku": "proto-greater_amberjack",
+    "vi": "Cá cam Kampachi",
+    "en": "Greater amberjack",
+    "ja": "カンパチ",
+    "scientific": "Seriola dumerili",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Thịt săn giòn hơn Hamachi, vị thanh tao và độ béo thanh thoát.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kanpachi"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "間八",
+    "jaTrade": "カンパチ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "greater_amberjack",
+      "digest": "24c033b73ada79ab893216cd0ff76c0a82138d0faa3788383d7c74fc089ca5bf",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "27.00 - 48.00 USD/kg",
+      "rangeVnd": "620.000 - 1.100.000 đ/kg",
+      "specRef": "Phi-lê sashimi cao cấp nhập khẩu Nhật",
+      "note": "Chữ 'Bát' (八) do có vệt sọc sẫm xiên trên đỉnh đầu như chữ số 8",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "threadfin_bream",
+    "group": "Cá",
+    "sku": "proto-threadfin_bream",
+    "vi": "Cá đổng / Cá lượng",
+    "en": "Golden threadfin bream",
+    "ja": "イトヨリダイ",
+    "scientific": "Nemipterus virgatus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Thịt cá xay surimi đông lạnh"
+    ],
+    "identification": "Tia vây đuôi trên kéo dài thành một sợi chỉ vàng óng ả.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "itoyoridai"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "糸撚魚",
+    "jaTrade": "イトヨリ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "surimi",
+        "labelVi": "Thịt cá xay surimi đông lạnh",
+        "hs6": "0304.99"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "threadfin_bream",
+      "digest": "31c0701213bf52cb33b840dc1ac934948a4819bad80f2650698134d6ddd48feb",
+      "verified": false
+    },
+    "family": "Nemipteridae",
+    "familyVi": "Họ Cá lượng",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.00 - 5.60 USD/kg",
+      "rangeVnd": "70.000 - 130.000 đ/kg",
+      "specRef": "Nguyên con đông lạnh / Nguyên liệu sản xuất Surimi cốt lõi",
+      "note": "Nguyên liệu surimi tạo độ dai (gel strength) xuất sắc",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "lizardfish",
+    "group": "Cá",
+    "sku": "proto-lizardfish",
+    "vi": "Cá mối",
+    "en": "Greater lizardfish",
+    "ja": "マエソ",
+    "scientific": "Saurida tumbil",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Surimi đông lạnh"
+    ],
+    "identification": "Miệng rộng đầy răng nhọn hình thoi như thằn lằn, thịt trắng rất dẻo khi quết chả.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "maeso"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "鰐鯒",
+    "jaTrade": "エソ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "surimi",
+        "labelVi": "Surimi đông lạnh",
+        "hs6": "0304.99"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "lizardfish",
+      "digest": "fe66113ea76abd12d0681b1ec93b18a5f5eed2b62cd18859ca98ffc82a28a9ad",
+      "verified": false
+    },
+    "family": "Synodontidae",
+    "familyVi": "Họ Cá mối",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.20 - 4.10 USD/kg",
+      "rangeVnd": "50.000 - 95.000 đ/kg",
+      "specRef": "Nguyên con đông lạnh / Surimi / Khô cá mối 1 nắng",
+      "note": "Nguyên liệu sản xuất chả cá Kamaboko truyền thống của Nhật",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "snakehead",
+    "group": "Cá",
+    "sku": "proto-snakehead",
+    "vi": "Cá lóc / Cá quả",
+    "en": "Striped snakehead",
+    "ja": "ライギョ",
+    "scientific": "Channa striata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Có cơ quan hô hấp phụ trên mang giúp hít thở không khí và trườn trên cạn.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "raigyo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "雷魚",
+    "jaTrade": "スネークヘッド",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "snakehead",
+      "digest": "84353371eaa51f0fe3856c9e46a7902162c95ebd4dc07efc01dd31b89212ffe9",
+      "verified": false
+    },
+    "family": "Channidae",
+    "familyVi": "Họ Cá quả",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.80 - 4.80 USD/kg",
+      "rangeVnd": "65.000 - 110.000 đ/kg",
+      "specRef": "Sống bơi / Phi-lê đông lạnh xuất khẩu",
+      "note": "Đặc sản cá lóc nướng trui rơm miền Tây sông nước",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "climbing_perch",
+    "group": "Cá",
+    "sku": "proto-climbing_perch",
+    "vi": "Cá rô đồng",
+    "en": "Climbing perch",
+    "ja": "キノボリウオ",
+    "scientific": "Anabas testudineus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh"
+    ],
+    "identification": "Gai nắp mang cứng giúp cá có thể 'leo trèo' di chuyển qua các bờ cỏ ẩm ướt.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "kinoboriuo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "木登り魚",
+    "jaTrade": "キノボリウオ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "climbing_perch",
+      "digest": "4cea083c3e3da21b73a63fa6bcc5fa7c7226e62e87128c60864b04499aa4d465",
+      "verified": false
+    },
+    "family": "Anabantidae",
+    "familyVi": "Họ Cá rô đồng",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.00 - 5.20 USD/kg",
+      "rangeVnd": "70.000 - 120.000 đ/kg",
+      "specRef": "Sống nguyên con / Thịt cá rô rút xương hấp",
+      "note": "Món canh bánh đa cá rô đồng Hải Dương trứ danh",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "clown_featherback",
+    "group": "Cá",
+    "sku": "proto-clown_featherback",
+    "vi": "Cá thát lát cườm",
+    "en": "Clown featherback",
+    "ja": "スポッテッドナイフフィッシュ",
+    "scientific": "Chitala ornata",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh",
+      "Thịt nạo đông lạnh"
+    ],
+    "identification": "Thân mỏng dẹt như lưỡi dao với hàng đốm tròn viền đen như chuỗi ngọc cườm.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "supotteddonaifufisshu"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Spotted knifefish"
+    ],
+    "jaKanji": "斑刀魚",
+    "jaTrade": "ナイフフィッシュ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Thịt nạo đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "clown_featherback",
+      "digest": "81b889dd0252cd7be019ae3bc9044b1d3a67554b923bc1d949becc1c7d218124",
+      "verified": false
+    },
+    "family": "Notopteridae",
+    "familyVi": "Họ Cá thát lát",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.50 - 6.00 USD/kg",
+      "rangeVnd": "80.000 - 140.000 đ/kg",
+      "specRef": "Thịt nạo tươi làm chả / Nguyên con đông lạnh",
+      "note": "Chả cá thát lát Hậu Giang nổi tiếng với độ dẻo dai tự nhiên",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "red_mullet",
+    "group": "Cá",
+    "sku": "proto-red_mullet",
+    "vi": "Cá phèn hồng",
+    "en": "Striped red mullet",
+    "ja": "ヒメジ",
+    "scientific": "Mullus surmuletus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Có đôi râu cằm linh hoạt dùng để dò tìm thức ăn vùi trong lớp cát sỏi đáy biển.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "himeji"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Goatfish"
+    ],
+    "jaKanji": "比売知",
+    "jaTrade": "ヒメジ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "red_mullet",
+      "digest": "b5949e12af3dce1eedcc1275085cefb75fa6e7f2bba2e44c3f9fbcf5478807e6",
+      "verified": false
+    },
+    "family": "Mullidae",
+    "familyVi": "Họ Cá phèn",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.90 - 7.00 USD/kg",
+      "rangeVnd": "90.000 - 160.000 đ/kg",
+      "specRef": "Tươi nguyên con ướp đá / Cấp đông trên tàu",
+      "note": "Thịt ngọt đậm đà, chuyên kho tiêu, chiên giòn rụm",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "flying_fish",
+    "group": "Cá",
+    "sku": "proto-flying_fish",
+    "vi": "Cá chuồn",
+    "en": "Flying fish",
+    "ja": "トビウオ",
+    "scientific": "Cheilopogon melanurus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Trứng cá đông lạnh"
+    ],
+    "identification": "Vây ngực mở rộng như đôi cánh cho phép lướt trên mặt nước hàng chục mét.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "tobiuo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "飛魚",
+    "jaTrade": "トビウオ / トビッコ (trứng)",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "roe",
+        "labelVi": "Trứng cá đông lạnh",
+        "hs6": "0303.91"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "flying_fish",
+      "digest": "750e668eb5b7a494bad3f91f5e9a7af27613d267c1e2b91792e68d25c235e0d6",
+      "verified": false
+    },
+    "family": "Exocoetidae",
+    "familyVi": "Họ Cá chuồn",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.80 - 4.80 USD/kg",
+      "rangeVnd": "65.000 - 110.000 đ/kg",
+      "specRef": "Nguyên con tươi / Trứng cá chuồn Tobiko đông lạnh làm sushi",
+      "note": "Trứng cá chuồn Tobiko có giá tới 600.000 - 900.000 đ/kg",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "capelin",
+    "group": "Cá",
+    "sku": "proto-capelin",
+    "vi": "Cá trứng Nauy",
+    "en": "Capelin",
+    "ja": "カラフトシシャモ",
+    "scientific": "Mallotus villosus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Đông lạnh nguyên con",
+      "Trứng cá (làm Masago)"
+    ],
+    "identification": "Bụng cá cái chứa đầy bọc trứng giòn tan chiếm phần lớn thể tích cơ thể.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "karafutoshishamo"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Mallotus"
+    ],
+    "jaKanji": "樺太柳葉魚",
+    "jaTrade": "シシャモ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh nguyên con",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "roe",
+        "labelVi": "Trứng cá (làm Masago)",
+        "hs6": "0303.91"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "capelin",
+      "digest": "0f4eee2f4ef611433087f89713251af83a5d93efff772e279ff3767959d98019",
+      "verified": false
+    },
+    "family": "Osmeridae",
+    "familyVi": "Họ Cá ếch biếc Osmeridae",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.60 - 4.10 USD/kg",
+      "rangeVnd": "60.000 - 95.000 đ/kg",
+      "specRef": "Đông lạnh nguyên con đầy trứng khay 500g nhập Nauy/Canada",
+      "note": "Món nướng chiên nguyên con béo bùi được ưa chuộng khắp các quán ăn",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "mahi_mahi",
+    "group": "Cá",
+    "sku": "proto-mahi_mahi",
+    "vi": "Cá nục heo / Cá dũa",
+    "en": "Mahi-mahi",
+    "ja": "シイラ",
+    "scientific": "Coryphaena hippurus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Phi-lê đông lạnh"
+    ],
+    "identification": "Màu sắc ngũ sắc rực rỡ đổi từ xanh ngọc bích sang vàng kim khi bơi săn mồi dưới biển.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shiira"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Dorado",
+      "Dolphinfish"
+    ],
+    "jaKanji": "鱪",
+    "jaTrade": "シイラ / マヒマヒ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Phi-lê đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "mahi_mahi",
+      "digest": "85403a78d27813f5fd67e21451516f2c9632f093edfb36eb1c16ad298eb4593a",
+      "verified": false
+    },
+    "family": "Coryphaenidae",
+    "familyVi": "Họ Cá nục heo",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.70 - 6.50 USD/kg",
+      "rangeVnd": "85.000 - 150.000 đ/kg",
+      "specRef": "Phi-lê đông lạnh IQF / Nguyên con tươi đánh bắt xa bờ",
+      "note": "Cá xuất khẩu chủ lực đi thị trường Bắc Mỹ cho món steak phi-lê nướng",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "milkfish",
+    "group": "Cá",
+    "sku": "proto-milkfish",
+    "vi": "Cá măng biển",
+    "en": "Milkfish",
+    "ja": "サバヒー",
+    "scientific": "Chanos chanos",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Rút xương đông lạnh"
+    ],
+    "identification": "Thịt cá ngọt đậm đà nhưng nhiều xương dăm hình chữ Y cần kỹ thuật rút xương điêu luyện.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "sabahi-"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "鯖比売",
+    "jaTrade": "サバヒー",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "frozen_fillet",
+        "labelVi": "Rút xương đông lạnh",
+        "hs6": "0304.89"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "milkfish",
+      "digest": "bcd97dab822a4aeb9ae1919d4dd28c9400cdf86991bb9ce1204f623957fa8e4c",
+      "verified": false
+    },
+    "family": "Chanidae",
+    "familyVi": "Họ Cá măng",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "3.00 - 5.20 USD/kg",
+      "rangeVnd": "70.000 - 120.000 đ/kg",
+      "specRef": "Tươi / Rút xương xẻ bướm đông lạnh xuất khẩu",
+      "note": "Quốc ngư của Philippines (Bangus) và cực kỳ nổi tiếng tại Đài Loan",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "horse_mackerel",
+    "group": "Cá",
+    "sku": "proto-horse_mackerel",
+    "vi": "Cá nục hoa / Aji",
+    "en": "Japanese jack mackerel",
+    "ja": "マアジ",
+    "scientific": "Trachurus japonicus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Tươi hoặc ướp lạnh",
+      "Đông lạnh"
+    ],
+    "identification": "Dọc đường bên của thân có hàng vảy cứng nhọn hình khiên (scutes).",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "maaji"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Horse mackerel"
+    ],
+    "jaKanji": "真鯵",
+    "jaTrade": "アジ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Tươi hoặc ướp lạnh",
+        "hs6": "0302.49"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.59"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "horse_mackerel",
+      "digest": "b18090b54cfcb8abe616437854a2eb975469215032b6fed3a3fa93c1ddb31b08",
+      "verified": false
+    },
+    "family": "Carangidae",
+    "familyVi": "Họ Cá khế",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "2.60 - 4.80 USD/kg",
+      "rangeVnd": "60.000 - 110.000 đ/kg",
+      "specRef": "Nguyên con đông lạnh tàu / Phi-lê tươi làm sushi",
+      "note": "Thành phần không thể thiếu trong thực đơn sushi bình dân Edomae",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "beluga_sturgeon",
+    "group": "Cá",
+    "sku": "proto-beluga_sturgeon",
+    "vi": "Cá tầm Beluga / Trứng cá Caviar",
+    "en": "Beluga sturgeon",
+    "ja": "オオチョウザメ",
+    "scientific": "Huso huso",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Thịt cá tươi/ướp lạnh (CITES II)",
+      "Thịt cá đông lạnh (CITES II)",
+      "Trứng cá muối Caviar chuẩn"
+    ],
+    "identification": "Cá nước ngọt lớn nhất thế giới (dài tới 7m, nặng 1.5 tấn), mất 15-20 năm mới đẻ lứa trứng đầu.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "oochouzame"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [
+      "Great sturgeon"
+    ],
+    "jaKanji": "大蝶鮫",
+    "jaTrade": "ベルーガ (キャビア)",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Thịt cá tươi/ướp lạnh (CITES II)",
+        "hs6": "0302.89"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Thịt cá đông lạnh (CITES II)",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "caviar",
+        "labelVi": "Trứng cá muối Caviar chuẩn",
+        "hs6": "1604.31"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "beluga_sturgeon",
+      "digest": "77a665708cbc4abea528bbfc266e123cf05d2c96753e54faa76077709ae5b991",
+      "verified": false
+    },
+    "family": "Acipenseridae",
+    "familyVi": "Họ Cá tầm",
+    "rarity": "legendary",
+    "marketPrice": {
+      "rangeUsd": "3,500 - 7,800 USD/kg Caviar",
+      "rangeVnd": "80.000.000 - 180.000.000 đ/kg Caviar",
+      "specRef": "Trứng cá muối đen Beluga Caviar thượng hạng biển Caspi",
+      "note": "Một trong những món ăn đắt đỏ và xa xỉ bậc nhất thế giới",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "siberian_sturgeon",
+    "group": "Cá",
+    "sku": "proto-siberian_sturgeon",
+    "vi": "Cá tầm Siberi",
+    "en": "Siberian sturgeon",
+    "ja": "シベリアチョウザメ",
+    "scientific": "Acipenser baerii",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh",
+      "Trứng cá muối Caviar"
+    ],
+    "identification": "Loài cá tầm thích nghi tốt và được nuôi lấy thịt & trứng đen thành công tại vùng núi cao Việt Nam.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "shiberiachouzame"
+    },
+    "taxonomicGroup": "fish",
+    "enAliases": [],
+    "jaKanji": "シベリアチョウザメ",
+    "jaTrade": "チョウザメ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0301.99"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0303.89"
+      },
+      {
+        "state": "caviar",
+        "labelVi": "Trứng cá muối Caviar",
+        "hs6": "1604.31"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "siberian_sturgeon",
+      "digest": "31c2bda0893bfba21e75bb4c0fe600d6b30ecd5eec8c370d09ea4873e512cd8d",
+      "verified": false
+    },
+    "family": "Acipenseridae",
+    "familyVi": "Họ Cá tầm",
+    "rarity": "uncommon",
+    "marketPrice": {
+      "rangeUsd": "9.50 - 15.00 USD/kg thịt cá",
+      "rangeVnd": "220.000 - 350.000 đ/kg thịt cá",
+      "specRef": "Sống bơi oxy nuôi nước lạnh Sa Pa / Đà Lạt (2-5kg/con)",
+      "note": "Thịt cá không xương hom mà toàn sụn giòn, dùng ăn lẩu chua cay",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sea_urchin",
+    "group": "Khác",
+    "sku": "proto-sea_urchin",
+    "vi": "Nhum biển / Cầu gai / Uni",
+    "en": "Purple sea urchin",
+    "ja": "ウニ / ムラサキウニ",
+    "scientific": "Strongylocentrotus purpuratus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống, tươi hoặc ướp lạnh",
+      "Đông lạnh",
+      "Chế biến hộp"
+    ],
+    "identification": "Phần ăn được là tuyến sinh dục màu vàng cam béo ngậy, tan chảy hương vị biển cả.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "uni"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [
+      "Sea urchin"
+    ],
+    "jaKanji": "雲丹",
+    "jaTrade": "ウニ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống, tươi hoặc ướp lạnh",
+        "hs6": "0308.11"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0308.12"
+      },
+      {
+        "state": "prepared",
+        "labelVi": "Chế biến hộp",
+        "hs6": "1605.62"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sea_urchin",
+      "digest": "41191d683cc593be30f44e28f05640bec90f7fec41d50f28c206244eb154d3f0",
+      "verified": false
+    },
+    "family": "Strongylocentrotidae",
+    "familyVi": "Họ Cầu gai",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "50.00 - 120.00 USD/kg Uni",
+      "rangeVnd": "1.200.000 - 2.800.000 đ/kg Uni",
+      "specRef": "Trứng Uni xếp hộp gỗ gỗ thông (Bafun / Murasaki Uni)",
+      "note": "Hàng Hokkaido Nhật Bản đạt giá cao ngất ngưởng trong các nhà hàng Omakase",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "penis_fish",
+    "group": "Khác",
+    "sku": "proto-penis_fish",
+    "vi": "Cá dương vật / Giun biển Gaebul",
+    "en": "Innkeeper worm",
+    "ja": "ユムシ",
+    "scientific": "Urechis caupo",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh"
+    ],
+    "identification": "Hình dáng nhạy cảm độc lạ, ruột giòn sần sật vị ngọt tự nhiên chứa nhiều axit amin.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "yumushi"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [
+      "Penis fish"
+    ],
+    "jaKanji": "ユムシ",
+    "jaTrade": "ユムシ / ケブル",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0308.90"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0308.90"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "penis_fish",
+      "digest": "2b236bfd15697ad0bda26ae527b902084912e5e9f61780e6ed376409a58eb38e",
+      "verified": false
+    },
+    "family": "Urechidae",
+    "familyVi": "Họ Trùng thìa Urechidae",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "9.50 - 16.50 USD/kg",
+      "rangeVnd": "220.000 - 380.000 đ/kg",
+      "specRef": "Sống nguyên con bể hải sản Hàn Quốc / Trung Quốc",
+      "note": "Món ăn sashimi tươi sống chấm dầu mè muối biển Gaebul (개불)",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sea_squirt",
+    "group": "Khác",
+    "sku": "proto-sea_squirt",
+    "vi": "Hải dứa / Hoya",
+    "en": "Sea squirt",
+    "ja": "ホヤ / マボヤ",
+    "scientific": "Halocynthia roretzi",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh"
+    ],
+    "identification": "Thuộc ngành Động vật có dây sống sơ khai, vẻ ngoài sần sùi màu đỏ cam như quả dứa biển.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hoya"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [
+      "Sea pineapple"
+    ],
+    "jaKanji": "海鞘",
+    "jaTrade": "ホヤ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0308.90"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0308.90"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sea_squirt",
+      "digest": "47e9fb64fbba010a280f9a8ac72863b69e2392fcc9959e191cf2123e5b91e30f",
+      "verified": false
+    },
+    "family": "Pyuridae",
+    "familyVi": "Họ Hải đồn Pyuridae",
+    "rarity": "common",
+    "marketPrice": {
+      "rangeUsd": "8.00 - 13.00 USD/kg",
+      "rangeVnd": "180.000 - 300.000 đ/kg",
+      "specRef": "Tươi sống ngâm nước biển xuất khẩu từ vùng Tohoku",
+      "note": "Hương vị nồng nàn độc đáo kết hợp cả 5 vị: ngọt, mặn, chua, đắng và umami",
+      "sourced": false
+    }
+  },
+  {
+    "externalId": "sandworm",
+    "group": "Khác",
+    "sku": "proto-sandworm",
+    "vi": "Sá sùng / Địa sâm",
+    "en": "Peanut worm",
+    "ja": "スジホシムシ",
+    "scientific": "Sipunculus nudus",
+    "source": "Prototype seafood-master-2 — chưa kiểm chứng",
+    "aliases": [],
+    "forms": [
+      "Sống hoặc tươi",
+      "Đông lạnh",
+      "Khô"
+    ],
+    "identification": "Vàng ròng của biển cả, linh hồn tạo vị ngọt thanh hậu sâu cho nước dùng phở bò Hà Nội xưa.",
+    "note": "Nhập từ prototype; tên, ảnh, HS và giá chưa kiểm chứng.",
+    "pronunciation": {
+      "ja": "hoshimushi"
+    },
+    "taxonomicGroup": "other",
+    "enAliases": [
+      "Sandworm"
+    ],
+    "jaKanji": "星虫",
+    "jaTrade": "スジホシムシ",
+    "tradeRestriction": null,
+    "hsHints": [
+      {
+        "state": "live_fresh_chilled",
+        "labelVi": "Sống hoặc tươi",
+        "hs6": "0308.90"
+      },
+      {
+        "state": "frozen",
+        "labelVi": "Đông lạnh",
+        "hs6": "0308.90"
+      },
+      {
+        "state": "dried",
+        "labelVi": "Khô",
+        "hs6": "0308.90"
+      }
+    ],
+    "provenance": {
+      "origin": "prototype:seafood-master-2",
+      "prototypeId": "sandworm",
+      "digest": "a6dbac979023ceb7e1f0fd6cd265eafa0897cc4738c78904d79b485ee61592d0",
+      "verified": false
+    },
+    "family": "Sipunculidae",
+    "familyVi": "Họ Sá sùng Sipunculidae",
+    "rarity": "rare",
+    "marketPrice": {
+      "rangeUsd": "150.00 - 240.00 USD/kg khô",
+      "rangeVnd": "3.500.000 - 5.500.000 đ/kg khô",
+      "specRef": "Sá sùng khô Quan Lạn (Vân Đồn, Quảng Ninh) thượng hạng",
+      "note": "Hàng tươi đào bãi cát có giá khoảng 400.000 - 650.000 đ/kg",
+      "sourced": false
+    }
+  }
+]

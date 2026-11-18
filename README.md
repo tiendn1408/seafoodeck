@@ -17,6 +17,19 @@ Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pi
 
 Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Chạy VPS/GHCR và nâng cấp](docs/DEPLOY_PILOT.md). Chưa deploy VPS trong lượt này.
 
+## Nhập dữ liệu prototype
+
+Bộ prototype (100 loài, 5 hồ sơ HS) được nhập thành bản nháp qua script chỉ gọi API quản trị; không ghi thẳng DB. Thông tin nguồn và giới hạn: [docs/sources/prototype-import](docs/sources/prototype-import/README.md).
+
+```sh
+# Chạy thử: đăng nhập và tra cứu, không ghi gì
+node scripts/import-prototype.mjs --source ../seafood-master-2 --base-url http://127.0.0.1:18089 --dry-run
+# Chạy thật vào API đích (mật khẩu quản trị được hỏi lúc chạy, không đưa qua argv/env)
+node scripts/import-prototype.mjs --source ../seafood-master-2 --base-url http://127.0.0.1:18089
+```
+
+Chạy lên VPS chỉ khi người vận hành quyết định; script không tự chạy ở đó.
+
 ## Kiểm tra
 
 ```sh
