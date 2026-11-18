@@ -93,6 +93,32 @@
         ]
       }
     },
+    "/api/v1/catalog/overview": {
+      "get": {
+        "operationId": "CatalogController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogOverviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
     "/api/v1/catalog/items/{revisionId}": {
       "get": {
         "operationId": "CatalogController_detail",
@@ -1129,6 +1155,100 @@
           "page",
           "limit",
           "total",
+          "items"
+        ]
+      },
+      "OverviewGroupsResponse": {
+        "type": "object",
+        "properties": {
+          "fish": {
+            "type": "number"
+          },
+          "crustacean": {
+            "type": "number"
+          },
+          "mollusc": {
+            "type": "number"
+          },
+          "other": {
+            "type": "number"
+          },
+          "none": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fish",
+          "crustacean",
+          "mollusc",
+          "other",
+          "none"
+        ]
+      },
+      "OverviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "revisionId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "vi": {
+            "type": "string"
+          },
+          "scientific": {
+            "type": "string"
+          },
+          "taxonomicGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "revisionId",
+          "itemId",
+          "vi",
+          "scientific",
+          "taxonomicGroup",
+          "imageId"
+        ]
+      },
+      "CatalogOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "learnable": {
+            "type": "number"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/OverviewGroupsResponse"
+          },
+          "hsCases": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewItemResponse"
+            }
+          }
+        },
+        "required": [
+          "releaseId",
+          "internal",
+          "learnable",
+          "groups",
+          "hsCases",
           "items"
         ]
       },

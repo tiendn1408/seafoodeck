@@ -4,12 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { AuthSession, Prisma } from './generated/prisma/client';
+import { Prisma, type AuthSession } from './generated/prisma/client';
 import { parse } from 'csv-parse/sync';
 import { Db } from './db';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
 import { EXTERNAL_ID_PATTERN } from './import-state';
+import { likePattern, summarizeOverview, type OverviewRow } from './overview';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
@@ -249,6 +250,15 @@ export class Catalog {
     )
       throw new BadRequestException('Phân trang/bộ lọc không hợp lệ.');
     const release = await this.current(actor);
+    const altIds = query
+      ? (
+          await this.db.$queryRaw<{ id: string }[]>(Prisma.sql`
+            SELECT "id" FROM "Revision"
+            WHERE "data"->>'jaTrade' ILIKE ${likePattern(query)}
+              OR "data"->>'jaKanji' ILIKE ${likePattern(query)}
+              OR ("data"->'enAliases')::text ILIKE ${likePattern(query)}`)
+        ).map((r) => r.id)
+      : [];
     const where: Prisma.RevisionWhereInput = {
       AND: [
         ...(learnable
@@ -259,14 +269,19 @@ export class Catalog {
       releases: { some: { releaseId: release.id } },
       ...(query
         ? {
-            names: {
-              some: {
-                OR: [
-                  { label: { contains: query, mode: 'insensitive' } },
-                  { searchText: { contains: query, mode: 'insensitive' } },
-                ],
+            OR: [
+              {
+                names: {
+                  some: {
+                    OR: [
+                      { label: { contains: query, mode: 'insensitive' } },
+                      { searchText: { contains: query, mode: 'insensitive' } },
+                    ],
+                  },
+                },
               },
-            },
+              { id: { in: altIds } },
+            ],
           }
         : {}),
       ...(group ? { data: { path: ['group'], equals: group } } : {}),
@@ -289,6 +304,36 @@ export class Catalog {
       total,
       items: rows.map((r) => this.dto(r)),
     };
+  }
+  async overview(actor: AuthSession) {
+    const release = await this.current(actor);
+    const revisions = await this.db.revision.findMany({
+      where: {
+        releases: { some: { releaseId: release.id } },
+        AND: kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } })),
+      },
+      orderBy: { item: { externalId: 'asc' } },
+      include: { names: true, media: { include: { asset: true } } },
+    });
+    const rows: OverviewRow[] = revisions.map((r) => {
+      const d = r.data as unknown as ItemData;
+      const label = (kind: Kind) => r.names.find((n) => n.kind === kind)?.label ?? '';
+      return {
+        revisionId: r.id,
+        itemId: d.externalId,
+        vi: label('vi'),
+        scientific: label('scientific'),
+        taxonomicGroup: d.taxonomicGroup ?? null,
+        media: r.media.map((m) => m.asset),
+      };
+    });
+    const hsCases = await this.db.tradeScenario.count({
+      where: {
+        revisionId: { in: rows.map((r) => r.revisionId) },
+        ...(!release.internal ? { status: 'approved' } : {}),
+      },
+    });
+    return summarizeOverview(rows, hsCases, release);
   }
   dto(row: {
     id: string;

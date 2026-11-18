@@ -36,6 +36,29 @@ export class CatalogPageResponse {
   @ApiProperty() total!: number;
   @ApiProperty({ type: [CatalogItemResponse] }) items!: CatalogItemResponse[];
 }
+export class OverviewGroupsResponse {
+  @ApiProperty() fish!: number;
+  @ApiProperty() crustacean!: number;
+  @ApiProperty() mollusc!: number;
+  @ApiProperty() other!: number;
+  @ApiProperty() none!: number;
+}
+export class OverviewItemResponse {
+  @ApiProperty() revisionId!: string;
+  @ApiProperty() itemId!: string;
+  @ApiProperty() vi!: string;
+  @ApiProperty() scientific!: string;
+  @ApiProperty({ nullable: true, type: String }) taxonomicGroup!: string | null;
+  @ApiProperty({ nullable: true, type: String }) imageId!: string | null;
+}
+export class CatalogOverviewResponse {
+  @ApiProperty() releaseId!: string;
+  @ApiProperty() internal!: boolean;
+  @ApiProperty() learnable!: number;
+  @ApiProperty({ type: OverviewGroupsResponse }) groups!: OverviewGroupsResponse;
+  @ApiProperty() hsCases!: number;
+  @ApiProperty({ type: [OverviewItemResponse] }) items!: OverviewItemResponse[];
+}
 export class SignedUrlResponse {
   @ApiProperty() url!: string;
   @ApiProperty() expiresIn!: number;

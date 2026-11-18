@@ -14,6 +14,7 @@ import {
 } from './learning';
 import { normalizeCode, validateHs, validateTariffScope } from './hs';
 import { summarizeImportState } from './import-state';
+import { summarizeOverview, likePattern, type OverviewRow } from './overview';
 import { passwordHash, passwordMatches } from './security';
 const item = {
   externalId: 'cod-test',
@@ -331,4 +332,64 @@ test('summarizeImportState flags released, live profile image, no provenance', (
   assert.equal(latest.released, true);
   assert.equal(latest.hasProfileImage, true);
   assert.equal(latest.fromImporter, false);
+});
+
+const ovRow = (
+  id: string,
+  group: OverviewRow['taxonomicGroup'],
+  media: OverviewRow['media'] = [],
+) => ({
+  revisionId: 'rev-' + id,
+  itemId: id,
+  vi: 'Tên ' + id,
+  scientific: 'Sci ' + id,
+  taxonomicGroup: group,
+  media,
+});
+const asset = (id: string, role: string, status = 'approved', revokedAt: Date | null = null) => ({
+  id,
+  role,
+  status,
+  revokedAt,
+});
+test('overview counts groups including none and exposes only six keys', () => {
+  const o = summarizeOverview(
+    [ovRow('a', 'fish'), ovRow('b', 'fish'), ovRow('c', 'mollusc'), ovRow('d', null)],
+    7,
+    { id: 'rel', internal: false },
+  );
+  assert.deepEqual(o.groups, { fish: 2, crustacean: 0, mollusc: 1, other: 0, none: 1 });
+  assert.equal(o.learnable, 4);
+  assert.equal(o.hsCases, 7);
+  assert.equal(o.releaseId, 'rel');
+  for (const i of o.items)
+    assert.deepEqual(Object.keys(i).sort(), [
+      'imageId',
+      'itemId',
+      'revisionId',
+      'scientific',
+      'taxonomicGroup',
+      'vi',
+    ]);
+});
+test('overview image: profile first, unapproved dropped for public, kept for internal', () => {
+  const rows = [
+    ovRow('a', 'fish', [asset('idn', 'identification'), asset('pro', 'profile')]),
+    ovRow('b', 'fish', [asset('x', 'identification', 'draft')]),
+    ovRow('c', 'fish', [asset('y', 'profile', 'approved', new Date())]),
+  ];
+  const pub = summarizeOverview(rows, 0, { id: 'r', internal: false });
+  assert.deepEqual(
+    pub.items.map((i) => i.imageId),
+    ['pro', null, null],
+  );
+  const int = summarizeOverview(rows, 0, { id: 'r', internal: true });
+  assert.deepEqual(
+    int.items.map((i) => i.imageId),
+    ['pro', 'x', null],
+  );
+});
+test('likePattern escapes wildcards', () => {
+  assert.equal(likePattern('50%_a'), '%50\\%\\_a%');
+  assert.equal(likePattern('a\\b'), '%a\\\\b%');
 });
