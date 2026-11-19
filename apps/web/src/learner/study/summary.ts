@@ -1,4 +1,5 @@
 import { DAY, reviewKey } from '../../domain/review';
+import { effectiveDueAt } from '../haul';
 import type { Game } from '../../pilot/api';
 import type { Ledger } from '../ledger';
 
@@ -34,6 +35,12 @@ type Row = {
   skipped: boolean;
   at: string | undefined;
 };
+
+/** "hồ sơ" for an HS-only haul, "mục" for a mixed one, "loài" otherwise. */
+function noun(entries: HaulEntry[]) {
+  const hs = entries.filter((e) => e.kind === 'hs').length;
+  return hs && hs === entries.length ? 'hồ sơ' : hs ? 'mục' : 'loài';
+}
 
 /**
  * The haul of a finished session: which species made it into the net and which slipped.
@@ -79,7 +86,7 @@ export function summarizeHaul(game: Game, ledger: Ledger): HaulSummary {
     const due = skills
       .map((s) => ledger.reviews[reviewKey(first.targetId, s)])
       .filter((r) => r && r.lastSessionId === game.id)
-      .map((r) => Date.parse(r.dueAt));
+      .map((r) => effectiveDueAt(r, ledger.attempts));
     const days =
       due.length && isFinite(last)
         ? Math.max(1, Math.round((Math.min(...due) - last) / DAY))
@@ -107,6 +114,6 @@ export function summarizeHaul(game: Game, ledger: Ledger): HaulSummary {
     caught,
     missed,
     total: entries.length,
-    title: `${caught.length} / ${entries.length} loài vào lưới`,
+    title: `${caught.length} / ${entries.length} ${noun(entries)} vào lưới`,
   };
 }

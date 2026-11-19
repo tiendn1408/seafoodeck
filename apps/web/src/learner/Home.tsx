@@ -148,8 +148,8 @@ export function Home({
 
   const reviews = Object.values(ledger.reviews);
   const loading = !overview && !error;
-  const haul = overview ? pickHaul(overview, reviews, now) : [];
-  const plan = overview ? planCast(overview, reviews, now) : null;
+  const haul = overview ? pickHaul(overview, reviews, ledger.attempts, now) : [];
+  const plan = overview ? planCast(overview, reviews, ledger.attempts, now) : null;
   const shown = wide ? 5 : roomy ? 3 : 2;
   const groupOf = new Map(
     overview?.items.map((i) => [i.itemId, groupTone(i.taxonomicGroup).key]) ?? [],

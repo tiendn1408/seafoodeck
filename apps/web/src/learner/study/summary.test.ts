@@ -162,6 +162,37 @@ describe('summarizeHaul', () => {
     );
     const s = withLedger(g);
     expect(s.caught[0]).toMatchObject({ label: 'Tôm sú đông lạnh nguyên con', kind: 'hs' });
+    expect(s.title).toBe('1 / 1 hồ sơ vào lưới');
+  });
+
+  it('says "mục" when species and HS cases share one haul', () => {
+    const g = game(
+      [
+        question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }),
+        question(
+          'h',
+          { targetId: 'case-1', targetLabel: '0306.17', skill: 'hs', correct: false },
+          { type: 'hs', prompt: 'Tôm sú đông lạnh nguyên con\nMô tả lô hàng…' },
+        ),
+      ],
+      'review',
+    );
+    expect(withLedger(g).title).toBe('1 / 2 mục vào lưới');
+  });
+
+  it('counts days to the effective due date when a practice cannot move the stored one', () => {
+    const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' })]);
+    const ledger = mergeGame(empty, g);
+    const key = Object.keys(ledger.reviews)[0];
+    // Stage 2 (7 days) whose stored date sits one day after this practice: the learner UI
+    // treats it as due a full interval after the practice, so the summary says 7, not 1.
+    const practised = {
+      ...ledger,
+      reviews: {
+        [key]: { ...ledger.reviews[key], stage: 2, dueAt: '2026-11-20T08:00:00.000Z' },
+      },
+    };
+    expect(summarizeHaul(g, practised).caught[0].note).toBe('ôn lại sau 7 ngày');
   });
 
   it('ignores questions without a result', () => {

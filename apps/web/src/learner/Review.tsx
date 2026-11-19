@@ -1,35 +1,38 @@
 import { RotateCcw } from 'lucide-react';
 import type { ReviewState } from '../domain/models';
+import { INTERVAL_DAYS } from '../domain/review';
 import type { CatalogOverview } from '../pilot/api';
 import { SignedImage } from '../pilot/Media';
 import type { StartSession } from './Home';
 import { MasteryScales } from './MasteryScales';
 import { MissingPhoto } from './MissingPhoto';
 import { SpeciesCard } from './SpeciesCard';
-import { masteryLevel } from './haul';
+import { masteryLevel, splitDue } from './haul';
 import { skillLabel, type Ledger } from './ledger';
 import { useOverview } from './useOverview';
 import './library.css';
 
-const STEPS = [1, 3, 7, 14];
-const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
+const STEPS = INTERVAL_DAYS;
+const day = (t: number) => new Date(t).toLocaleDateString('vi-VN');
+/** A review with the time the learner UI treats it as due (see effectiveDueAt). */
+type Row = { review: ReviewState; at: number };
 
 /** Reviews of one target, in due order. */
-function byTarget(rows: ReviewState[]) {
-  const map = new Map<string, ReviewState[]>();
-  for (const r of [...rows].sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt)))
-    map.set(r.targetId, [...(map.get(r.targetId) ?? []), r]);
+function byTarget(rows: Row[]) {
+  const map = new Map<string, Row[]>();
+  for (const r of [...rows].sort((a, b) => a.at - b.at))
+    map.set(r.review.targetId, [...(map.get(r.review.targetId) ?? []), r]);
   return [...map.entries()];
 }
 
-function Skills({ rows }: { rows: ReviewState[] }) {
+function Skills({ rows }: { rows: Row[] }) {
   return (
     <ul className="review-skills">
-      {rows.map((r) => (
+      {rows.map(({ review: r, at }) => (
         <li key={r.key} className="review-skill">
           <span className="review-skill-name">{skillLabel(r.skill)}</span>
           <span className="review-skill-when">
-            Mốc {STEPS[r.stage] ?? STEPS[STEPS.length - 1]} ngày · {day(r.dueAt)}
+            Mốc {STEPS[r.stage] ?? STEPS[STEPS.length - 1]} ngày · {day(at)}
           </span>
         </li>
       ))}
@@ -43,7 +46,7 @@ function Rows({
   labels,
   all,
 }: {
-  rows: ReviewState[];
+  rows: Row[];
   overview: CatalogOverview | null;
   labels: Ledger['labels'];
   all: ReviewState[];
@@ -108,19 +111,19 @@ function Fresh({
 
 /** The species in the schedule as portholes in the deep header: due ones first, ringed. */
 function Portholes({
-  reviews,
+  rows,
   overview,
   now,
 }: {
-  reviews: ReviewState[];
+  rows: Row[];
   overview: CatalogOverview | null;
   now: number;
 }) {
   const species = new Map(overview?.items.map((i) => [i.itemId, i]));
-  const entries = byTarget(reviews)
+  const entries = byTarget(rows)
     .flatMap(([id, rs]) => {
       const item = species.get(id);
-      return item ? [{ item, due: rs.some((r) => Date.parse(r.dueAt) <= now) }] : [];
+      return item ? [{ item, due: rs.some((r) => r.at <= now) }] : [];
     })
     .sort((a, b) => Number(b.due) - Number(a.due));
   if (!entries.length) return null;
@@ -167,16 +170,17 @@ export function Review({
   onVersion: (releaseId: string) => void;
 }) {
   const { overview } = useOverview(onVersion);
-  const due = reviews.filter((r) => Date.parse(r.dueAt) <= now),
-    later = reviews.filter((r) => Date.parse(r.dueAt) > now);
-  const next = [...later].sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
+  // "Due" follows the learner UI's effective due date: a review practised after it fell due
+  // waits one interval again instead of staying due forever.
+  const { due, later } = splitDue(reviews, ledger.attempts, now);
+  const next = later[0];
   return (
     <section className="ice-page review" aria-labelledby="review-title">
       <header className="ice-hero">
         <div className="ice-hero-copy">
           <h1 id="review-title">Góc ôn tập của bạn.</h1>
           <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
-          <Portholes reviews={reviews} overview={overview} now={now} />
+          <Portholes rows={[...due, ...later]} overview={overview} now={now} />
         </div>
         {reviews.length > 0 && (
           <div className="review-action">
@@ -200,7 +204,9 @@ export function Review({
                   undefined,
                   'en',
                   undefined,
-                  due.slice(0, 30).map((r) => ({ targetId: r.targetId, skill: r.skill })),
+                  due
+                    .slice(0, 30)
+                    .map(({ review: r }) => ({ targetId: r.targetId, skill: r.skill })),
                 )
               }
             >
@@ -213,7 +219,7 @@ export function Review({
                 : due.length
                   ? 'Mục đến hạn sớm nhất được ôn trước.'
                   : next
-                    ? `Chưa có mục đến hạn. Mục kế tiếp: ${day(next.dueAt)}.`
+                    ? `Chưa có mục đến hạn. Mục kế tiếp: ${day(next.at)}.`
                     : ''}
             </p>
           </div>

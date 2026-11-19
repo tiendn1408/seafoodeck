@@ -1,4 +1,5 @@
-import type { ReviewState } from '../domain/models';
+import type { Attempt, ReviewState } from '../domain/models';
+import { DAY, INTERVAL_DAYS } from '../domain/review';
 import type { CatalogOverview } from '../pilot/api';
 
 export type GroupKey = 'fish' | 'crustacean' | 'mollusc' | 'other' | 'none';
@@ -21,28 +22,81 @@ export function groupTone(g: string | null | undefined): {
 const current = (o: CatalogOverview, reviews: ReviewState[]) =>
   reviews.filter((r) => r.contentVersion === o.releaseId);
 const learnSkill = (s: string) => s.startsWith('name:') || s.startsWith('match:') || s === 'image';
-const dueTime = (r: ReviewState) => Date.parse(r.dueAt);
+
+/** Latest non-skipped attempt time per release + target + skill, built once per attempts array. */
+const lastCache = new WeakMap<readonly Attempt[], Map<string, number>>();
+const lastKey = (version: string, targetId: string, skill: string) =>
+  `${version}\u0000${targetId}\u0000${skill}`;
+function lastAttempts(attempts: readonly Attempt[]) {
+  let map = lastCache.get(attempts);
+  if (!map) {
+    map = new Map();
+    for (const a of attempts) {
+      if (a.skipped) continue;
+      const key = lastKey(a.contentVersion, a.targetId, a.skill);
+      const t = Date.parse(a.at);
+      if (isFinite(t) && t > (map.get(key) ?? -Infinity)) map.set(key, t);
+    }
+    lastCache.set(attempts, map);
+  }
+  return map;
+}
+
+/**
+ * When the learner UI treats a review as due. The stored `dueAt` never moves for a correct
+ * answer that cannot advance the stage (a self-rated "Đã nhớ", a practice in the same
+ * release), so it can sit in the past for good. A review practised after it fell due is
+ * therefore due again only one stage interval after that practice. Scheduling itself
+ * (`scheduleReview`) and the stored state are unchanged.
+ */
+export function effectiveDueAt(review: ReviewState, attempts: readonly Attempt[]): number {
+  const stored = Date.parse(review.dueAt);
+  const last = lastAttempts(attempts).get(
+    lastKey(review.contentVersion, review.targetId, review.skill),
+  );
+  if (last === undefined) return stored;
+  const days = INTERVAL_DAYS[Math.min(Math.max(review.stage, 0), INTERVAL_DAYS.length - 1)];
+  return Math.max(stored, last + days * DAY);
+}
+export function isDue(review: ReviewState, attempts: readonly Attempt[], now: number) {
+  return effectiveDueAt(review, attempts) <= now;
+}
+
+/** Reviews split into due now and scheduled later, each sorted by effective due time. */
+export function splitDue(reviews: ReviewState[], attempts: readonly Attempt[], now: number) {
+  const rows = reviews
+    .map((review) => ({ review, at: effectiveDueAt(review, attempts) }))
+    .sort((a, b) => a.at - b.at);
+  return { due: rows.filter((r) => r.at <= now), later: rows.filter((r) => r.at > now) };
+}
 
 function itemReviews(itemId: string, reviews: ReviewState[]) {
   return reviews.filter((r) => r.targetId === itemId && learnSkill(r.skill));
 }
-function statusIn(itemId: string, scoped: ReviewState[], now: number): 'new' | 'due' | 'learning' {
+function statusIn(
+  itemId: string,
+  scoped: ReviewState[],
+  attempts: readonly Attempt[],
+  now: number,
+): 'new' | 'due' | 'learning' {
   const rs = itemReviews(itemId, scoped);
   if (!rs.length) return 'new';
-  return rs.some((r) => dueTime(r) <= now) ? 'due' : 'learning';
+  return rs.some((r) => isDue(r, attempts, now)) ? 'due' : 'learning';
 }
 /** Status of an item. Pass reviews already scoped to the release (see planCast/pickHaul). */
 export function itemStatus(
   itemId: string,
   reviews: ReviewState[],
+  attempts: readonly Attempt[],
   now: number,
 ): 'new' | 'due' | 'learning' {
-  return statusIn(itemId, reviews, now);
+  return statusIn(itemId, reviews, attempts, now);
 }
 
 export function pickHaul(
   o: CatalogOverview,
   reviews: ReviewState[],
+  attempts: readonly Attempt[],
   now: number,
   max = 5,
 ): CatalogOverview['items'] {
@@ -50,12 +104,12 @@ export function pickHaul(
   const due: { item: CatalogOverview['items'][number]; at: number }[] = [];
   const fresh: CatalogOverview['items'] = [];
   for (const item of o.items) {
-    const s = statusIn(item.itemId, scoped, now);
+    const s = statusIn(item.itemId, scoped, attempts, now);
     if (s === 'new') fresh.push(item);
     else if (s === 'due')
       due.push({
         item,
-        at: Math.min(...itemReviews(item.itemId, scoped).map(dueTime)),
+        at: Math.min(...itemReviews(item.itemId, scoped).map((r) => effectiveDueAt(r, attempts))),
       });
   }
   due.sort((a, b) => a.at - b.at);
@@ -66,15 +120,22 @@ export type CastPlan =
   | { kind: 'review'; targets: { targetId: string; skill: string }[] }
   | { kind: 'flashcard'; revisionId: string }
   | { kind: 'done' };
-export function planCast(o: CatalogOverview, reviews: ReviewState[], now: number): CastPlan {
+export function planCast(
+  o: CatalogOverview,
+  reviews: ReviewState[],
+  attempts: readonly Attempt[],
+  now: number,
+): CastPlan {
   const scoped = current(o, reviews);
-  const dueRows = scoped.filter((r) => dueTime(r) <= now).sort((a, b) => dueTime(a) - dueTime(b));
+  const dueRows = splitDue(scoped, attempts, now).due;
   if (dueRows.length)
     return {
       kind: 'review',
-      targets: dueRows.slice(0, 8).map((r) => ({ targetId: r.targetId, skill: r.skill })),
+      targets: dueRows
+        .slice(0, 8)
+        .map(({ review: r }) => ({ targetId: r.targetId, skill: r.skill })),
     };
-  const fresh = o.items.find((i) => statusIn(i.itemId, scoped, now) === 'new');
+  const fresh = o.items.find((i) => statusIn(i.itemId, scoped, attempts, now) === 'new');
   return fresh ? { kind: 'flashcard', revisionId: fresh.revisionId } : { kind: 'done' };
 }
 
