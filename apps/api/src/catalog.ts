@@ -7,12 +7,12 @@ import {
 import { Prisma, type AuthSession } from './generated/prisma/client';
 import { parse } from 'csv-parse/sync';
 import { Db } from './db';
+import { alternateNameIdsSql, ungroupedIdsSql } from './search-sql';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
 import { EXTERNAL_ID_PATTERN } from './import-state';
 import {
   groupTotals,
-  likePattern,
   summarizeOverview,
   toOverviewRow,
   type GroupTotals,
@@ -258,13 +258,9 @@ export class Catalog {
       throw new BadRequestException('Phân trang/bộ lọc không hợp lệ.');
     const release = await this.current(actor);
     const altIds = query
-      ? (
-          await this.db.$queryRaw<{ id: string }[]>(Prisma.sql`
-            SELECT "id" FROM "Revision"
-            WHERE "data"->>'jaTrade' ILIKE ${likePattern(query)}
-              OR "data"->>'jaKanji' ILIKE ${likePattern(query)}
-              OR ("data"->'enAliases')::text ILIKE ${likePattern(query)}`)
-        ).map((r) => r.id)
+      ? (await this.db.$queryRaw<{ id: string }[]>(alternateNameIdsSql(release.id, query))).map(
+          (r) => r.id,
+        )
       : [];
     const base: Prisma.RevisionWhereInput = {
       AND: [
@@ -295,11 +291,7 @@ export class Catalog {
     // "none" = no named group recorded (missing, null or unknown value), as the web shows it.
     const ungrouped =
       taxon === 'none'
-        ? (
-            await this.db.$queryRaw<{ id: string }[]>(Prisma.sql`
-              SELECT "id" FROM "Revision"
-              WHERE COALESCE("data"->>'taxonomicGroup', '') NOT IN ('fish', 'crustacean', 'mollusc', 'other')`)
-          ).map((r) => r.id)
+        ? (await this.db.$queryRaw<{ id: string }[]>(ungroupedIdsSql(release.id))).map((r) => r.id)
         : [];
     const inGroup = (t: string): Prisma.RevisionWhereInput => ({
       ...base,
