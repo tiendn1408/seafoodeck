@@ -11,6 +11,9 @@ import { Db } from './db';
 import { Catalog, Kind } from './catalog';
 import { Media } from './media';
 import { hash } from './security';
+import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
+import { buildLogRows, recordAttempt, withSerializableRetry } from './progress-record';
+import type { SubmitContext } from './progress-record';
 type Option = { id: string; label: string };
 export interface PrivateQuestion {
   type: string;
@@ -160,6 +163,41 @@ export function grade(q: PrivateQuestion, answer: Record<string, unknown>) {
       (!q.correctFollowUp || answer.followUpId === q.correctFollowUp);
   }
   return { answered: true, skipped: false, correct, selfRated: false };
+}
+const FINGERPRINT_KINDS = ['vi', 'en', 'ja', 'scientific'];
+/**
+ * Content fingerprints for logged targets: HS targets are TradeScenario ids; every other target
+ * is an Item id (listening targets carry a `/listening/<kind>` suffix), fingerprinted from the
+ * names of that item's revision in the session's release. Unresolvable targets are absent.
+ */
+async function contentVersions(
+  tx: Prisma.TransactionClient,
+  releaseId: string,
+  hs: boolean,
+  targetIds: string[],
+): Promise<Map<string, string>> {
+  const versions = new Map<string, string>();
+  if (hs) {
+    const cases = await tx.tradeScenario.findMany({ where: { id: { in: targetIds } } });
+    for (const c of cases)
+      versions.set(c.id, scenarioFingerprint(c.data as Parameters<typeof scenarioFingerprint>[0]));
+    return versions;
+  }
+  const itemOf = (id: string) => id.split('/listening/')[0];
+  const revisions = await tx.revision.findMany({
+    where: {
+      itemId: { in: [...new Set(targetIds.map(itemOf))] },
+      releases: { some: { releaseId } },
+    },
+    include: { names: true },
+  });
+  for (const id of targetIds) {
+    const revision = revisions.find((r) => r.itemId === itemOf(id));
+    if (!revision) continue;
+    const names = revision.names.filter((n) => FINGERPRINT_KINDS.includes(n.kind));
+    versions.set(id, itemFingerprint(names.map((n) => ({ kind: n.kind, label: n.label }))));
+  }
+  return versions;
 }
 @Injectable()
 export class Learning {
@@ -589,19 +627,48 @@ export class Learning {
         ? { source: q.source, correctOption: q.correct, correctPairs: q.pairs, reveal: q.reveal }
         : {}),
     };
+    const userId = actor.role === 'student' ? actor.userId : null;
     try {
       return (
-        await this.db.$transaction(async (tx) =>
-          tx.attempt.create({
-            data: {
-              questionId,
-              actorId: actor.id,
-              idempotencyKey: key,
-              payloadHash,
-              answer: answer as Prisma.InputJsonValue,
-              result: JSON.parse(JSON.stringify(result)),
+        await withSerializableRetry(() =>
+          this.db.$transaction(
+            async (tx) => {
+              const created = await tx.attempt.create({
+                data: {
+                  questionId,
+                  actorId: actor.id,
+                  idempotencyKey: key,
+                  payloadHash,
+                  answer: answer as Prisma.InputJsonValue,
+                  result: JSON.parse(JSON.stringify(result)),
+                },
+              });
+              if (userId) {
+                const ctx: SubmitContext = {
+                  userId,
+                  sessionId: s.id,
+                  questionId,
+                  mode: s.mode,
+                  releaseId: s.releaseId,
+                  reviewOfId: s.reviewOfId,
+                  at: result.at,
+                };
+                const versions = await contentVersions(
+                  tx,
+                  s.releaseId,
+                  q.type === 'hs',
+                  result.items?.map((i) => i.targetId) ?? [q.targetId],
+                );
+                await recordAttempt(
+                  tx,
+                  ctx,
+                  buildLogRows(ctx, result, (id) => versions.get(id)),
+                );
+              }
+              return created;
             },
-          }),
+            { isolationLevel: 'Serializable' },
+          ),
         )
       ).result;
     } catch (e) {

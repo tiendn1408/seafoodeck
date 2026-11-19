@@ -10,6 +10,7 @@
     "start": "node dist/main.js",
     "migrate": "prisma migrate deploy",
     "seed:internal": "node dist/seed.js",
+    "rebuild:progress": "node dist/rebuild-progress.js",
     "lint": "eslint src/*.ts",
     "format:check": "prettier --check src/*.ts prisma.config.ts *.json *.mjs"
   },
