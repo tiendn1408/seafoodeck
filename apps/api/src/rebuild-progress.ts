@@ -10,7 +10,11 @@ async function main() {
     await db.$disconnect();
   }
 }
-main().catch(() => {
-  console.error('Rebuilding review progress failed; nothing was changed.');
+main().catch((e: unknown) => {
+  const code = (e as { code?: unknown } | null)?.code;
+  console.error(
+    'Rebuilding review progress failed; nothing was changed.' +
+      (typeof code === 'string' ? ` (${code})` : ''),
+  );
   process.exit(1);
 });

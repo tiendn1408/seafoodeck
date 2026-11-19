@@ -628,6 +628,16 @@ export class Learning {
         : {}),
     };
     const userId = actor.role === 'student' ? actor.userId : null;
+    // Log-only per-pair targets: a skipped match has no public `items` but still logs each pair.
+    const logItems =
+      result.items ??
+      (q.type === 'match'
+        ? Object.entries(q.targets ?? {}).map(([left, targetId]) => ({
+            targetId,
+            correct: false,
+            label: q.left?.find((o) => o.id === left)?.label,
+          }))
+        : undefined);
     try {
       return (
         await withSerializableRetry(() =>
@@ -657,12 +667,12 @@ export class Learning {
                   tx,
                   s.releaseId,
                   q.type === 'hs',
-                  result.items?.map((i) => i.targetId) ?? [q.targetId],
+                  logItems?.map((i) => i.targetId) ?? [q.targetId],
                 );
                 await recordAttempt(
                   tx,
                   ctx,
-                  buildLogRows(ctx, result, (id) => versions.get(id)),
+                  buildLogRows(ctx, { ...result, items: logItems }, (id) => versions.get(id)),
                 );
               }
               return created;

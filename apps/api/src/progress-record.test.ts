@@ -78,6 +78,27 @@ test('skipped question yields a skipped row', () => {
   assert.equal(rows[0].correct, false);
 });
 
+test('skipped match with per-pair items gives one skipped row per pair', () => {
+  const rows = buildLogRows(
+    ctx({ mode: 'match' }),
+    {
+      ...base,
+      skill: 'match:en',
+      targetId: 'matching',
+      skipped: true,
+      correct: false,
+      items: [
+        { targetId: 'a', correct: false, label: 'A' },
+        { targetId: 'b', correct: false, label: 'B' },
+        { targetId: 'c', correct: false, label: 'C' },
+      ],
+    },
+    versionOf,
+  );
+  assert.equal(rows.length, 3);
+  assert.ok(rows.every((r) => r.skipped && !r.correct));
+});
+
 test('attemptNumber and isReview are derived from the server context', () => {
   assert.equal(buildLogRows(ctx({ reviewOfId: 'old' }), base, versionOf)[0].attemptNumber, 2);
   assert.equal(buildLogRows(ctx(), base, versionOf)[0].attemptNumber, 1);
@@ -237,6 +258,30 @@ test('skipped rows are logged but do not touch ReviewProgress', async () => {
   );
   assert.equal(logs.length, 1);
   assert.equal(logs[0].skipped, true);
+  assert.equal(progress.size, 0);
+  assert.deepEqual(out, []);
+});
+
+test('a skipped match logs every pair but creates no progress rows', async () => {
+  const { tx, logs, progress } = fakeTx();
+  const c = ctx({ mode: 'match' });
+  const out = await recordAttempt(
+    tx,
+    c,
+    buildLogRows(
+      c,
+      {
+        ...base,
+        skill: 'match:en',
+        targetId: 'matching',
+        skipped: true,
+        correct: false,
+        items: ['a', 'b', 'c'].map((targetId) => ({ targetId, correct: false })),
+      },
+      versionOf,
+    ),
+  );
+  assert.equal(logs.length, 3);
   assert.equal(progress.size, 0);
   assert.deepEqual(out, []);
 });
