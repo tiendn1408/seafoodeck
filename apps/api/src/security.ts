@@ -159,6 +159,17 @@ export class LoginLimiter {
     if (++named.count > 10) throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
     this.names.set(name, named);
   }
+  private passwordChecks = new Map<string, { count: number; until: number }>();
+  /** Current-password checks (POST /me/password): 10 / 10 min per user, apart from login buckets. */
+  checkPassword(userId: string) {
+    const now = Date.now();
+    for (const [key, b] of this.passwordChecks) if (b.until < now) this.passwordChecks.delete(key);
+    const key = `pw:${userId}`;
+    const bucket = this.passwordChecks.get(key) ?? { count: 0, until: now + 600000 };
+    if (++bucket.count > 10)
+      throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
+    this.passwordChecks.set(key, bucket);
+  }
 }
 /** Marks a handler as reachable while the account must still change its password. */
 export const AllowWhilePasswordChange = () => SetMetadata('allowWhilePasswordChange', true);

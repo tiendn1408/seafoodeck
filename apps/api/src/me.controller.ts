@@ -24,6 +24,7 @@ import {
   AccessGuard,
   ActorRequest,
   AllowWhilePasswordChange,
+  LoginLimiter,
   passwordCheck,
   passwordHash,
   passwordMinFor,
@@ -52,7 +53,10 @@ export class PasswordDto {
 @ApiCookieAuth('seafoodeck_session')
 @Controller('me')
 export class MeController {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private limiter: LoginLimiter,
+  ) {}
   private async account(req: ActorRequest) {
     const user = await this.db.user.findUnique({ where: { id: requireAccount(req) } });
     if (!user || user.disabledAt) throw new UnauthorizedException('Phiên hết hạn.');
@@ -94,8 +98,11 @@ export class MeController {
   @Post('password')
   async password(@Req() req: ActorRequest, @Body() dto: PasswordDto) {
     const user = await this.account(req);
+    this.limiter.checkPassword(user.id);
     if (!passwordCheck(dto.current, user.passwordHash))
       throw new BadRequestException('Mật khẩu hiện tại không đúng.');
+    if (dto.next === dto.current)
+      throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại.');
     const min = passwordMinFor(user.role);
     if (dto.next.length < min)
       throw new BadRequestException(`Mật khẩu mới cần ít nhất ${min} ký tự.`);

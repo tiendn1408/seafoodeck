@@ -13,8 +13,12 @@ import {
   MustChangePasswordGuard,
   AdminOnlyGuard,
   passwordMinFor,
+  passwordHash,
+  passwordMatches,
+  type Auth,
   type ActorRequest,
 } from './security';
+import type { Request, Response } from 'express';
 import { MeController } from './me.controller';
 import { AuthController } from './auth.controller';
 import { UserDto } from './admin-extra.controller';
@@ -160,4 +164,181 @@ test('POST /admin/users password length depends on role', async () => {
   assert.notEqual(await userErrors({ ...base, role: 'admin', password: 'x'.repeat(20) }), 0);
   assert.equal(passwordMinFor('student'), 8);
   assert.equal(passwordMinFor('manager'), 16);
+});
+
+const scrypt = (s: string) => passwordHash(s);
+type Call = { op: string; args: Record<string, unknown> };
+const accountDb = (user: Record<string, unknown> | null) => {
+  const calls: Call[] = [];
+  const rec =
+    (op: string, result: unknown = {}) =>
+    async (args: Record<string, unknown>) => {
+      calls.push({ op, args });
+      return typeof result === 'function' ? (result as () => unknown)() : result;
+    };
+  const db = {
+    user: { findUnique: rec('user.findUnique', () => user), update: rec('user.update') },
+    authSession: { deleteMany: rec('authSession.deleteMany'), delete: rec('authSession.delete') },
+    audit: { create: rec('audit.create') },
+    $transaction: async (fn: (tx: unknown) => unknown) => fn(db),
+  };
+  return { db: db as unknown as Db, calls };
+};
+const accountReq = (userId = 'u1') =>
+  ({
+    actor: { id: 'current-sid', role: 'student', userId },
+    ip: '10.0.0.1',
+  }) as unknown as ActorRequest;
+const httpStatus = async (p: Promise<unknown>) =>
+  p.then(
+    () => 200,
+    (e: HttpException) => e.getStatus(),
+  );
+
+test('POST /me/password verifies current, enforces role minimum and rejects unchanged', async () => {
+  const student = {
+    id: 'u1',
+    role: 'student',
+    passwordHash: scrypt('temp-pass'),
+    disabledAt: null,
+  };
+  const me = () => new MeController(accountDb(student).db, new LoginLimiter());
+  assert.equal(
+    await httpStatus(me().password(accountReq(), { current: 'wrong-pass', next: 'brand-new1' })),
+    400,
+  );
+  assert.equal(
+    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'temp-pass' })),
+    400,
+  );
+  assert.equal(
+    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'short12' })),
+    400,
+  );
+  assert.equal(
+    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'eightch8' })),
+    200,
+  );
+  const manager = { ...student, role: 'manager' };
+  const asManager = () => new MeController(accountDb(manager).db, new LoginLimiter());
+  assert.equal(
+    await httpStatus(
+      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(15) }),
+    ),
+    400,
+  );
+  assert.equal(
+    await httpStatus(
+      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(16) }),
+    ),
+    200,
+  );
+});
+
+test('POST /me/password clears the flag, keeps this session, revokes others, audits no secret', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    passwordHash: scrypt('temp-pass'),
+    disabledAt: null,
+    mustChangePassword: true,
+  };
+  const { db, calls } = accountDb(user);
+  await new MeController(db, new LoginLimiter()).password(accountReq(), {
+    current: 'temp-pass',
+    next: 'my-new-secret',
+  });
+  const update = calls.find((c) => c.op === 'user.update')!.args as {
+    where: { id: string };
+    data: { passwordHash: string; mustChangePassword: boolean };
+  };
+  assert.equal(update.where.id, 'u1');
+  assert.equal(update.data.mustChangePassword, false);
+  assert.ok(passwordMatches('my-new-secret', update.data.passwordHash));
+  assert.deepEqual(calls.find((c) => c.op === 'authSession.deleteMany')!.args, {
+    where: { userId: 'u1', id: { not: 'current-sid' } },
+  });
+  const audit = JSON.stringify(calls.find((c) => c.op === 'audit.create')!.args);
+  assert.match(audit, /user\.password_change/);
+  for (const secret of ['temp-pass', 'my-new-secret', update.data.passwordHash])
+    assert.equal(audit.includes(secret), false);
+});
+
+test('POST /me/password blocks the 11th current-password check per user', async () => {
+  const user = { id: 'u1', role: 'student', passwordHash: scrypt('temp-pass'), disabledAt: null };
+  const me = new MeController(accountDb(user).db, new LoginLimiter());
+  for (let i = 0; i < 10; i++)
+    assert.equal(
+      await httpStatus(me.password(accountReq(), { current: `wrong${i}`, next: 'brand-new1' })),
+      400,
+    );
+  assert.equal(
+    await httpStatus(me.password(accountReq(), { current: 'temp-pass', next: 'brand-new1' })),
+    429,
+  );
+  const other = new MeController(
+    accountDb({ ...user, id: 'u2' }).db,
+    (me as unknown as { limiter: LoginLimiter }).limiter,
+  );
+  assert.equal(
+    await httpStatus(
+      other.password(accountReq('u2'), { current: 'temp-pass', next: 'brand-new1' }),
+    ),
+    200,
+  );
+});
+
+const fakeAuth = () =>
+  ({
+    actor: async () => ({ id: 'before-sid' }),
+    checkWrite: () => undefined,
+    create: async (_res: unknown, role: string) => ({ id: 'after-sid', role }),
+    view: (row: { role: string }) => ({ role: row.role }),
+  }) as unknown as Auth;
+const loginReq = { ip: '10.0.0.7', headers: {}, cookies: {} } as unknown as Request;
+
+test('login: disabled account gets the wrong-password 401; lastLoginAt only on success', async () => {
+  const saved = scrypt('correct-horse-16ch');
+  const attempt = async (user: Record<string, unknown> | null, credential: string) => {
+    const { db, calls } = accountDb(user);
+    const ctrl = new AuthController(fakeAuth(), db, new LoginLimiter());
+    try {
+      await ctrl.login({ username: 'alice', credential }, loginReq, {} as Response);
+      return { status: 200, body: null, calls };
+    } catch (e) {
+      return {
+        status: (e as HttpException).getStatus(),
+        body: (e as HttpException).getResponse(),
+        calls,
+      };
+    }
+  };
+  const wrong = await attempt(
+    { id: 'u1', role: 'student', passwordHash: saved, disabledAt: null },
+    'nope',
+  );
+  const disabled = await attempt(
+    { id: 'u1', role: 'student', passwordHash: saved, disabledAt: new Date() },
+    'correct-horse-16ch',
+  );
+  const unknown = await attempt(null, 'correct-horse-16ch');
+  for (const r of [wrong, disabled, unknown]) {
+    assert.equal(r.status, 401);
+    assert.deepEqual(r.body, wrong.body);
+    assert.equal(
+      r.calls.some((c) => c.op === 'user.update'),
+      false,
+    );
+  }
+  const ok = await attempt(
+    { id: 'u1', role: 'student', passwordHash: saved, disabledAt: null },
+    'correct-horse-16ch',
+  );
+  assert.equal(ok.status, 200);
+  const update = ok.calls.find((c) => c.op === 'user.update')!.args as {
+    where: { id: string };
+    data: { lastLoginAt: Date };
+  };
+  assert.equal(update.where.id, 'u1');
+  assert.ok(update.data.lastLoginAt instanceof Date);
 });
