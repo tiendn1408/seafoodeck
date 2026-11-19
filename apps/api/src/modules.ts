@@ -1,7 +1,16 @@
 import { Global, Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { Db } from './db';
-import { Auth, AccessGuard, AdminOnlyGuard, EditingGuard, LoginLimiter } from './security';
+import {
+  Auth,
+  AccessGuard,
+  AdminOnlyGuard,
+  EditingGuard,
+  LoginLimiter,
+  MustChangePasswordGuard,
+} from './security';
 import { AuthController } from './auth.controller';
+import { MeController } from './me.controller';
 import { Catalog } from './catalog';
 import { Media } from './media';
 import { Learning } from './learning';
@@ -17,8 +26,16 @@ import { AdminExtraController } from './admin-extra.controller';
 export class DatabaseModule {}
 @Module({
   imports: [DatabaseModule],
-  controllers: [AuthController],
-  providers: [Auth, AccessGuard, AdminOnlyGuard, EditingGuard, LoginLimiter],
+  controllers: [AuthController, MeController],
+  providers: [
+    Auth,
+    AccessGuard,
+    AdminOnlyGuard,
+    EditingGuard,
+    LoginLimiter,
+    // Global: runs before every controller's own guards and resolves the session cookie itself.
+    { provide: APP_GUARD, useClass: MustChangePasswordGuard },
+  ],
   exports: [Auth, AccessGuard, AdminOnlyGuard, EditingGuard],
 })
 export class AuthModule {}

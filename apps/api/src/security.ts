@@ -5,7 +5,9 @@ import {
   UnauthorizedException,
   ForbiddenException,
   HttpException,
+  SetMetadata,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { Request, Response } from 'express';
 import type { AuthSession } from './generated/prisma/client';
@@ -23,6 +25,23 @@ export function passwordMatches(password: string, saved: string) {
   const actual = scryptSync(password, salt, 64);
   const expected = Buffer.from(digest, 'hex');
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+/** Shortest password accepted for a role: account students 8, every staff/manager role 16. */
+export const passwordMinFor = (role: string) => (role === 'student' ? 8 : 16);
+// Burned on unknown usernames so a missing account costs the same scrypt work as a wrong password.
+const decoyHash = passwordHash(opaque());
+export function passwordCheck(password: string, saved: string | undefined) {
+  return passwordMatches(password, saved ?? decoyHash) && saved !== undefined;
+}
+/** Deletes a user's sessions (optionally keeping one), e.g. after a password change or disable. */
+export function revokeUserSessions(
+  db: Pick<Db, 'authSession'>,
+  userId: string,
+  keepSessionId?: string,
+) {
+  return db.authSession.deleteMany({
+    where: { userId, ...(keepSessionId ? { id: { not: keepSessionId } } : {}) },
+  });
 }
 export type ActorRequest = Request & { actor: AuthSession };
 const cookie = 'seafoodeck_session';
@@ -88,6 +107,20 @@ export function requireRole(req: ActorRequest, roles: string[]) {
   if (!roles.includes(req.actor.role))
     throw new ForbiddenException('Tài khoản không có quyền thao tác này.');
 }
+export function requireStudent(req: ActorRequest) {
+  if (req.actor.role === 'learner' || req.actor.role === 'guest')
+    throw new ForbiddenException('Đăng nhập tài khoản để xem tiến độ.');
+  if (req.actor.role !== 'student' || !req.actor.userId)
+    throw new ForbiddenException('Tài khoản không có quyền thao tác này.');
+}
+export function requireManager(req: ActorRequest) {
+  requireRole(req, ['manager', 'admin']);
+}
+/** Session belongs to a user account (not an invite-code learner or guest). */
+export function requireAccount(req: ActorRequest): string {
+  if (!req.actor.userId) throw new ForbiddenException('Đăng nhập tài khoản để xem hồ sơ.');
+  return req.actor.userId;
+}
 @Injectable()
 export class AdminOnlyGuard implements CanActivate {
   canActivate(ctx: ExecutionContext) {
@@ -110,12 +143,61 @@ export class EditingGuard implements CanActivate {
 @Injectable()
 export class LoginLimiter {
   private buckets = new Map<string, { count: number; until: number }>();
-  check(ip: string) {
+  private names = new Map<string, { count: number; until: number }>();
+  /** 20 attempts / 10 min per IP and, when a username is given, 10 / 10 min per lowercased name. */
+  check(ip: string, username?: string) {
     const now = Date.now();
     for (const [key, b] of this.buckets) if (b.until < now) this.buckets.delete(key);
+    for (const [key, b] of this.names) if (b.until < now) this.names.delete(key);
     const bucket = this.buckets.get(ip) ?? { count: 0, until: now + 600000 };
     if (++bucket.count > 20)
       throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
     this.buckets.set(ip, bucket);
+    if (username === undefined) return;
+    const name = username.toLowerCase();
+    const named = this.names.get(name) ?? { count: 0, until: now + 600000 };
+    if (++named.count > 10) throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
+    this.names.set(name, named);
+  }
+}
+/** Marks a handler as reachable while the account must still change its password. */
+export const AllowWhilePasswordChange = () => SetMetadata('allowWhilePasswordChange', true);
+/**
+ * Global guard. Runs before controller guards, so it resolves the session cookie itself and
+ * reads the flag fresh from the user row (never cached on the session, so clearing it takes
+ * effect on the very next request). Invite-code learners, guests and unauthenticated requests
+ * have no userId and are untouched.
+ */
+@Injectable()
+export class MustChangePasswordGuard implements CanActivate {
+  constructor(
+    private db: Db,
+    private reflector: Reflector,
+  ) {}
+  async canActivate(ctx: ExecutionContext) {
+    if (
+      this.reflector.getAllAndOverride<boolean>('allowWhilePasswordChange', [
+        ctx.getHandler(),
+        ctx.getClass(),
+      ])
+    )
+      return true;
+    const token = ctx.switchToHttp().getRequest<Request>().cookies?.[cookie];
+    if (!token) return true;
+    const session = await this.db.authSession.findUnique({
+      where: { id: hash(token) },
+      select: { userId: true, expiresAt: true },
+    });
+    if (!session?.userId || session.expiresAt.getTime() <= Date.now()) return true;
+    const user = await this.db.user.findUnique({
+      where: { id: session.userId },
+      select: { mustChangePassword: true },
+    });
+    if (user?.mustChangePassword)
+      throw new ForbiddenException({
+        message: 'Cần đổi mật khẩu trước.',
+        code: 'MUST_CHANGE_PASSWORD',
+      });
+    return true;
   }
 }

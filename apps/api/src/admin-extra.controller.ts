@@ -11,7 +11,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiProperty, ApiTags } from '@nestjs/swagger';
 import {
   IsString,
   IsIn,
@@ -21,9 +21,20 @@ import {
   MaxLength,
   Matches,
   IsBoolean,
+  ValidateBy,
+  type ValidationOptions,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { Db } from './db';
-import { AdminOnlyGuard, AccessGuard, ActorRequest, requireRole, passwordHash } from './security';
+import {
+  AdminOnlyGuard,
+  AccessGuard,
+  ActorRequest,
+  requireRole,
+  passwordHash,
+  passwordMinFor,
+} from './security';
+import { CreatedUserResponse } from './contract';
 import { normalizeCode, validateTariffScope } from './hs';
 import { EXTERNAL_ID_PATTERN, summarizeImportState } from './import-state';
 class TariffDto {
@@ -38,32 +49,76 @@ class TariffDto {
 class ConfirmDto {
   @ApiProperty() @IsBoolean() confirmed!: boolean;
 }
-class UserDto {
+/** Password length depends on the requested role: student 8, manager and staff roles 16. */
+const PasswordForRole = (options?: ValidationOptions) =>
+  ValidateBy(
+    {
+      name: 'passwordForRole',
+      validator: {
+        validate: (value, args) =>
+          typeof value === 'string' &&
+          value.length >= passwordMinFor(String((args?.object as UserDto | undefined)?.role)),
+        defaultMessage: (args) =>
+          `password must be at least ${passwordMinFor(String((args?.object as UserDto | undefined)?.role))} characters`,
+      },
+    },
+    options,
+  );
+export const USER_ROLES = ['editor', 'reviewer', 'publisher', 'manager', 'student'];
+export class UserDto {
   @ApiProperty() @IsString() @Matches(/^[a-zA-Z0-9_-]{3,50}$/) username!: string;
-  @ApiProperty() @IsString() @MinLength(16) @MaxLength(150) password!: string;
-  @ApiProperty({ enum: ['editor', 'reviewer', 'publisher'] })
-  @IsIn(['editor', 'reviewer', 'publisher'])
+  @ApiProperty({ description: 'At least 8 characters for student, 16 for every other role.' })
+  @IsString()
+  @PasswordForRole()
+  @MaxLength(150)
+  password!: string;
+  @ApiProperty({ enum: USER_ROLES })
+  @IsIn(USER_ROLES)
   role!: string;
+  @ApiProperty({ required: false, nullable: true, type: String, maxLength: 80 })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  displayName?: string | null;
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  mustChangePassword?: boolean;
 }
 @ApiTags('Admin')
 @Controller('admin')
 @UseGuards(AccessGuard, AdminOnlyGuard)
 export class AdminExtraController {
   constructor(private db: Db) {}
-  @Post('users') async user(@Req() req: ActorRequest, @Body() dto: UserDto) {
+  @ApiCreatedResponse({ type: CreatedUserResponse })
+  @Post('users')
+  async user(@Req() req: ActorRequest, @Body() dto: UserDto) {
     requireRole(req, ['admin']);
     const row = await this.db.user.create({
-      data: { username: dto.username, role: dto.role, passwordHash: passwordHash(dto.password) },
+      data: {
+        username: dto.username,
+        role: dto.role,
+        passwordHash: passwordHash(dto.password),
+        displayName: dto.displayName || null,
+        mustChangePassword: dto.mustChangePassword ?? false,
+      },
     });
     await this.db.audit.create({
       data: {
         actorId: req.actor.userId!,
         action: 'user.create',
         targetId: row.id,
-        detail: { role: row.role },
+        detail: { role: row.role, mustChangePassword: row.mustChangePassword },
       },
     });
-    return { id: row.id, username: row.username, role: row.role };
+    return {
+      id: row.id,
+      username: row.username,
+      role: row.role,
+      displayName: row.displayName,
+      mustChangePassword: row.mustChangePassword,
+    };
   }
   @Get('items/by-external/:externalId') async byExternal(
     @Req() req: ActorRequest,

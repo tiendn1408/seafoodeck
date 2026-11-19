@@ -21,7 +21,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthMeResponse"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -64,6 +71,102 @@
         },
         "tags": [
           "Auth"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "MeController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      },
+      "patch": {
+        "operationId": "MeController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/me/password": {
+      "post": {
+        "operationId": "MeController_password",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordChangedResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
         ]
       }
     },
@@ -818,7 +921,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedUserResponse"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -984,6 +1094,42 @@
       }
     },
     "schemas": {
+      "AuthMeResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "csrf": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Account sessions only."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Account sessions only."
+          },
+          "mustChangePassword": {
+            "type": "boolean",
+            "description": "Account sessions only."
+          }
+        },
+        "required": [
+          "role",
+          "internal",
+          "csrf",
+          "expiresAt"
+        ]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -996,6 +1142,67 @@
         },
         "required": [
           "credential"
+        ]
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "mustChangePassword"
+        ]
+      },
+      "ProfileDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 80
+          }
+        }
+      },
+      "PasswordDto": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string",
+            "description": "At least 8 characters for students, 16 for other roles."
+          }
+        },
+        "required": [
+          "current",
+          "next"
+        ]
+      },
+      "PasswordChangedResponse": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "changed"
         ]
       },
       "NameResponse": {
@@ -1612,21 +1819,61 @@
             "type": "string"
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "description": "At least 8 characters for student, 16 for every other role."
           },
           "role": {
             "type": "string",
             "enum": [
               "editor",
               "reviewer",
-              "publisher"
+              "publisher",
+              "manager",
+              "student"
             ]
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 80
+          },
+          "mustChangePassword": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
           "username",
           "password",
           "role"
+        ]
+      },
+      "CreatedUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "role",
+          "displayName",
+          "mustChangePassword"
         ]
       },
       "TariffDto": {

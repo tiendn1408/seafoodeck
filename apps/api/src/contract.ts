@@ -124,3 +124,35 @@ export class RevealResponse {
   @ApiProperty() source!: string;
   @ApiProperty({ nullable: true }) audioAssetId!: string | null;
 }
+export class AuthMeResponse {
+  @ApiProperty() role!: string;
+  @ApiProperty() internal!: boolean;
+  @ApiProperty() csrf!: string;
+  @ApiProperty() expiresAt!: string;
+  @ApiProperty({ required: false, description: 'Account sessions only.' }) userId?: string;
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    type: String,
+    description: 'Account sessions only.',
+  })
+  displayName?: string | null;
+  @ApiProperty({ required: false, description: 'Account sessions only.' })
+  mustChangePassword?: boolean;
+}
+export class MeResponse {
+  @ApiProperty() username!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() role!: string;
+  @ApiProperty() mustChangePassword!: boolean;
+}
+export class PasswordChangedResponse {
+  @ApiProperty() changed!: boolean;
+}
+export class CreatedUserResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() username!: string;
+  @ApiProperty() role!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() mustChangePassword!: boolean;
+}
