@@ -65,13 +65,15 @@ test('catalogue uses API paging, Japanese search, signed thumbnails and stable d
   await page.locator('.library-card').click();
   await expect(page).toHaveURL(/#profile\/green-mussel$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Vẹm xanh.', exact: true })).toBeVisible();
-  const image = page.locator('.pilot-profile-image img');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Vẹm xanh', exact: true }),
+  ).toBeVisible();
+  const image = page.locator('.cover-photo img');
   await expect(image).toBeVisible();
   await expect
     .poll(() => image.evaluate((i) => (i as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  await expect(page.getByText('Chưa có bản thu', { exact: true })).toHaveCount(3);
+  await expect(page.getByText('Chưa có bản thu đã duyệt.', { exact: true })).toHaveCount(3);
   await page.route('**/api/v1/catalog/items?**', (r) => r.abort());
   await page.goto('/#library');
   await expect(page.getByRole('alert')).toContainText('Không kết nối');
@@ -194,7 +196,7 @@ test('profile thumbnail retries one failed signed request and then loads', async
     else await route.continue();
   });
   await page.goto('/#profile/atlantic-cod');
-  const image = page.locator('.pilot-profile-image img');
+  const image = page.locator('.cover-photo img');
   await expect(image).toBeVisible();
   await expect
     .poll(() => image.evaluate((i) => (i as HTMLImageElement).naturalWidth))

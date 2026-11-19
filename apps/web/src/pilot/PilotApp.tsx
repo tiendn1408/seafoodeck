@@ -8,18 +8,18 @@ import {
   vi,
   type AuthView,
   type CatalogPage,
-  type CatalogItem,
   type Game,
   type ApiQuestion,
   type Score,
   type Reveal,
 } from './api';
-import { SignedImage, Pronunciation, stopAudio, MediaCredit } from './Media';
+import { SignedImage, Pronunciation, stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { Login } from '../learner/Login';
 import { Home, type Taxon } from '../learner/Home';
+import { Profile } from '../learner/Profile';
 import { groupTone } from '../learner/haul';
 import {
   LEDGER_KEY,
@@ -161,7 +161,7 @@ export default function PilotApp() {
   return (
     <AppShell
       route={route}
-      tone={route === 'home' ? 'deep' : 'ice'}
+      tone={route === 'home' || route.startsWith('profile/') ? 'deep' : 'ice'}
       staff={!!staff}
       internal={!!auth?.internal}
       signedIn={signedIn}
@@ -171,7 +171,9 @@ export default function PilotApp() {
         className={
           route === 'home' && signedIn
             ? 'home-stage'
-            : `content home-content ${route === 'study' ? 'pilot-study-content' : ''}`
+            : route.startsWith('profile/') && signedIn
+              ? 'profile-stage'
+              : `content home-content ${route === 'study' ? 'pilot-study-content' : ''}`
         }
       >
         {warning && <ErrorNote message={warning} />}
@@ -481,89 +483,6 @@ function CatalogScreen({
           </div>
         </>
       )}
-    </>
-  );
-}
-function Profile({
-  id,
-  internal,
-  onStart,
-}: {
-  id: string;
-  internal: boolean;
-  onStart: (mode: string, id: string) => Promise<void>;
-}) {
-  const [item, setItem] = useState<CatalogItem | null>(null),
-    [error, setError] = useState('');
-  useEffect(() => {
-    api<CatalogItem>('/catalog/items/' + id)
-      .then(setItem)
-      .catch((e) => setError(e.message));
-  }, [id]);
-  if (error) return <ErrorNote message={error} />;
-  if (!item) return <p role="status">Đang tải hồ sơ…</p>;
-  const photo = item.media.find((m) => ['profile', 'identification'].includes(m.role));
-  return (
-    <>
-      <a href="#library" className="pilot-text-button">
-        Về thư viện
-      </a>
-      <h1>{vi(item)}.</h1>
-      <p>
-        {item.group} · {item.sku}
-      </p>
-      <div className="specimen-record">
-        <div className="pilot-profile-image">
-          {photo ? <SignedImage id={photo.id} alt={vi(item)} /> : <p>Ảnh loài đang bổ sung.</p>}
-        </div>
-        <div>
-          <h2>Dấu hiệu nhận biết</h2>
-          <p>{item.identification || 'Chưa có mô tả được duyệt.'}</p>
-          <h3>Dạng hàng tham khảo</h3>
-          <p>{item.forms.join(' · ') || 'Chưa có dữ liệu quy cách.'}</p>
-          <p>{item.note}</p>
-        </div>
-      </div>
-      {photo && <MediaCredit id={photo.id} />}
-      <div className="pilot-name-grid">
-        {item.names.map((n) => (
-          <section key={n.kind}>
-            <small>
-              {n.kind === 'en'
-                ? 'Tiếng Anh'
-                : n.kind === 'ja'
-                  ? 'Tiếng Nhật'
-                  : n.kind === 'scientific'
-                    ? 'Tên khoa học'
-                    : 'Tiếng Việt'}
-            </small>
-            <h2>{n.label}</h2>
-            <p>{n.pronunciation || 'Hướng dẫn đọc đang bổ sung.'}</p>
-            {n.kind !== 'vi' && (
-              <Pronunciation
-                id={
-                  item.media.find(
-                    (m) =>
-                      m.role === 'pronunciation' &&
-                      m.nameKind === n.kind &&
-                      (internal || m.approved),
-                  )?.id
-                }
-              />
-            )}
-            <details>
-              <summary>Nguồn tên gọi</summary>
-              <p>{n.source}</p>
-            </details>
-          </section>
-        ))}
-      </div>
-      <button className="btn primary" onClick={() => void onStart('flashcard', item.revisionId)}>
-        Chỉ học flashcard · 3 thẻ
-      </button>
-      <a className="btn secondary" href="#home">
-        Xem HS theo dạng hàng
-      </a>
     </>
   );
 }

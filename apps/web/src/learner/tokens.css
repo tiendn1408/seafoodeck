@@ -1,4 +1,7 @@
 @import '@fontsource/be-vietnam-pro/800.css';
+/* Real italic faces: scientific names are italic and font-synthesis is off. */
+@import '@fontsource/be-vietnam-pro/400-italic.css';
+@import '@fontsource/be-vietnam-pro/500-italic.css';
 
 /*
  * Learner design tokens: "Biển sâu × Ấn bản loài".
