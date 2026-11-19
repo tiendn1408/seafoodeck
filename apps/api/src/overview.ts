@@ -7,6 +7,27 @@ export interface OverviewRow {
   taxonomicGroup: TaxonomicGroup | null;
   media: { id: string; role: string; status: string; revokedAt: Date | null }[];
 }
+/** Minimal revision shape needed to build an overview row. */
+export interface OverviewRevision {
+  id: string;
+  /** Item row id (uuid): the ledger/learning targetId, NOT the human externalId. */
+  itemId: string;
+  data: unknown;
+  names: { kind: string; label: string }[];
+  media: { asset: OverviewRow['media'][number] }[];
+}
+export function toOverviewRow(r: OverviewRevision): OverviewRow {
+  const d = r.data as { taxonomicGroup?: TaxonomicGroup | null };
+  const label = (kind: string) => r.names.find((n) => n.kind === kind)?.label ?? '';
+  return {
+    revisionId: r.id,
+    itemId: r.itemId,
+    vi: label('vi'),
+    scientific: label('scientific'),
+    taxonomicGroup: d.taxonomicGroup ?? null,
+    media: r.media.map((m) => m.asset),
+  };
+}
 export interface CatalogOverview {
   releaseId: string;
   internal: boolean;

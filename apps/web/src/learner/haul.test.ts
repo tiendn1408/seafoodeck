@@ -79,6 +79,18 @@ describe('haul', () => {
     expect(pickHaul(o, rs, NOW).map((i) => i.itemId)).toEqual(['i0']);
   });
 });
+describe('Item-uuid identity', () => {
+  it('classifies a review by overview itemId (Item uuid) as ledger targetId', () => {
+    const o = mk(2);
+    o.items[0].itemId = 'uuid-1';
+    o.items[1].itemId = 'uuid-2';
+    const rs = [rv('uuid-1', 'name:en', 1, 3)];
+    expect(itemStatus('uuid-1', rs, NOW)).toBe('learning');
+    expect(itemStatus('uuid-2', rs, NOW)).toBe('new');
+    expect(itemStatus('ext-1', rs, NOW)).toBe('new');
+    expect(pickHaul(o, rs, NOW).map((i) => i.itemId)).toEqual(['uuid-2']);
+  });
+});
 describe('progress', () => {
   it('counts an item once per language', () => {
     const o = mk(3);

@@ -14,7 +14,7 @@ import {
 } from './learning';
 import { normalizeCode, validateHs, validateTariffScope } from './hs';
 import { summarizeImportState } from './import-state';
-import { summarizeOverview, likePattern, type OverviewRow } from './overview';
+import { summarizeOverview, likePattern, toOverviewRow, type OverviewRow } from './overview';
 import { passwordHash, passwordMatches } from './security';
 const item = {
   externalId: 'cod-test',
@@ -392,4 +392,27 @@ test('overview image: profile first, unapproved dropped for public, kept for int
 test('likePattern escapes wildcards', () => {
   assert.equal(likePattern('50%_a'), '%50\\%\\_a%');
   assert.equal(likePattern('a\\b'), '%a\\\\b%');
+});
+
+test('toOverviewRow uses the Item id (ledger targetId), not the externalId', () => {
+  const row = toOverviewRow({
+    id: 'rev-1',
+    itemId: 'uuid-1',
+    data: { externalId: 'ext-1', taxonomicGroup: 'fish' },
+    names: [
+      { kind: 'vi', label: 'Cá' },
+      { kind: 'scientific', label: 'Piscis' },
+    ],
+    media: [{ asset: asset('a1', 'profile') }],
+  });
+  assert.equal(row.itemId, 'uuid-1');
+  assert.equal(row.revisionId, 'rev-1');
+  assert.equal(row.vi, 'Cá');
+  assert.equal(row.scientific, 'Piscis');
+  assert.equal(row.taxonomicGroup, 'fish');
+  assert.deepEqual(
+    row.media.map((m) => m.id),
+    ['a1'],
+  );
+  assert.equal(summarizeOverview([row], 0, { id: 'r', internal: true }).items[0].itemId, 'uuid-1');
 });

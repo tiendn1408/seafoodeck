@@ -10,7 +10,7 @@ import { Db } from './db';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
 import { EXTERNAL_ID_PATTERN } from './import-state';
-import { likePattern, summarizeOverview, type OverviewRow } from './overview';
+import { likePattern, summarizeOverview, toOverviewRow, type OverviewRow } from './overview';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
@@ -315,18 +315,7 @@ export class Catalog {
       orderBy: { item: { externalId: 'asc' } },
       include: { names: true, media: { include: { asset: true } } },
     });
-    const rows: OverviewRow[] = revisions.map((r) => {
-      const d = r.data as unknown as ItemData;
-      const label = (kind: Kind) => r.names.find((n) => n.kind === kind)?.label ?? '';
-      return {
-        revisionId: r.id,
-        itemId: d.externalId,
-        vi: label('vi'),
-        scientific: label('scientific'),
-        taxonomicGroup: d.taxonomicGroup ?? null,
-        media: r.media.map((m) => m.asset),
-      };
-    });
+    const rows: OverviewRow[] = revisions.map(toOverviewRow);
     const hsCases = await this.db.tradeScenario.count({
       where: {
         revisionId: { in: rows.map((r) => r.revisionId) },
