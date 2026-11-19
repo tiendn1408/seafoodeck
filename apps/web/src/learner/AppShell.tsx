@@ -142,7 +142,8 @@ export function AppShell({
               <ShieldCheck size={20} aria-hidden="true" />
             </a>
           )}
-          <ThemeToggle />
+          {/* Deep screens never change with the theme, so the toggle only lives on ice. */}
+          {tone === 'ice' && <ThemeToggle />}
           {logout}
         </div>
       </header>

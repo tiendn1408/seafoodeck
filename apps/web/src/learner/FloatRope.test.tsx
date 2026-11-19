@@ -44,6 +44,23 @@ describe('FloatRope', () => {
     );
   });
 
+  it('drops the hull numbers on long ropes where buoys get too small to read them', () => {
+    const done = Array.from({ length: 12 }, (_, index) => ({
+      index,
+      group: 'fish' as const,
+      correct: true,
+    }));
+    const short = render(<FloatRope total={10} done={done.slice(0, 10)} />);
+    expect(short.querySelector('.float-rope')!.hasAttribute('data-dense')).toBe(false);
+    expect(short.querySelectorAll('.float.caught b')).toHaveLength(10);
+    const long = render(<FloatRope total={30} done={done} />);
+    const rope = long.querySelector('.float-rope')!;
+    expect(rope.hasAttribute('data-dense')).toBe(true);
+    expect(long.querySelectorAll('.float.caught')).toHaveLength(12);
+    expect(long.querySelectorAll('.float.caught b')).toHaveLength(0);
+    expect(rope.getAttribute('aria-label')).toBe('Tiến độ mẻ lưới: 12 / 30');
+  });
+
   it('rings only the unanswered float in play', () => {
     const host = render(
       <FloatRope total={3} current={1} done={[{ index: 0, group: 'fish', correct: true }]} />,

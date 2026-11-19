@@ -1,3 +1,4 @@
+import { withPage, withQuery, withTaxon, type LibraryView } from './libraryView';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { api, vi, type CatalogItem, type CatalogPage } from '../pilot/api';
@@ -156,22 +157,22 @@ export function GroupChips({
 }
 
 export function Library({
-  taxon,
-  onTaxon,
+  view,
+  onView,
   reviews,
   onVersion,
 }: {
-  taxon: Taxon | '';
-  onTaxon: (taxon: Taxon | '') => void;
+  /** Search, group and page, kept by the app so a profile visit and back restores them. */
+  view: LibraryView;
+  onView: (view: LibraryView) => void;
   /** Reviews already scoped to the current release. */
   reviews: ReviewState[];
   onVersion: (releaseId: string) => void;
 }) {
   const { overview } = useOverview(onVersion);
+  const { query, taxon, page } = view;
   const wide = useMedia('(min-width: 900px)');
   const [data, setData] = useState<CatalogPage | null>(null),
-    [page, setPage] = useState(1),
-    [query, setQuery] = useState(''),
     [error, setError] = useState(''),
     [retry, setRetry] = useState(0);
   const requestKey = JSON.stringify([page, query, taxon, retry]);
@@ -212,12 +213,11 @@ export function Library({
   const failed = !loading && !!error;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   function turn(next: number) {
-    setPage(next);
+    onView(withPage(view, next));
     top.current?.scrollIntoView({ block: 'start' });
   }
   function choose(next: Taxon | '') {
-    onTaxon(next);
-    setPage(1);
+    onView(withTaxon(view, next));
   }
 
   return (
@@ -235,10 +235,7 @@ export function Library({
             type="search"
             aria-label="Tìm loài theo bốn tên gọi"
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => onView(withQuery(view, e.target.value))}
             placeholder="Tên Việt, Anh, Nhật, khoa học…"
             autoComplete="off"
             spellCheck={false}

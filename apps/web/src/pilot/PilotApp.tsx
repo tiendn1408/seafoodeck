@@ -5,7 +5,8 @@ import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { Login } from '../learner/Login';
-import { Home, type Taxon } from '../learner/Home';
+import { Home } from '../learner/Home';
+import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
 import { Review } from '../learner/Review';
@@ -26,12 +27,11 @@ export default function PilotApp() {
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
     [version, setVersion] = useState(''),
-    [libraryTaxon, setLibraryTaxon] = useState<Taxon | ''>('');
+    [libraryView, setLibraryView] = useState<LibraryView>(LIBRARY_START);
   useEffect(() => {
     const f = () => {
       const next = currentRoute();
       setRoute(next);
-      if (next !== 'library') setLibraryTaxon('');
       window.scrollTo(0, 0);
       setError('');
       stopAudio();
@@ -181,15 +181,15 @@ export default function PilotApp() {
                 onResume={ledger.sessionId ? resume : undefined}
                 onVersion={setVersion}
                 onOpenLibrary={(taxon) => {
-                  setLibraryTaxon(taxon);
+                  setLibraryView(openGroup(taxon));
                   location.hash = 'library';
                 }}
               />
             )}
             {route === 'library' && (
               <Library
-                taxon={libraryTaxon}
-                onTaxon={setLibraryTaxon}
+                view={libraryView}
+                onView={setLibraryView}
                 reviews={reviews}
                 onVersion={setVersion}
               />

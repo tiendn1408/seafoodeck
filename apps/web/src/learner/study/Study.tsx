@@ -5,8 +5,7 @@ import { stopAudio } from '../../pilot/Media';
 import { FloatRope, type RopeFloat } from '../FloatRope';
 import type { Ledger } from '../ledger';
 import { QuestionView, coverName } from './QuestionView';
-// Explicit extension: `Summary.tsx` sits beside `summary.ts` and macOS paths ignore case.
-import { Summary } from './Summary.tsx';
+import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
 import './study.css';
 

@@ -53,6 +53,8 @@
 .species-card-tag {
   position: absolute;
   z-index: 1;
+  /* Sits over the stretched name link: clicks go through to the link. */
+  pointer-events: none;
   top: -9px;
   left: var(--space-3);
   padding: 2px 8px;

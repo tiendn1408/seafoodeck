@@ -33,6 +33,7 @@ _backups/
 .impeccable/build/
 .impeccable/hook.cache.json
 **/.impeccable/mocks/
+**/.impeccable/hook.cache.json
 **/.impeccable/questions/
 **/.impeccable/review/
 **/.impeccable/build/

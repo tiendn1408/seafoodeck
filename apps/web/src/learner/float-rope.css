@@ -109,6 +109,14 @@
   font-size: 0.8em;
   line-height: 1;
 }
+/* Long ropes: small buoys, no numbers; the cap/hull/ring states still tell them apart. */
+.float-rope[data-dense] .float {
+  font-size: 0;
+}
+.float-rope[data-dense] .float.missed {
+  border-width: 1.5px;
+}
+
 /* The question in play: a salmon ring around the dark buoy. */
 .float.current {
   box-shadow:

@@ -214,6 +214,9 @@ export function Home({
         {loading ? (
           <>
             <div className="home-title">
+              <h1 id="home-title" className="home-sr">
+                Mẻ lưới hôm nay
+              </h1>
               <p role="status" className="home-sr">
                 Đang tải mẻ lưới hôm nay…
               </p>

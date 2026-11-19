@@ -305,7 +305,7 @@ async function checkLayout(page: Page) {
   await contained('.cover-photo img');
   expect(await fits()).toBe(true);
 }
-// One login covers both viewports: the login limiter allows 20 attempts per 10 minutes.
+// One login covers every viewport of a project: the login limiter allows 20 attempts per 10 minutes.
 test('home, library and profile never scroll sideways and show whole photos', async ({
   page,
 }, info) => {
@@ -314,6 +314,11 @@ test('home, library and profile never scroll sideways and show whole photos', as
   if (info.project.name === 'mobile')
     await test.step('320×640 phone', async () => {
       await page.setViewportSize({ width: 320, height: 640 });
+      await checkLayout(page);
+    });
+  else
+    await test.step('1280×800 laptop', async () => {
+      await page.setViewportSize({ width: 1280, height: 800 });
       await checkLayout(page);
     });
 });

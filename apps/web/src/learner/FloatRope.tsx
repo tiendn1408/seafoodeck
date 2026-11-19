@@ -4,6 +4,13 @@ import './float-rope.css';
 
 export type RopeFloat = { index: number; group: GroupKey; correct: boolean };
 
+/**
+ * Above this many floats a buoy on a 320px phone falls under ~24px (92% of a 288px rope / n),
+ * too small for its number: the rope then drops the numbers and keeps the cap, hull and
+ * dashed-ring states plus the accessible label.
+ */
+export const DENSE_ROPE = 10;
+
 /** Horizontal inset of the first and last float, in % of the rope width. */
 const INSET = 4;
 
@@ -44,10 +51,12 @@ export function FloatRope({
 }) {
   const byIndex = new Map(done.map((d) => [d.index, d]));
   const caught = done.filter((d) => d.correct).length;
+  const dense = total > DENSE_ROPE;
   return (
     <div
       className={`float-rope ${className}`.trim()}
       style={{ '--n': total } as CSSProperties}
+      data-dense={dense ? '' : undefined}
       role="img"
       aria-label={`Tiến độ mẻ lưới: ${caught} / ${total}`}
     >
@@ -81,7 +90,7 @@ export function FloatRope({
                 } as CSSProperties
               }
             >
-              {state === 'caught' ? <b>{i + 1}</b> : null}
+              {state === 'caught' && !dense ? <b>{i + 1}</b> : null}
             </span>
           );
         })}
