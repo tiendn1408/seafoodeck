@@ -892,23 +892,19 @@
 }
 .haul-list {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
 }
-/* A catch card: the species' photo whole in a porthole, its state buoy on the rim. */
+/* A catch entry sits straight on the sheet (no card in a card): the species' photo whole in
+   a porthole, then its names and what happens next. A slipped species gets a dashed rim. */
 .haul-row {
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
   grid-template-areas: 'port names' 'port note';
   align-items: center;
   gap: var(--space-1) var(--space-4);
-  padding: var(--space-3);
-  border: 1px solid var(--ice-line);
-  border-radius: var(--radius-md);
-  background: var(--ice-surface);
-  box-shadow: var(--shadow-raise);
 }
 .haul-port {
   --missing-ink: var(--deep-muted);
@@ -941,21 +937,10 @@
 .haul-port .missing-photo-silhouette {
   width: 64%;
 }
-.haul-dot {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--ice-surface);
-  border-radius: 50%;
-  background: linear-gradient(180deg, #f4f8f9 0 40%, var(--tone) 40% 100%);
-  box-shadow: 0 2px 6px rgb(11 34 48 / 0.25);
-}
-.haul-row[data-state='missed'] .haul-dot {
-  border: 2px dashed var(--ice-muted);
-  background: var(--ice-surface);
+.haul-row[data-state='missed'] .haul-port {
   box-shadow: none;
+  outline: 2px dashed var(--ice-muted);
+  outline-offset: 2px;
 }
 .haul-names {
   grid-area: names;
@@ -1054,7 +1039,7 @@
   /* One species fills its column as a large catch card instead of a lone row. */
   .haul-list:has(> :only-child) .haul-row {
     grid-template-columns: 160px minmax(0, 1fr);
-    padding: var(--space-5);
+    column-gap: var(--space-6);
   }
   .haul-list:has(> :only-child) .haul-port {
     width: 160px;

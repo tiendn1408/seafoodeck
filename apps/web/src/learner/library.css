@@ -6,6 +6,8 @@
   background: var(--ice-bg);
 }
 .ice-stage {
+  --ice-rope: rgb(11 34 48 / 0.2);
+  --ice-rope-lay: rgb(11 34 48 / 0.09);
   /* The deep hero bleeds to the viewport edges; nothing may widen the page. */
   overflow-x: clip;
   min-height: 100%;
@@ -325,9 +327,17 @@
   pointer-events: none;
 }
 @media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .ice-stage {
+    --ice-rope: rgb(232 217 181 / 0.42);
+    --ice-rope-lay: rgb(232 217 181 / 0.2);
+  }
   :root:not([data-theme='light']) .ice-empty--scales {
     --scales-color: rgb(143 211 220 / 0.14);
   }
+}
+:root[data-theme='dark'] .ice-stage {
+  --ice-rope: rgb(232 217 181 / 0.42);
+  --ice-rope-lay: rgb(232 217 181 / 0.2);
 }
 :root[data-theme='dark'] .ice-empty--scales {
   --scales-color: rgb(143 211 220 / 0.14);
@@ -690,10 +700,13 @@
 .review-fresh .ice-note {
   margin-top: var(--space-3);
 }
+/* Desktop: scheduled species flow two to a row, the not-yet-scheduled ones below them in a
+   wider grid, both at full width, so neither column is left beside a void. */
 @media (min-width: 900px) {
-  .review-body {
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    column-gap: clamp(var(--space-7), 4vw, var(--space-9));
+  .review-fresh .library-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-3);
   }
   .review-action {
     align-items: flex-end;
@@ -709,10 +722,6 @@
 }
 
 /* ---------- Progress ---------- */
-.progress-grid {
-  display: grid;
-  gap: var(--space-5);
-}
 .ice-panel {
   min-width: 0;
   padding: var(--space-5);
@@ -731,32 +740,15 @@
   grid-column: 1 / -1;
   margin: 0;
 }
-@media (min-width: 900px) {
-  .progress-figures {
-    grid-template-columns: repeat(4, max-content);
-  }
-}
-.progress-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  margin: var(--space-5) 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--ice-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-.progress-legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.progress-board {
+  display: grid;
+  gap: var(--space-8);
 }
 .progress-skills,
 .progress-mastery {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -781,35 +773,115 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.progress-mastery + .ice-note {
-  margin-top: var(--space-4);
-}
-.ice-bar {
+
+/* Ice float-slider: a laid rope, the hauled-in length in the skill colour, a buoy at the end. */
+.ice-gauge {
+  position: relative;
   grid-column: 1 / -1;
-  display: block;
-  height: 8px;
-  border-radius: 8px;
-  background: var(--ice-raised);
-  overflow: hidden;
+  height: 24px;
+  margin-inline: 12px;
 }
-.ice-bar i {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  background: var(--bar);
-  transform: scaleX(var(--fill, 0));
-  transform-origin: left center;
+.ice-gauge::before,
+.ice-gauge i {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 4px;
+  border-radius: 4px;
+  translate: 0 -50%;
 }
-.ice-bar--stack {
-  display: flex;
-  gap: 2px;
+.ice-gauge::before {
+  right: 0;
+  background: repeating-linear-gradient(90deg, var(--ice-rope) 0 6px, var(--ice-rope-lay) 6px 9px);
 }
-.ice-bar--stack i {
-  flex: none;
+.ice-gauge i {
   width: calc(var(--fill, 0) * 100%);
-  transform: none;
+  height: 6px;
+  background: var(--bar);
 }
+.ice-gauge b {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--fill, 0) * 100%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: linear-gradient(180deg, #f4f8f9 0 42%, var(--bar) 42% 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(11 34 48 / 0.18),
+    inset 0 -3px 0 rgb(0 0 0 / 0.16),
+    0 3px 7px rgb(11 34 48 / 0.25);
+}
+
+/* Milestone floats: one small buoy per species, hull in its group colour. */
+.progress-floats,
+.progress-floats-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding-left: 2px;
+}
+.progress-floats i {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f4f8f9 0 40%, var(--float-fill, var(--group-none)) 40% 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(11 34 48 / 0.18),
+    inset 0 -3px 0 rgb(0 0 0 / 0.16),
+    0 3px 6px rgb(11 34 48 / 0.22);
+}
+.progress-floats em {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-style: normal;
+  font-weight: 700;
+}
+/* No species at this milestone yet: an empty stretch of rope. */
+.progress-floats-empty {
+  height: 4px;
+  min-height: 0;
+  margin: 10px 0;
+  border-radius: 4px;
+  background: repeating-linear-gradient(90deg, var(--ice-rope) 0 6px, var(--ice-rope-lay) 6px 9px);
+}
+.progress-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-5) 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.progress-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.progress-species {
+  margin-top: var(--space-7);
+}
+.progress-species .ice-note {
+  margin-top: var(--space-3);
+}
+.progress-species .ice-note a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ice-focus);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .ice-figures {
   display: flex;
   flex-wrap: wrap;
@@ -835,11 +907,23 @@
   font-variant-numeric: tabular-nums;
 }
 @media (min-width: 900px) {
-  .progress-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .progress-figures {
+    grid-template-columns: repeat(4, max-content);
   }
-  .ice-panel {
-    padding: var(--space-6) var(--space-7);
+  /* One wide board: skill ropes left, the milestone floats right. */
+  .progress-board {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: clamp(var(--space-8), 6vw, 96px);
+    padding: var(--space-7) var(--space-8);
+  }
+  .progress-mastery-col {
+    padding-left: clamp(var(--space-7), 4vw, var(--space-9));
+    border-left: 1px solid var(--ice-line);
+  }
+  .progress-species .library-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-3);
   }
 }
 

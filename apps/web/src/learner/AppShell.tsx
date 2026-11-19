@@ -72,8 +72,11 @@ export function AppShell({
   const desktop = useMedia('(min-width: 900px)');
   const current = tabFor(route);
   const links = signedIn ? [...tabs, ...(staff ? [adminTab] : [])] : [];
+  // Phone: the wordmark stays on Home and Profiles (the chip moves to a second line there);
+  // elsewhere an internal release shows the mark and the chip on one compact row.
+  const wordmark = route === 'home' || route.startsWith('profile/');
   const brand = (
-    <div className="shell-brand">
+    <div className="shell-brand" data-wordmark={wordmark ? '' : undefined}>
       <a className="shell-logo" href="#home">
         <ScaleMark />
         <span className="shell-wordmark">Seafood Deck</span>

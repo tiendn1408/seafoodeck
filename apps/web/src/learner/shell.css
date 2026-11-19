@@ -245,7 +245,7 @@
 }
 /* One-row phone header: on an internal release the mark stands for the wordmark (still the
    link's accessible name) so the honest chip fits beside it. */
-.shell[data-layout='phone'] .shell-brand:has(.shell-chip) .shell-wordmark {
+.shell[data-layout='phone'] .shell-brand:has(.shell-chip):not([data-wordmark]) .shell-wordmark {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -259,6 +259,16 @@
   font-size: 0.6875rem;
   max-width: none;
   white-space: nowrap;
+}
+/* Home and Profiles keep the wordmark; the chip sits on its own single line under it. */
+.shell[data-layout='phone'] .shell-brand[data-wordmark]:has(.shell-chip) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.shell[data-layout='phone'] .shell-brand[data-wordmark] .shell-chip {
+  max-width: 100%;
+  margin: -4px 0 var(--space-1);
 }
 .shell-chip-short {
   display: block;

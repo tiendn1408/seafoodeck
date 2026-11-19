@@ -27,7 +27,6 @@ function CatchRow({ entry, species }: { entry: HaulEntry; species: SpeciesRef | 
         ) : (
           <MissingPhoto />
         )}
-        <span className="haul-dot" />
       </span>
       <div className="haul-names">
         <strong>{entry.label}</strong>
