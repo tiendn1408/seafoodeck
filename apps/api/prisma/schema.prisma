@@ -129,6 +129,13 @@ model User {
   username String @unique
   passwordHash String
   role String
+  displayName String?
+  disabledAt DateTime?
+  mustChangePassword Boolean @default(false)
+  createdAt DateTime @default(now())
+  lastLoginAt DateTime?
+  attempts LearningAttempt[]
+  reviews ReviewProgress[]
 }
 model AuthSession {
   id String @id
@@ -144,6 +151,7 @@ model GameSession {
   actorId String
   releaseId String
   mode String
+  reviewOfId String?
   expiresAt DateTime
   createdAt DateTime @default(now())
   actor AuthSession @relation(fields: [actorId], references: [id], onDelete: Cascade)
@@ -178,4 +186,40 @@ model Audit {
   targetId String
   detail Json
   at DateTime @default(now())
+}
+model LearningAttempt {
+  id String @id @default(uuid())
+  userId String
+  sessionId String
+  questionId String
+  targetId String
+  skill String
+  mode String
+  isReview Boolean
+  attemptNumber Int
+  correct Boolean
+  skipped Boolean
+  selfRated Boolean
+  contentVersion String
+  releaseId String
+  label String
+  at DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([questionId, targetId])
+  @@index([userId, at])
+  @@index([userId, targetId, skill])
+}
+model ReviewProgress {
+  userId String
+  targetId String
+  skill String
+  stage Int
+  dueAt DateTime
+  lastAttemptAt DateTime
+  lastSessionId String
+  contentVersion String
+  selfRated Boolean
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, targetId, skill])
+  @@index([userId, dueAt])
 }
