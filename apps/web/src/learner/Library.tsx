@@ -107,6 +107,54 @@ export function LibraryResults({
   );
 }
 
+/**
+ * "Tất cả" plus the four group chips. Counts come from the list response (taxon ignored), so a
+ * chip's number is the total its list shows; before the first response the chips carry none.
+ */
+export function GroupChips({
+  taxon,
+  groups,
+  onChoose,
+}: {
+  taxon: Taxon | '';
+  groups: CatalogPage['groups'];
+  onChoose: (taxon: Taxon | '') => void;
+}) {
+  const all = groups
+    ? groups.fish + groups.crustacean + groups.mollusc + groups.other + groups.none
+    : null;
+  return (
+    <div className="library-chips" role="group" aria-label="Lọc theo nhóm">
+      <button
+        type="button"
+        className="library-chip"
+        aria-pressed={taxon === ''}
+        onClick={() => onChoose('')}
+      >
+        Tất cả
+        {all !== null && <span className="library-chip-count">{all}</span>}
+      </button>
+      {taxa.map((t) => {
+        const tone = groupTone(t);
+        return (
+          <button
+            type="button"
+            key={t}
+            className="library-chip"
+            aria-pressed={taxon === t}
+            style={{ '--tone': tone.css } as CSSProperties}
+            onClick={() => onChoose(t)}
+          >
+            <span className="library-swatch" aria-hidden="true" />
+            {tone.label}
+            {groups && <span className="library-chip-count">{groups[t]}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Library({
   taxon,
   onTaxon,
@@ -193,33 +241,7 @@ export function Library({
             spellCheck={false}
           />
         </label>
-        <div className="library-chips" role="group" aria-label="Lọc theo nhóm">
-          <button
-            type="button"
-            className="library-chip"
-            aria-pressed={taxon === ''}
-            onClick={() => choose('')}
-          >
-            Tất cả
-          </button>
-          {taxa.map((t) => {
-            const tone = groupTone(t);
-            return (
-              <button
-                type="button"
-                key={t}
-                className="library-chip"
-                aria-pressed={taxon === t}
-                style={{ '--tone': tone.css } as CSSProperties}
-                onClick={() => choose(t)}
-              >
-                <span className="library-swatch" aria-hidden="true" />
-                {tone.label}
-                {overview && <span className="library-chip-count">{overview.groups[t]}</span>}
-              </button>
-            );
-          })}
-        </div>
+        <GroupChips taxon={taxon} groups={data?.groups} onChoose={choose} />
       </div>
 
       {failed ? (

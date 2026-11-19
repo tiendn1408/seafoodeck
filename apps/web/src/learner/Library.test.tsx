@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import type { CatalogItem } from '../pilot/api';
-import { LibraryResults } from './Library';
+import { GroupChips, LibraryResults } from './Library';
 
 const groups = ['fish', 'crustacean', 'mollusc', 'other', null] as const;
 const items: CatalogItem[] = Array.from({ length: 120 }, (_, i) => ({
@@ -51,5 +51,28 @@ describe('LibraryResults', () => {
     expect(host.querySelectorAll('.library-grid > .library-card .species-card--tile')).toHaveLength(
       12,
     );
+  });
+});
+
+describe('GroupChips', () => {
+  const chips = (host: HTMLElement) =>
+    [...host.querySelectorAll('.library-chip')].map((b) => b.textContent);
+
+  it('shows no counts before the first list response', () => {
+    const host = render(<GroupChips taxon="" groups={undefined} onChoose={() => {}} />);
+    expect(chips(host)).toEqual(['Tất cả', 'Cá', 'Giáp xác', 'Nhuyễn thể', 'Khác']);
+    expect(host.querySelector('.library-chip-count')).toBeNull();
+  });
+
+  it('counts each chip from the list response; Tất cả is the sum of all five groups', () => {
+    const host = render(
+      <GroupChips
+        taxon="fish"
+        groups={{ fish: 31, crustacean: 19, mollusc: 12, other: 4, none: 934 }}
+        onChoose={() => {}}
+      />,
+    );
+    expect(chips(host)).toEqual(['Tất cả1000', 'Cá31', 'Giáp xác19', 'Nhuyễn thể12', 'Khác4']);
+    expect(host.querySelector('[aria-pressed="true"]')!.textContent).toBe('Cá31');
   });
 });

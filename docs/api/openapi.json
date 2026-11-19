@@ -1124,40 +1124,6 @@
           "media"
         ]
       },
-      "CatalogPageResponse": {
-        "type": "object",
-        "properties": {
-          "releaseId": {
-            "type": "string"
-          },
-          "internal": {
-            "type": "boolean"
-          },
-          "page": {
-            "type": "number"
-          },
-          "limit": {
-            "type": "number"
-          },
-          "total": {
-            "type": "number"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CatalogItemResponse"
-            }
-          }
-        },
-        "required": [
-          "releaseId",
-          "internal",
-          "page",
-          "limit",
-          "total",
-          "items"
-        ]
-      },
       "OverviewGroupsResponse": {
         "type": "object",
         "properties": {
@@ -1183,6 +1149,49 @@
           "mollusc",
           "other",
           "none"
+        ]
+      },
+      "CatalogPageResponse": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogItemResponse"
+            }
+          },
+          "groups": {
+            "description": "Items per taxonomic group for the current q/learnable/group filters, ignoring taxon.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverviewGroupsResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "releaseId",
+          "internal",
+          "page",
+          "limit",
+          "total",
+          "items",
+          "groups"
         ]
       },
       "OverviewItemResponse": {

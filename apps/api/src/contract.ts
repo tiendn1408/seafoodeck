@@ -28,6 +28,13 @@ export class CatalogItemResponse {
   @ApiProperty({ required: false, nullable: true, type: String }) jaTrade!: string | null;
   @ApiProperty({ type: [MediaResponse] }) media!: MediaResponse[];
 }
+export class OverviewGroupsResponse {
+  @ApiProperty() fish!: number;
+  @ApiProperty() crustacean!: number;
+  @ApiProperty() mollusc!: number;
+  @ApiProperty() other!: number;
+  @ApiProperty() none!: number;
+}
 export class CatalogPageResponse {
   @ApiProperty() releaseId!: string;
   @ApiProperty() internal!: boolean;
@@ -35,13 +42,12 @@ export class CatalogPageResponse {
   @ApiProperty() limit!: number;
   @ApiProperty() total!: number;
   @ApiProperty({ type: [CatalogItemResponse] }) items!: CatalogItemResponse[];
-}
-export class OverviewGroupsResponse {
-  @ApiProperty() fish!: number;
-  @ApiProperty() crustacean!: number;
-  @ApiProperty() mollusc!: number;
-  @ApiProperty() other!: number;
-  @ApiProperty() none!: number;
+  @ApiProperty({
+    type: OverviewGroupsResponse,
+    description:
+      'Items per taxonomic group for the current q/learnable/group filters, ignoring taxon.',
+  })
+  groups!: OverviewGroupsResponse;
 }
 export class OverviewItemResponse {
   @ApiProperty() revisionId!: string;

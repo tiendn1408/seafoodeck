@@ -44,6 +44,8 @@ export interface CatalogPage {
   limit: number;
   total: number;
   items: CatalogItem[];
+  /** Items per taxonomic group for the current search, ignoring the taxon filter. */
+  groups?: { fish: number; crustacean: number; mollusc: number; other: number; none: number };
 }
 export interface Score {
   targetLabel?: string;

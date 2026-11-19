@@ -77,3 +77,13 @@ export function summarizeOverview(
     items,
   };
 }
+
+export type GroupTotals = Record<TaxonomicGroup | 'none', number>;
+/**
+ * Per-group totals for the catalogue chips. `all` counts every item matching the current
+ * filters except the taxon; items without one of the four named groups make up `none`.
+ */
+export function groupTotals(all: number, named: Record<TaxonomicGroup, number>): GroupTotals {
+  const sum = named.fish + named.crustacean + named.mollusc + named.other;
+  return { ...named, none: Math.max(0, all - sum) };
+}

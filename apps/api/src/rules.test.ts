@@ -14,7 +14,13 @@ import {
 } from './learning';
 import { normalizeCode, validateHs, validateTariffScope } from './hs';
 import { summarizeImportState } from './import-state';
-import { summarizeOverview, likePattern, toOverviewRow, type OverviewRow } from './overview';
+import {
+  summarizeOverview,
+  likePattern,
+  toOverviewRow,
+  groupTotals,
+  type OverviewRow,
+} from './overview';
 import { passwordHash, passwordMatches } from './security';
 const item = {
   externalId: 'cod-test',
@@ -415,4 +421,18 @@ test('toOverviewRow uses the Item id (ledger targetId), not the externalId', () 
     ['a1'],
   );
   assert.equal(summarizeOverview([row], 0, { id: 'r', internal: true }).items[0].itemId, 'uuid-1');
+});
+test('groupTotals: four named groups as counted, none is the remainder of the untaxed total', () => {
+  assert.deepEqual(groupTotals(31, { fish: 10, crustacean: 6, mollusc: 4, other: 1 }), {
+    fish: 10,
+    crustacean: 6,
+    mollusc: 4,
+    other: 1,
+    none: 10,
+  });
+  const g = groupTotals(1000, { fish: 0, crustacean: 0, mollusc: 0, other: 0 });
+  assert.equal(g.none, 1000);
+  assert.equal(g.fish + g.crustacean + g.mollusc + g.other + g.none, 1000);
+  // Never negative, even if counts raced a publish.
+  assert.equal(groupTotals(3, { fish: 2, crustacean: 2, mollusc: 0, other: 0 }).none, 0);
 });
