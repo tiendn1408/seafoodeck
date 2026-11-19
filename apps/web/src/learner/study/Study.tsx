@@ -59,7 +59,14 @@ export function Study({
       ? [{ index: i, group: lookup(coverName(x))?.group ?? 'none', correct: x.result.correct }]
       : [],
   );
-  const rope = <FloatRope total={game.questions.length} done={floats} className="study-rope" />;
+  const rope = (
+    <FloatRope
+      total={game.questions.length}
+      done={floats}
+      current={cursor}
+      className="study-rope"
+    />
+  );
   const q = game.questions[cursor];
   if (!q)
     return (
@@ -86,9 +93,9 @@ export function Study({
               Câu {cursor + 1} / {game.questions.length}
             </span>
           </p>
-          <a className="study-pause" href="#home">
+          <a className="study-pause" href="#home" title="Tạm dừng">
             <Pause size={18} aria-hidden="true" />
-            Tạm dừng
+            <span className="study-pause-text">Tạm dừng</span>
           </a>
         </div>
         {rope}

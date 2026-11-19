@@ -1,6 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { Game } from '../../pilot/api';
+import { SignedImage } from '../../pilot/Media';
+import { MissingPhoto } from '../MissingPhoto';
+import { coverPhoto } from '../SpeciesCover';
 import { groupTone } from '../haul';
 import type { Ledger } from '../ledger';
 import { summarizeHaul, type HaulEntry } from './summary';
@@ -18,7 +21,14 @@ function CatchRow({ entry, species }: { entry: HaulEntry; species: SpeciesRef | 
       data-state={entry.caught ? 'caught' : 'missed'}
       style={{ '--tone': tone.css } as CSSProperties}
     >
-      <span className="haul-dot" aria-hidden="true" />
+      <span className="haul-port" aria-hidden="true">
+        {entry.kind === 'species' && item && coverPhoto(item) ? (
+          <SignedImage id={coverPhoto(item)!.id} thumbnail />
+        ) : (
+          <MissingPhoto />
+        )}
+        <span className="haul-dot" />
+      </span>
       <div className="haul-names">
         <strong>{entry.label}</strong>
         {entry.kind === 'hs' ? (

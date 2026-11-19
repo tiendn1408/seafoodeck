@@ -49,14 +49,25 @@
   opacity: 0.6;
   mask-image: linear-gradient(180deg, transparent 55%, #000 100%);
 }
+/* The frame follows the photo's own aspect: no dead bands, the credit tucked right under it.
+   Placeholders (loading, missing, failed) keep a 4:3 well so the layout does not jump. */
 .cover-photo {
-  aspect-ratio: 4 / 3;
+  display: flex;
+  justify-content: center;
   min-height: 0;
+}
+.cover-photo:has(> .missing-photo, > .pilot-media-placeholder) {
+  aspect-ratio: 4 / 3;
+}
+.cover-photo > .missing-photo,
+.cover-photo > .pilot-media-placeholder {
+  flex: 1;
 }
 .cover-photo img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: min(62vh, 600px);
   object-fit: contain;
   filter: drop-shadow(0 14px 22px rgb(0 0 0 / 0.35));
 }
@@ -80,7 +91,7 @@
 
 /* Credit: small, quiet, always present when there is a photo. */
 .cover-credit {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
 }
 .cover-credit .pilot-media-credit {
   display: flex;

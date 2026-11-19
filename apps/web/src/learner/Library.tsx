@@ -206,6 +206,9 @@ export function Library({
     return id ? masteryLevel(reviews, id) : 0;
   };
   const loading = loadedKey !== requestKey;
+  // The neutral "Chưa phân nhóm" tag is said once here, not on every tile.
+  const ungrouped =
+    data?.items.filter((i) => groupTone(i.taxonomicGroup).key === 'none').length ?? 0;
   const failed = !loading && !!error;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   function turn(next: number) {
@@ -236,7 +239,7 @@ export function Library({
               setQuery(e.target.value);
               setPage(1);
             }}
-            placeholder="Tên Việt, Anh, Nhật, khoa học hoặc bí danh…"
+            placeholder="Tên Việt, Anh, Nhật, khoa học…"
             autoComplete="off"
             spellCheck={false}
           />
@@ -254,6 +257,14 @@ export function Library({
         <div className="library-results" aria-busy={loading}>
           <p className="library-count" role="status">
             {data.total} mục · Trang {data.page} / {pages}
+            {wide && ungrouped > 0 && (
+              <span className="library-ungrouped">
+                <span className="library-swatch" aria-hidden="true" />
+                {ungrouped === data.items.length
+                  ? 'Cả trang chưa phân nhóm'
+                  : `${ungrouped} loài trên trang chưa phân nhóm`}
+              </span>
+            )}
             {loading && <span className="library-loading"> · đang tải…</span>}
           </p>
           {data.items.length ? (

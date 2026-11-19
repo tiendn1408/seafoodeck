@@ -92,6 +92,12 @@
   overflow-wrap: anywhere;
 }
 
+/* No group recorded: the neutral tag is said once by the list (header, count line), never
+   repeated on every card. Real group tags keep their colour. */
+.species-card[data-group='none'] .species-card-tag {
+  display: none;
+}
+
 /* Floating in deep water (home): always a light card, whatever the theme. */
 .species-card--float {
   --card-bg: #f7fbfc;
@@ -135,4 +141,19 @@
 }
 .species-card--row .species-card-copy {
   padding: 0;
+}
+/* Small thumbnails: the silhouette alone; its words stay for screen readers. */
+.species-card--row .missing-photo {
+  gap: 0;
+}
+.species-card--row .missing-photo span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.species-card--row .missing-photo-silhouette {
+  width: 62%;
 }

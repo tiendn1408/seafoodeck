@@ -6,6 +6,8 @@
   background: var(--ice-bg);
 }
 .ice-stage {
+  /* The deep hero bleeds to the viewport edges; nothing may widen the page. */
+  overflow-x: clip;
   min-height: 100%;
   background: var(--ice-bg);
   color: var(--ice-ink);
@@ -62,6 +64,142 @@
   color: var(--ice-muted);
   font-size: var(--text-md);
 }
+/*
+ * Deep header zone of Review and Progress: the sea carries on under the scalloped header
+ * (a shade lighter, so the scale edge still reads), then the ice sheet begins. Full-bleed
+ * background without widening the page (box-shadow spread + clip-path). Always deep, in
+ * both themes.
+ */
+.ice-hero {
+  --scales-color: rgb(255 255 255 / 0.05);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: var(--space-6);
+  margin: calc(-1 * var(--space-7)) 0 var(--space-7);
+  padding: var(--space-8) 0 var(--space-7);
+  background: var(--deep-800);
+  box-shadow: 0 0 0 100vmax var(--deep-800);
+  clip-path: inset(0 -100vmax);
+  color: var(--deep-ink);
+}
+.ice-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: auto -100vmax 0;
+  height: 72px;
+  background-image: var(--scales-bg);
+  background-size: var(--scales-size);
+  background-position: var(--scales-position);
+  mask-image: linear-gradient(to top, #000, transparent);
+  pointer-events: none;
+}
+.ice-hero h1 {
+  margin: 0;
+  color: var(--deep-ink);
+  font-size: clamp(2rem, 1.3rem + 2.8vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+.ice-hero .ice-lede {
+  color: var(--deep-muted);
+}
+.ice-hero .ice-figures dt,
+.ice-hero .ice-note {
+  color: var(--deep-muted);
+}
+.ice-hero .ice-figures dd {
+  color: var(--deep-ink);
+}
+.ice-hero :focus-visible {
+  outline-color: var(--deep-accent);
+}
+.ice-hero .ice-primary:disabled {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--deep-muted);
+}
+
+/* Species of the schedule as portholes: photo whole (contain) in a round dark well. */
+.ice-portholes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ice-portholes li {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 88px;
+}
+.ice-porthole {
+  --missing-ink: var(--deep-muted);
+  --missing-hole: var(--deep-950);
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #24414b, var(--deep-950));
+  box-shadow:
+    inset 0 0 0 3px rgb(232 217 181 / 0.4),
+    0 8px 18px rgb(0 0 0 / 0.4);
+  overflow: hidden;
+}
+.ice-porthole img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.ice-porthole .missing-photo span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ice-porthole .missing-photo-silhouette {
+  width: 64%;
+}
+.ice-portholes li[data-due] .ice-porthole {
+  box-shadow:
+    inset 0 0 0 3px rgb(232 217 181 / 0.4),
+    0 0 0 3px var(--deep-800),
+    0 0 0 6px var(--action),
+    0 8px 18px rgb(0 0 0 / 0.4);
+}
+.ice-porthole-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--deep-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ice-porthole-more {
+  align-content: center;
+  height: 76px;
+  color: var(--deep-muted);
+  font-weight: 800;
+}
+@media (min-width: 900px) {
+  .ice-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: clamp(var(--space-7), 5vw, var(--space-9));
+    padding: var(--space-8) 0;
+  }
+}
+
 .ice-h2 {
   display: flex;
   align-items: baseline;
@@ -231,6 +369,7 @@
   color: var(--ice-ink);
   font-size: var(--text-md);
   caret-color: var(--action);
+  text-overflow: ellipsis;
 }
 .library-search input:focus-visible {
   outline: none;
@@ -306,6 +445,16 @@
 .library-results[aria-busy='true'] :is(.library-sections, .library-grid) {
   opacity: 0.55;
   transition: opacity var(--dur) var(--ease-out);
+}
+
+.library-ungrouped {
+  --tone: var(--group-none);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-4);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--ice-line);
 }
 
 /* Phone: grouped compact list. */
@@ -476,11 +625,23 @@
 .review-action .ice-figures {
   margin: 0;
 }
+.review-action .ice-note {
+  max-width: 32ch;
+}
 .review-group + .review-group {
   margin-top: var(--space-7);
 }
+.review-list {
+  display: grid;
+  gap: var(--space-3);
+}
 .review-list .species-card--row {
   align-items: flex-start;
+  padding: var(--space-3);
+  box-shadow: var(--shadow-raise);
+}
+.review-list .species-card--row .species-card-photo {
+  flex-basis: 96px;
 }
 .review-list .species-card-aside {
   align-self: flex-start;
@@ -499,6 +660,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: baseline;
   gap: 0 var(--space-3);
   font-size: var(--text-sm);
   line-height: 1.45;
@@ -506,35 +668,43 @@
 .review-skill-name {
   color: var(--ice-ink);
   font-weight: 700;
+  white-space: nowrap;
 }
 .review-skill-when {
   color: var(--ice-muted);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .review-plain {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--ice-line);
   border-radius: var(--radius-md);
   background: var(--ice-surface);
+  box-shadow: var(--shadow-raise);
 }
 .review-plain strong {
   display: block;
   font-weight: 800;
   overflow-wrap: anywhere;
 }
+.review-fresh .ice-note {
+  margin-top: var(--space-3);
+}
 @media (min-width: 900px) {
   .review-body {
-    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
-    gap: var(--space-7) clamp(var(--space-7), 4vw, var(--space-9));
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    column-gap: clamp(var(--space-7), 4vw, var(--space-9));
   }
   .review-action {
-    position: sticky;
-    top: calc(var(--shell-header-h) + var(--space-6));
+    align-items: flex-end;
+    text-align: right;
+  }
+  .review-action .ice-figures {
+    justify-content: flex-end;
   }
   .review-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: var(--space-4);
   }
 }
 
@@ -549,6 +719,38 @@
   border: 1px solid var(--ice-line);
   border-radius: var(--radius-lg);
   background: var(--ice-surface);
+  box-shadow: var(--shadow-raise);
+}
+.progress-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-7);
+  margin: 0;
+}
+.progress-history {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+@media (min-width: 900px) {
+  .progress-figures {
+    grid-template-columns: repeat(4, max-content);
+  }
+}
+.progress-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.progress-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 .progress-skills,
 .progress-mastery {
@@ -599,21 +801,20 @@
   transform: scaleX(var(--fill, 0));
   transform-origin: left center;
 }
+.ice-bar--stack {
+  display: flex;
+  gap: 2px;
+}
+.ice-bar--stack i {
+  flex: none;
+  width: calc(var(--fill, 0) * 100%);
+  transform: none;
+}
 .ice-figures {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-7);
   margin: 0 0 var(--space-4);
-}
-.progress-answers .ice-figures {
-  display: grid;
-  grid-template-columns: repeat(3, max-content);
-}
-@media (max-width: 479px) {
-  .progress-answers .ice-figures {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-4);
-  }
 }
 .ice-figures > div {
   display: flex;
@@ -636,9 +837,6 @@
 @media (min-width: 900px) {
   .progress-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .progress-answers {
-    grid-column: 1 / -1;
   }
   .ice-panel {
     padding: var(--space-6) var(--space-7);

@@ -76,7 +76,7 @@ export function AppShell({
     <div className="shell-brand">
       <a className="shell-logo" href="#home">
         <ScaleMark />
-        <span>Seafood Deck</span>
+        <span className="shell-wordmark">Seafood Deck</span>
       </a>
       {signedIn && internal && (
         <span className="shell-chip" title={internalLabel}>
@@ -84,7 +84,9 @@ export function AppShell({
             internalLabel
           ) : (
             <>
-              <span aria-hidden="true">Bản nội bộ · chưa duyệt</span>
+              <span className="shell-chip-short" aria-hidden="true">
+                Nội bộ · chưa duyệt
+              </span>
               <span className="shell-chip-full">{internalLabel}</span>
             </>
           )}

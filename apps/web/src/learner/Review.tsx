@@ -1,8 +1,10 @@
 import { RotateCcw } from 'lucide-react';
 import type { ReviewState } from '../domain/models';
 import type { CatalogOverview } from '../pilot/api';
+import { SignedImage } from '../pilot/Media';
 import type { StartSession } from './Home';
 import { MasteryScales } from './MasteryScales';
+import { MissingPhoto } from './MissingPhoto';
 import { SpeciesCard } from './SpeciesCard';
 import { masteryLevel } from './haul';
 import { skillLabel, type Ledger } from './ledger';
@@ -73,6 +75,77 @@ function Rows({
   );
 }
 
+/** Species of the release not yet in any schedule: where the next haul comes from. */
+function Fresh({
+  reviews,
+  overview,
+}: {
+  reviews: ReviewState[];
+  overview: CatalogOverview | null;
+}) {
+  const scheduled = new Set(reviews.map((r) => r.targetId));
+  const fresh = overview?.items.filter((i) => !scheduled.has(i.itemId)) ?? [];
+  if (!fresh.length) return null;
+  return (
+    <section className="review-group review-fresh" aria-labelledby="review-fresh">
+      <h2 id="review-fresh" className="ice-h2">
+        Chưa vào lịch <span className="ice-count">{fresh.length}</span>
+      </h2>
+      <ul className="library-list">
+        {fresh.slice(0, 6).map((item) => (
+          <li key={item.itemId}>
+            <SpeciesCard variant="row" item={item} aside={<MasteryScales level={0} />} />
+          </li>
+        ))}
+      </ul>
+      <p className="ice-note">
+        {fresh.length > 6 ? `Và ${fresh.length - 6} loài khác trong thư viện. ` : ''}
+        Thả lưới ở trang Học để đưa loài mới vào lịch ôn.
+      </p>
+    </section>
+  );
+}
+
+/** The species in the schedule as portholes in the deep header: due ones first, ringed. */
+function Portholes({
+  reviews,
+  overview,
+  now,
+}: {
+  reviews: ReviewState[];
+  overview: CatalogOverview | null;
+  now: number;
+}) {
+  const species = new Map(overview?.items.map((i) => [i.itemId, i]));
+  const entries = byTarget(reviews)
+    .flatMap(([id, rs]) => {
+      const item = species.get(id);
+      return item ? [{ item, due: rs.some((r) => Date.parse(r.dueAt) <= now) }] : [];
+    })
+    .sort((a, b) => Number(b.due) - Number(a.due));
+  if (!entries.length) return null;
+  const shown = entries.slice(0, 8);
+  return (
+    <ul className="ice-portholes" aria-label="Loài trong lịch ôn">
+      {shown.map(({ item, due }) => (
+        <li key={item.itemId} data-due={due ? '' : undefined} title={item.vi}>
+          <span className="ice-porthole">
+            {item.imageId ? (
+              <SignedImage id={item.imageId} thumbnail alt={item.vi} />
+            ) : (
+              <MissingPhoto />
+            )}
+          </span>
+          <span className="ice-porthole-name">{item.vi}</span>
+        </li>
+      ))}
+      {entries.length > shown.length && (
+        <li className="ice-porthole-more">+{entries.length - shown.length}</li>
+      )}
+    </ul>
+  );
+}
+
 /**
  * Review corner on the ice surface: what is due now and what is scheduled next, each skill
  * on its own 1 → 3 → 7 → 14 day ladder. One button starts a review of up to 30 due items.
@@ -99,13 +172,14 @@ export function Review({
   const next = [...later].sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
   return (
     <section className="ice-page review" aria-labelledby="review-title">
-      <header className="ice-head">
-        <h1 id="review-title">Góc ôn tập của bạn.</h1>
-        <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
-      </header>
-      {reviews.length ? (
-        <div className="review-body">
-          <div className="ice-panel review-action">
+      <header className="ice-hero">
+        <div className="ice-hero-copy">
+          <h1 id="review-title">Góc ôn tập của bạn.</h1>
+          <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
+          <Portholes reviews={reviews} overview={overview} now={now} />
+        </div>
+        {reviews.length > 0 && (
+          <div className="review-action">
             <dl className="ice-figures">
               <div>
                 <dt>Đến hạn</dt>
@@ -143,6 +217,10 @@ export function Review({
                     : ''}
             </p>
           </div>
+        )}
+      </header>
+      {reviews.length ? (
+        <div className="review-body">
           <div className="review-lists">
             {due.length > 0 && (
               <section className="review-group" aria-labelledby="review-due">
@@ -161,6 +239,7 @@ export function Review({
               </section>
             )}
           </div>
+          <Fresh reviews={reviews} overview={overview} />
         </div>
       ) : (
         <div className="ice-empty ice-empty--scales">

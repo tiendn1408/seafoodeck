@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { groupTone, type GroupKey } from './haul';
 
-/** A doorway into the library, filtered to one taxonomic group. */
+/** A chip that opens the library filtered to one taxonomic group. */
 export function GroupEntry({
   group,
   count,
@@ -26,11 +26,9 @@ export function GroupEntry({
         <path d="M1.5 20a6.5 6.5 0 0 1 13 0" />
         <path d="M15.5 20a6.5 6.5 0 0 1 13 0" />
       </svg>
-      <span className="group-entry-copy">
-        <strong>{tone.label}</strong>
-        <small>{count} loài</small>
-      </span>
-      <ArrowRight size={18} aria-hidden="true" />
+      <strong>{tone.label}</strong>
+      <small>{count} loài</small>
+      <ArrowRight size={16} aria-hidden="true" />
     </button>
   );
 }

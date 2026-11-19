@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleX,
   Hand,
+  LockKeyhole,
   SkipForward,
   X,
 } from 'lucide-react';
@@ -35,6 +36,40 @@ export function coverName(q: ApiQuestion): string | undefined {
   if (q.type === 'flashcard') return q.front;
   if (q.type === 'image') return q.result?.targetLabel;
   return undefined;
+}
+
+/**
+ * Desktop flashcard front: the species' other cards in this haul as locked rows (code, which
+ * question asks it, whether it is done), so the answer column is not one button on a void.
+ * Names are never shown here; each card reveals only its own language.
+ */
+function LockedCards({ game, q, index }: { game: Game; q: ApiQuestion; index: number }) {
+  const rows = game.questions.flatMap((x, i) =>
+    x.type === 'flashcard' && x.front === q.front && i !== index && answerLanguage[x.prompt]
+      ? [{ i, code: answerLanguage[x.prompt].code, prompt: x.prompt, done: !!x.result }]
+      : [],
+  );
+  if (!rows.length) return null;
+  return (
+    <ul className="study-locked" aria-label="Các thẻ khác của loài này">
+      {rows.map((r) => (
+        <li key={r.i} data-done={r.done ? '' : undefined}>
+          <span className="cover-code" aria-hidden="true">
+            {r.code}
+          </span>
+          <span className="study-locked-name">{r.prompt}</span>
+          <span className="study-locked-state">
+            {r.done ? (
+              <Check size={16} aria-hidden="true" />
+            ) : (
+              <LockKeyhole size={16} aria-hidden="true" />
+            )}
+            {r.done ? `Đã lật ở câu ${r.i + 1}` : `Lật ở câu ${r.i + 1}`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /** Photo credit carried by an answered image question ("credit · rights\nsource"). */
@@ -365,6 +400,7 @@ export function QuestionView({
             </button>
           )}
         </div>
+        {!reveal && <LockedCards game={game} q={q} index={index} />}
         {reveal && !done && (
           <div className="pilot-actions study-actions study-rate">
             <button

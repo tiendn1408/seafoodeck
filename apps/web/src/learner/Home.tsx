@@ -7,6 +7,7 @@ import {
   type CatalogPage,
   type Game,
 } from '../pilot/api';
+import { SignedImage } from '../pilot/Media';
 import { ErrorNote } from './ErrorNote';
 import { FloatRope, type RopeFloat } from './FloatRope';
 import { GroupEntry } from './GroupEntry';
@@ -195,6 +196,12 @@ export function Home({
     plan?.kind === 'flashcard'
       ? overview?.items.find((i) => i.revisionId === plan.revisionId)?.vi
       : undefined;
+  // Each practice key is led by a species photo: the chosen species for the name modes,
+  // another photographed species for "Đoán hình"; HS keeps its icon (it is about packaging).
+  const chosenItem = overview?.items.find((i) => i.revisionId === chosen);
+  const otherPhoto = overview?.items.find((i) => i.imageId && i.revisionId !== chosen)?.imageId;
+  const modePhoto = (mode: string): string | null | undefined =>
+    mode === 'hs' ? null : mode === 'image' ? otherPhoto : chosenItem?.imageId;
   const minutes = plan?.kind === 'review' ? Math.max(2, Math.ceil(plan.targets.length / 2)) : 2;
 
   return (
@@ -317,120 +324,136 @@ export function Home({
         {(!overview || overview.items.length > 0) && (
           <div className="home-rope">
             <p className="home-rope-caption">{ropeCaption}</p>
-            <FloatRope total={rope.total} done={rope.done} />
+            <FloatRope
+              total={rope.total}
+              done={rope.done}
+              current={session ? session.questions.findIndex((q) => !q.result) : undefined}
+            />
           </div>
         )}
       </section>
 
-      {overview && overview.items.length > 0 && (
-        <section className="home-band home-skills" aria-labelledby="skills-title">
-          <h2 id="skills-title">Bốn kỹ năng của bạn</h2>
-          <ul>
-            {skillProgress(overview, reviews).map((s) => (
-              <li key={s.key}>
-                <span className="home-skill-name">{s.label}</span>
-                <span className="home-skill-count">
-                  {s.done} / {s.total} {s.key === 'hs' ? 'hồ sơ' : 'loài'}
-                </span>
-                <span className="home-bar" aria-hidden="true">
-                  <i
-                    style={
-                      {
-                        '--fill': s.total ? s.done / s.total : 0,
-                        '--bar': skillColor[s.key],
-                      } as CSSProperties
-                    }
-                  />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="home-split">
+        {overview && overview.items.length > 0 && (
+          <section className="home-band home-skills" aria-labelledby="skills-title">
+            <h2 id="skills-title">Bốn kỹ năng của bạn</h2>
+            <ul>
+              {skillProgress(overview, reviews).map((s) => (
+                <li
+                  key={s.key}
+                  style={
+                    {
+                      '--fill': s.total ? s.done / s.total : 0,
+                      '--bar': skillColor[s.key],
+                    } as CSSProperties
+                  }
+                >
+                  <span className="home-skill-name">{s.label}</span>
+                  <span className="home-skill-count">
+                    {s.done} / {s.total} {s.key === 'hs' ? 'hồ sơ' : 'loài'}
+                  </span>
+                  {/* A short rope: the hauled-in part is coloured, the buoy marks how far. */}
+                  <span className="home-gauge" aria-hidden="true">
+                    <i />
+                    <b />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
-      <section className="home-band home-practice" aria-labelledby="practice-title">
-        <div className="home-practice-head">
-          <h2 id="practice-title">Luyện nghiệp vụ</h2>
-          {overview && overview.items.length > 0 && (
-            <div className="home-pickers">
-              <label>
-                <span>Loài học tên</span>
-                <select
-                  aria-label="Chọn loài học tên"
-                  value={chosen}
-                  onChange={(e) => setRevision(e.target.value)}
-                >
-                  {overview.items.map((i) => (
-                    <option key={i.revisionId} value={i.revisionId}>
-                      {i.vi}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Hướng ghép tên</span>
-                <select
-                  aria-label="Chọn hướng ghép tên"
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value)}
-                >
-                  <option value="en">Việt → Anh</option>
-                  <option value="ja">Việt → Nhật</option>
-                  <option value="scientific">Việt → Khoa học</option>
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
-        {loading ? (
-          <p role="status" className="home-muted">
-            Đang tải danh mục từ máy chủ…
-          </p>
-        ) : !overview ? (
-          <p className="home-muted">Tải lại mẻ lưới ở trên để mở các chế độ luyện.</p>
-        ) : !overview.items.length ? (
-          <p className="home-muted">Chưa có mục học trong bộ đã xuất bản.</p>
-        ) : (
-          <>
-            <div className="home-modes">
-              {modes.map(({ mode, label, note, count, Icon }) => (
+        <section className="home-band home-practice" aria-labelledby="practice-title">
+          <div className="home-practice-head">
+            <h2 id="practice-title">Luyện nghiệp vụ</h2>
+            {overview && overview.items.length > 0 && (
+              <div className="home-pickers">
+                <label>
+                  <span>Loài học tên</span>
+                  <select
+                    aria-label="Chọn loài học tên"
+                    value={chosen}
+                    onChange={(e) => setRevision(e.target.value)}
+                  >
+                    {overview.items.map((i) => (
+                      <option key={i.revisionId} value={i.revisionId}>
+                        {i.vi}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Hướng ghép tên</span>
+                  <select
+                    aria-label="Chọn hướng ghép tên"
+                    value={kind}
+                    onChange={(e) => setKind(e.target.value)}
+                  >
+                    <option value="en">Việt → Anh</option>
+                    <option value="ja">Việt → Nhật</option>
+                    <option value="scientific">Việt → Khoa học</option>
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+          {loading ? (
+            <p role="status" className="home-muted">
+              Đang tải danh mục từ máy chủ…
+            </p>
+          ) : !overview ? (
+            <p className="home-muted">Tải lại mẻ lưới ở trên để mở các chế độ luyện.</p>
+          ) : !overview.items.length ? (
+            <p className="home-muted">Chưa có mục học trong bộ đã xuất bản.</p>
+          ) : (
+            <>
+              <div className="home-modes">
+                {modes.map(({ mode, label, note, count, Icon }) => {
+                  const photo = modePhoto(mode);
+                  return (
+                    <button
+                      type="button"
+                      className="home-mode"
+                      key={mode}
+                      disabled={pending}
+                      onClick={() => void onStart(mode, chosen, kind)}
+                    >
+                      <span className="home-mode-port" data-photo={photo ? '' : undefined}>
+                        {photo ? (
+                          <SignedImage id={photo} thumbnail />
+                        ) : (
+                          <Icon size={24} aria-hidden="true" />
+                        )}
+                      </span>
+                      <span className="home-mode-name">{label}</span>
+                      <span className="home-mode-note">{note}</span>
+                      <span className="home-mode-count">
+                        {count}
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {listening && (
                 <button
                   type="button"
-                  className="home-mode"
-                  key={mode}
+                  className="home-secondary"
                   disabled={pending}
-                  onClick={() => void onStart(mode, chosen, kind)}
+                  onClick={() => void onStart('listening', chosen, kind)}
                 >
-                  <span className="home-mode-icon">
-                    <Icon size={22} aria-hidden="true" />
-                  </span>
-                  <span className="home-mode-name">{label}</span>
-                  <span className="home-mode-note">{note}</span>
-                  <span className="home-mode-count">
-                    {count}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </span>
+                  Nghe và chọn tên
                 </button>
-              ))}
-            </div>
-            {listening && (
-              <button
-                type="button"
-                className="home-secondary"
-                disabled={pending}
-                onClick={() => void onStart('listening', chosen, kind)}
-              >
-                Nghe và chọn tên
-              </button>
-            )}
-          </>
-        )}
-      </section>
+              )}
+            </>
+          )}
+        </section>
+      </div>
 
       {overview && overview.items.length > 0 && (
         <section className="home-band home-groups" aria-labelledby="groups-title">
           <h2 id="groups-title">Thư viện theo nhóm</h2>
-          <div className="home-group-grid">
+          <div className="home-group-chips">
             {taxa.map((t) => (
               <GroupEntry key={t} group={t} count={overview.groups[t]} onOpen={onOpenLibrary} />
             ))}

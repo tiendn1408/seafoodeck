@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { empty, mergeScore } from './ledger';
+import { empty, mergeScore, skillLabel } from './ledger';
 import { skillProgress } from './haul';
 import type { CatalogOverview, Game, Score } from '../pilot/api';
 
@@ -22,6 +22,14 @@ const base = {
   at: '2026-01-01T00:00:00Z',
 } as Score;
 
+describe('skillLabel', () => {
+  it('names each skill in plain Vietnamese', () => {
+    expect(skillLabel('name:en')).toBe('Tên tiếng Anh');
+    expect(skillLabel('name:ja')).toBe('Tên tiếng Nhật');
+    expect(skillLabel('name:scientific')).toBe('Tên khoa học');
+    expect(skillLabel('match:scientific')).toBe('Ghép Việt–khoa học');
+  });
+});
 describe('ledger', () => {
   it('does not record an existing answer twice', () => {
     const once = mergeScore(empty, base, game);
