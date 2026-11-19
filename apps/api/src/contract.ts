@@ -28,6 +28,13 @@ export class CatalogItemResponse {
   @ApiProperty({ required: false, nullable: true, type: String }) jaTrade!: string | null;
   @ApiProperty({ type: [MediaResponse] }) media!: MediaResponse[];
 }
+export class OverviewGroupsResponse {
+  @ApiProperty() fish!: number;
+  @ApiProperty() crustacean!: number;
+  @ApiProperty() mollusc!: number;
+  @ApiProperty() other!: number;
+  @ApiProperty() none!: number;
+}
 export class CatalogPageResponse {
   @ApiProperty() releaseId!: string;
   @ApiProperty() internal!: boolean;
@@ -35,6 +42,28 @@ export class CatalogPageResponse {
   @ApiProperty() limit!: number;
   @ApiProperty() total!: number;
   @ApiProperty({ type: [CatalogItemResponse] }) items!: CatalogItemResponse[];
+  @ApiProperty({
+    type: OverviewGroupsResponse,
+    description:
+      'Items per taxonomic group for the current q/learnable/group filters, ignoring taxon.',
+  })
+  groups!: OverviewGroupsResponse;
+}
+export class OverviewItemResponse {
+  @ApiProperty() revisionId!: string;
+  @ApiProperty() itemId!: string;
+  @ApiProperty() vi!: string;
+  @ApiProperty() scientific!: string;
+  @ApiProperty({ nullable: true, type: String }) taxonomicGroup!: string | null;
+  @ApiProperty({ nullable: true, type: String }) imageId!: string | null;
+}
+export class CatalogOverviewResponse {
+  @ApiProperty() releaseId!: string;
+  @ApiProperty() internal!: boolean;
+  @ApiProperty() learnable!: number;
+  @ApiProperty({ type: OverviewGroupsResponse }) groups!: OverviewGroupsResponse;
+  @ApiProperty() hsCases!: number;
+  @ApiProperty({ type: [OverviewItemResponse] }) items!: OverviewItemResponse[];
 }
 export class SignedUrlResponse {
   @ApiProperty() url!: string;

@@ -4,12 +4,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { AuthSession, Prisma } from './generated/prisma/client';
+import { Prisma, type AuthSession } from './generated/prisma/client';
 import { parse } from 'csv-parse/sync';
 import { Db } from './db';
+import { alternateNameIdsSql, ungroupedIdsSql } from './search-sql';
 import { hash } from './security';
 import { validateHs, type HsData } from './hs';
 import { EXTERNAL_ID_PATTERN } from './import-state';
+import {
+  groupTotals,
+  summarizeOverview,
+  toOverviewRow,
+  type GroupTotals,
+  type OverviewRow,
+} from './overview';
 
 export const kinds = ['vi', 'en', 'ja', 'scientific'] as const;
 export type Kind = (typeof kinds)[number];
@@ -245,34 +253,67 @@ export class Catalog {
       limit > 50 ||
       query.length > 100 ||
       group.length > 80 ||
-      !['', 'fish', 'crustacean', 'mollusc', 'other'].includes(taxon)
+      !['', 'fish', 'crustacean', 'mollusc', 'other', 'none'].includes(taxon)
     )
       throw new BadRequestException('Phân trang/bộ lọc không hợp lệ.');
     const release = await this.current(actor);
-    const where: Prisma.RevisionWhereInput = {
+    const altIds = query
+      ? (await this.db.$queryRaw<{ id: string }[]>(alternateNameIdsSql(release.id, query))).map(
+          (r) => r.id,
+        )
+      : [];
+    const base: Prisma.RevisionWhereInput = {
       AND: [
         ...(learnable
           ? kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } }))
           : []),
-        ...(taxon ? [{ data: { path: ['taxonomicGroup'], equals: taxon } }] : []),
       ],
       releases: { some: { releaseId: release.id } },
       ...(query
         ? {
-            names: {
-              some: {
-                OR: [
-                  { label: { contains: query, mode: 'insensitive' } },
-                  { searchText: { contains: query, mode: 'insensitive' } },
-                ],
+            OR: [
+              {
+                names: {
+                  some: {
+                    OR: [
+                      { label: { contains: query, mode: 'insensitive' } },
+                      { searchText: { contains: query, mode: 'insensitive' } },
+                    ],
+                  },
+                },
               },
-            },
+              { id: { in: altIds } },
+            ],
           }
         : {}),
       ...(group ? { data: { path: ['group'], equals: group } } : {}),
     };
-    const [total, rows] = await this.db.$transaction([
-      this.db.revision.count({ where }),
+    // "none" = no named group recorded (missing, null or unknown value), as the web shows it.
+    const ungrouped =
+      taxon === 'none'
+        ? (await this.db.$queryRaw<{ id: string }[]>(ungroupedIdsSql(release.id))).map((r) => r.id)
+        : [];
+    const inGroup = (t: string): Prisma.RevisionWhereInput => ({
+      ...base,
+      AND: [
+        ...(base.AND as Prisma.RevisionWhereInput[]),
+        { data: { path: ['taxonomicGroup'], equals: t } },
+      ],
+    });
+    const where: Prisma.RevisionWhereInput = !taxon
+      ? base
+      : taxon === 'none'
+        ? {
+            ...base,
+            AND: [...(base.AND as Prisma.RevisionWhereInput[]), { id: { in: ungrouped } }],
+          }
+        : inGroup(taxon);
+    const [all, fish, crustacean, mollusc, other, rows] = await this.db.$transaction([
+      this.db.revision.count({ where: base }),
+      this.db.revision.count({ where: inGroup('fish') }),
+      this.db.revision.count({ where: inGroup('crustacean') }),
+      this.db.revision.count({ where: inGroup('mollusc') }),
+      this.db.revision.count({ where: inGroup('other') }),
       this.db.revision.findMany({
         where,
         orderBy: { item: { externalId: 'asc' } },
@@ -281,14 +322,36 @@ export class Catalog {
         include: { names: true, media: { include: { asset: true } } },
       }),
     ]);
+    // Chip totals ignore the taxon, so each chip shows what selecting it would list.
+    const groups = groupTotals(all, { fish, crustacean, mollusc, other });
     return {
       releaseId: release.id,
       internal: release.internal,
       page,
       limit,
-      total,
+      total: taxon ? groups[taxon as keyof GroupTotals] : all,
       items: rows.map((r) => this.dto(r)),
+      groups,
     };
+  }
+  async overview(actor: AuthSession) {
+    const release = await this.current(actor);
+    const revisions = await this.db.revision.findMany({
+      where: {
+        releases: { some: { releaseId: release.id } },
+        AND: kinds.map((kind) => ({ names: { some: { kind, label: { not: '' } } } })),
+      },
+      orderBy: { item: { externalId: 'asc' } },
+      include: { names: true, media: { include: { asset: true } } },
+    });
+    const rows: OverviewRow[] = revisions.map(toOverviewRow);
+    const hsCases = await this.db.tradeScenario.count({
+      where: {
+        revisionId: { in: rows.map((r) => r.revisionId) },
+        ...(!release.internal ? { status: 'approved' } : {}),
+      },
+    });
+    return summarizeOverview(rows, hsCases, release);
   }
   dto(row: {
     id: string;

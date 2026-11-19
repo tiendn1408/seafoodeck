@@ -36,7 +36,7 @@ async function login(page: Page, admin = false) {
 }
 async function start(page: Page, name: string) {
   if (!(await page.getByRole('heading', { name: 'Luyện nghiệp vụ' }).isVisible()))
-    await page.getByRole('link', { name: 'Học tập', exact: true }).click();
+    await page.getByRole('link', { name: 'Học', exact: true }).click();
   const response = page.waitForResponse(
     (r) => r.url().endsWith('/api/v1/learning/sessions') && r.request().method() === 'POST',
   );
@@ -65,13 +65,15 @@ test('catalogue uses API paging, Japanese search, signed thumbnails and stable d
   await page.locator('.library-card').click();
   await expect(page).toHaveURL(/#profile\/green-mussel$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Vẹm xanh.', exact: true })).toBeVisible();
-  const image = page.locator('.pilot-profile-image img');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Vẹm xanh', exact: true }),
+  ).toBeVisible();
+  const image = page.locator('.cover-photo img');
   await expect(image).toBeVisible();
   await expect
     .poll(() => image.evaluate((i) => (i as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  await expect(page.getByText('Chưa có bản thu', { exact: true })).toHaveCount(3);
+  await expect(page.getByText('Chưa có bản thu đã duyệt.', { exact: true })).toHaveCount(3);
   await page.route('**/api/v1/catalog/items?**', (r) => r.abort());
   await page.goto('/#library');
   await expect(page.getByRole('alert')).toContainText('Không kết nối');
@@ -148,8 +150,33 @@ test('all four modes: reload, double submit, keyboard match, skipped media, HS a
   expect(Object.values((await ledger(page)).reviews)).toHaveLength(9);
   await page.goto('/#review');
   await expect(page.getByRole('heading', { name: 'Góc ôn tập của bạn.' })).toBeVisible();
-  await expect(page.locator('.pilot-review-list>div')).toHaveCount(9);
+  await expect(page.locator('.review-skill')).toHaveCount(9);
   expect(await page.locator('main').innerText()).not.toMatch(/name:en|match:en/);
+});
+test('Thả lưới mở được một phiên và về được trang chủ', async ({ page }) => {
+  await login(page);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /Mẻ lưới hôm nay: \d+ loài đang chờ/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Tiến độ mẻ lưới: 0 / 5' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tiếp tục phiên học' })).toHaveCount(0);
+  const response = page.waitForResponse(
+    (r) => r.url().endsWith('/api/v1/learning/sessions') && r.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Thả lưới', exact: true }).click();
+  const game = (await (await response).json()) as Game;
+  expect(game.mode).toBe('flashcard');
+  await expect(page.locator('.pilot-question')).toBeVisible();
+  await page.getByRole('button', { name: 'Chạm để lật thẻ' }).click();
+  await page.getByRole('button', { name: 'Đã nhớ', exact: true }).click();
+  await expect(page.getByText('Đã lưu tự đánh giá', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Tạm dừng' }).click();
+  await expect(page).toHaveURL(/#home$/);
+  await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: `Tiến độ mẻ lưới: 1 / ${game.questions.length}` }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tiếp tục phiên học' })).toBeVisible();
 });
 test('corrupt browser progress is preserved until a new game is started', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('seafood-deck:pilot:v1', '{invalid'));
@@ -169,7 +196,7 @@ test('profile thumbnail retries one failed signed request and then loads', async
     else await route.continue();
   });
   await page.goto('/#profile/atlantic-cod');
-  const image = page.locator('.pilot-profile-image img');
+  const image = page.locator('.cover-photo img');
   await expect(image).toBeVisible();
   await expect
     .poll(() => image.evaluate((i) => (i as HTMLImageElement).naturalWidth))
@@ -250,6 +277,51 @@ for (const viewport of [
       }
     }
   });
+async function checkLayout(page: Page) {
+  const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  const contained = async (selector: string) => {
+    await expect.poll(() => page.locator(selector).count()).toBeGreaterThan(0);
+    const values = await page
+      .locator(selector)
+      .evaluateAll((imgs) => imgs.map((i) => getComputedStyle(i).objectFit));
+    expect(values.every((v) => v === 'contain')).toBe(true);
+  };
+  await page.goto('/#home');
+  await expect(page.locator('.home-catch')).toBeVisible();
+  await contained('.home-catch .species-card-photo img');
+  expect(await fits()).toBe(true);
+  await page.goto('/#library');
+  await expect(page.locator('.library-card').first()).toBeVisible();
+  await contained('.library-card .species-card-photo img');
+  expect(await fits()).toBe(true);
+  // The first species on the page whose photo is published, so the cover has an <img>.
+  const href = await page
+    .locator('.library-card:has(.species-card-photo img) a')
+    .first()
+    .getAttribute('href');
+  expect(href).toMatch(/^#profile\/.+/);
+  await page.goto('/' + href);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await contained('.cover-photo img');
+  expect(await fits()).toBe(true);
+}
+// One login covers every viewport of a project: the login limiter allows 20 attempts per 10 minutes.
+test('home, library and profile never scroll sideways and show whole photos', async ({
+  page,
+}, info) => {
+  await login(page);
+  await test.step(`project viewport (${info.project.name})`, () => checkLayout(page));
+  if (info.project.name === 'mobile')
+    await test.step('320×640 phone', async () => {
+      await page.setViewportSize({ width: 320, height: 640 });
+      await checkLayout(page);
+    });
+  else
+    await test.step('1280×800 laptop', async () => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await checkLayout(page);
+    });
+});
 test('admin can preview CSV errors and publish/rollback a QA draft through the browser', async ({
   page,
 }) => {

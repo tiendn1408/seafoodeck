@@ -1,0 +1,80 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/91393-1795021441/content/visual-direction.html"
+        ],
+        "createdAt": "2026-11-18T17:04:50.397Z",
+        "reason": "agent: throwaway brainstorm mockup scaled to a 300px phone frame, not product UI"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/91393-1795021441/content/visual-direction.html"
+        ],
+        "createdAt": "2026-11-18T17:04:50.417Z",
+        "reason": "agent: throwaway brainstorm mockup of three directions, not product UI"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/91393-1795021441/content/visual-direction.html"
+        ],
+        "createdAt": "2026-11-18T17:05:02.779Z",
+        "reason": "agent: throwaway brainstorm mockup scaled to a 300px phone frame, not product UI"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/93700-1795022611/content/reference-board.html"
+        ],
+        "createdAt": "2026-11-18T17:24:22.262Z",
+        "reason": "agent: internal reference board of swatches (labels on flesh-colour swatches), not product UI"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/93700-1795022611/content/wow-concepts-v1.html"
+        ],
+        "createdAt": "2026-11-18T17:39:40.208Z",
+        "reason": "agent: throwaway concept mockups for direction choice; contrast settled at build"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/93700-1795022611/content/wow-concepts-v2.html"
+        ],
+        "createdAt": "2026-11-18T17:40:09.386Z",
+        "reason": "agent: concept mockups rendered at 0.6 scale inside device frames; sizing/contrast settled at build"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/93700-1795022611/content/wow-concepts-v2.html"
+        ],
+        "createdAt": "2026-11-18T17:40:09.404Z",
+        "reason": "agent: concept mockups rendered at 0.6 scale inside device frames; sizing/contrast settled at build"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/93700-1795022611/content/wow-concepts-v2.html"
+        ],
+        "createdAt": "2026-11-18T17:40:09.423Z",
+        "reason": "agent: concept mockups rendered at 0.6 scale inside device frames; sizing/contrast settled at build"
+      }
+    ]
+  }
+}

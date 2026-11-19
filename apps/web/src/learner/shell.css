@@ -1,0 +1,348 @@
+/* Learner app shell: deep-sea header (desktop tabs) / compact header + bottom tab bar (phone). */
+
+.shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.shell[data-tone='deep'] {
+  background: var(--deep-gradient);
+  color: var(--deep-ink);
+}
+.shell ::selection {
+  background: rgb(232 116 59 / 0.32);
+}
+.shell[data-tone='deep'] ::selection {
+  background: rgb(143 211 220 / 0.35);
+}
+
+.shell-skip {
+  position: fixed;
+  left: max(var(--space-4), env(safe-area-inset-left, 0px));
+  top: calc(var(--space-2) + env(safe-area-inset-top, 0px));
+  z-index: 60;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--action);
+  color: var(--action-ink);
+  font-weight: 700;
+  transform: translateY(-160%);
+  transition: transform var(--dur) var(--ease-out);
+}
+.shell-skip:focus {
+  transform: translateY(0);
+}
+
+/* Header: always deep-sea. Solid over ice screens, transparent over deep ones. */
+.shell-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: var(--shell-header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--deep-900);
+  color: var(--deep-ink);
+  font-family: var(--font-sans);
+}
+/* Scalloped bottom edge: one row of fish scales hanging off the solid header. */
+.shell-header::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 7px;
+  background-image: radial-gradient(circle at 50% 0, var(--deep-900) 6.5px, transparent 7px);
+  background-size: 14px 7px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+.shell[data-tone='deep'] .shell-header {
+  position: relative;
+  background: transparent;
+}
+.shell[data-tone='deep'] .shell-header::after {
+  content: none;
+}
+.shell-header :focus-visible,
+.shell-tabbar :focus-visible,
+.shell[data-tone='deep'] :focus-visible {
+  outline: 3px solid var(--deep-accent);
+  outline-offset: 3px;
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.shell-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--deep-ink);
+}
+.shell-mark {
+  fill: none;
+  stroke: var(--action);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.shell-chip {
+  padding: 3px 10px;
+  border: 1px solid rgb(232 116 59 / 0.55);
+  border-radius: 6px;
+  background: rgb(232 116 59 / 0.12);
+  color: #ffc9ad; /* 11.8:1 on --deep-900 */
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  max-width: 11rem;
+  position: relative;
+}
+
+.shell-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.shell-icon-button,
+.shell-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  color: var(--deep-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+.shell-icon-button:hover,
+.shell-logout:hover {
+  color: var(--deep-ink);
+  background: var(--deep-surface);
+}
+.shell-logout-text {
+  clip-path: inset(50%);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Desktop tabs */
+.shell-tabs {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: var(--space-1);
+}
+.shell-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--deep-muted);
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.shell-tab::after {
+  content: '';
+  position: absolute;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: 12px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--action);
+  transform: scaleX(0);
+  transition: transform var(--dur) var(--ease-out);
+}
+.shell-tab:hover {
+  color: var(--deep-ink);
+}
+.shell-tab[aria-current='page'] {
+  color: var(--deep-ink);
+}
+.shell-tab[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.shell-main {
+  flex: 1;
+  min-width: 0;
+  /* Landscape phones: keep content clear of the notch and rounded corners. */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.shell-main:focus {
+  outline: none;
+}
+
+.shell[data-layout='desktop'] .shell-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  min-height: calc(var(--shell-header-h) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) max(var(--space-7), env(safe-area-inset-right, 0px)) 0
+    max(var(--space-7), env(safe-area-inset-left, 0px));
+}
+.shell[data-layout='desktop'] .shell-tabs {
+  justify-self: center;
+}
+.shell[data-layout='desktop'] .shell-actions {
+  justify-self: end;
+}
+@media (min-width: 1180px) {
+  .shell-chip {
+    max-width: none;
+    white-space: nowrap;
+  }
+  .shell-logout {
+    padding: 0 var(--space-3);
+  }
+  .shell-logout-text {
+    position: static;
+    clip-path: none;
+    width: auto;
+    height: auto;
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+}
+
+/* Phone: compact header, fixed bottom tab bar inside the safe area. */
+.shell[data-layout='phone'] .shell-header {
+  min-height: calc(56px + env(safe-area-inset-top, 0px));
+  padding: calc(var(--space-1) + env(safe-area-inset-top, 0px))
+    max(var(--space-3), env(safe-area-inset-right, 0px)) var(--space-1)
+    max(var(--space-4), env(safe-area-inset-left, 0px));
+}
+.shell[data-layout='phone'] .shell-brand {
+  flex: 1 1 auto;
+  gap: var(--space-2);
+}
+.shell[data-layout='phone'] .shell-logo {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.0625rem;
+}
+/* One-row phone header: on an internal release the mark stands for the wordmark (still the
+   link's accessible name) so the honest chip fits beside it. */
+.shell[data-layout='phone'] .shell-brand:has(.shell-chip):not([data-wordmark]) .shell-wordmark {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.shell[data-layout='phone'] .shell-chip {
+  min-width: 0;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  max-width: none;
+  white-space: nowrap;
+}
+/* Home and Profiles keep the wordmark; the chip sits on its own single line under it. */
+.shell[data-layout='phone'] .shell-brand[data-wordmark]:has(.shell-chip) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.shell[data-layout='phone'] .shell-brand[data-wordmark] .shell-chip {
+  max-width: 100%;
+  margin: -4px 0 var(--space-1);
+}
+.shell-chip-short {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell-chip-full {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.shell[data-tabbar] .shell-main {
+  padding-bottom: calc(var(--shell-tab-h) + env(safe-area-inset-bottom, 0px));
+}
+
+.shell-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+  background: var(--deep-950);
+  border-top: 1px solid var(--deep-line);
+  font-family: var(--font-sans);
+}
+.shell-tabbar-item {
+  position: relative;
+  min-height: var(--shell-tab-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--deep-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.shell-tabbar-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 28%;
+  right: 28%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--action);
+  transform: scaleX(0);
+  transition: transform var(--dur) var(--ease-out);
+}
+.shell-tabbar-item[aria-current='page'] {
+  color: var(--deep-ink);
+  font-weight: 700;
+}
+.shell-tabbar-item[aria-current='page'] svg {
+  color: var(--action);
+}
+.shell-tabbar-item[aria-current='page']::before {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

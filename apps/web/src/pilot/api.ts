@@ -14,6 +14,28 @@ export interface CatalogItem {
   identification: string;
   note: string;
   media: { id: string; role: string; nameKind: string | null; approved: boolean }[];
+  taxonomicGroup?: 'fish' | 'crustacean' | 'mollusc' | 'other' | null;
+  family?: string | null;
+  familyVi?: string | null;
+  enAliases?: string[];
+  jaKanji?: string | null;
+  jaTrade?: string | null;
+}
+export interface CatalogOverview {
+  releaseId: string;
+  internal: boolean;
+  learnable: number;
+  groups: { fish: number; crustacean: number; mollusc: number; other: number; none: number };
+  hsCases: number;
+  items: {
+    revisionId: string;
+    /** Item row id (uuid): same as ledger/learning targetId. */
+    itemId: string;
+    vi: string;
+    scientific: string;
+    taxonomicGroup: 'fish' | 'crustacean' | 'mollusc' | 'other' | null;
+    imageId: string | null;
+  }[];
 }
 export interface CatalogPage {
   releaseId: string;
@@ -22,6 +44,8 @@ export interface CatalogPage {
   limit: number;
   total: number;
   items: CatalogItem[];
+  /** Items per taxonomic group for the current search, ignoring the taxon filter. */
+  groups?: { fish: number; crustacean: number; mollusc: number; other: number; none: number };
 }
 export interface Score {
   targetLabel?: string;

@@ -1,0 +1,144 @@
+@import '@fontsource/be-vietnam-pro/800.css';
+/* Real italic faces: scientific names are italic and font-synthesis is off. */
+@import '@fontsource/be-vietnam-pro/400-italic.css';
+@import '@fontsource/be-vietnam-pro/500-italic.css';
+
+/*
+ * Learner design tokens: "Biển sâu × Ấn bản loài".
+ * Deep surfaces (home, study) never change with the theme; only the "Băng" (ice)
+ * reading surface has a dark variant.
+ */
+:root {
+  /* Seafood-flesh group colours (taxonomicGroup). `-ink` is the text colour on that fill. */
+  --group-fish: #a8243a; /* tuna red: white text 7.0:1 */
+  --group-fish-ink: #ffffff;
+  --group-crustacean: #ee8a7a; /* cooked shrimp: dark text 6.7:1 */
+  --group-crustacean-ink: #3a120c;
+  --group-mollusc: #c99a2e; /* clam flesh: dark text 6.3:1 */
+  --group-mollusc-ink: #2b1e05;
+  --group-other: #4f6b5e; /* sea cucumber: white text 5.8:1 */
+  --group-other-ink: #ffffff;
+  --group-none: #5e6f78; /* no group recorded: neutral blue-grey, white text 5.3:1 */
+  --group-none-ink: #ffffff;
+
+  /* Primary action: salmon, pressed-in with a darker bottom lip. */
+  --action: #e8743b;
+  --action-hover: #f0864f;
+  --action-ink: #1b0f08; /* 6.2:1 on --action */
+  --action-lip: #a94e1d;
+  --action-glow: rgb(232 116 59 / 0.32);
+
+  /* "Biển sâu": ink-blue to deep-sea teal. */
+  --deep-950: #05141b;
+  --deep-900: #071c26;
+  --deep-800: #0b3341;
+  --deep-700: #0e4554;
+  --deep-gradient: linear-gradient(180deg, #071c26 0%, #0b3341 55%, #0e4554 100%);
+  --deep-ink: #f2f8f9;
+  --deep-muted: #a9c3c9; /* 9.4:1 on --deep-900 */
+  --deep-accent: #8fd3dc; /* light-ray cyan, focus ring on deep */
+  --deep-surface: rgb(255 255 255 / 0.07);
+  --deep-line: rgb(255 255 255 / 0.12);
+  --deep-ray: rgb(160 230 240 / 0.1);
+  --rope: #e8d9b5;
+
+  /* "Băng": cold ice reading surface (light). Never cream or paper. */
+  --ice-bg: #f3f7f8;
+  --ice-surface: #ffffff;
+  --ice-raised: #e9f1f2;
+  --ice-ink: #0b2230;
+  --ice-muted: #4c5e66; /* 6.3:1 on --ice-bg */
+  --ice-line: #d4e0e3;
+  --ice-focus: #0b6a7c;
+
+  /* Type */
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-ja:
+    'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo',
+    sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.75rem;
+  --text-display: clamp(2.5rem, 1.6rem + 3.2vw, 4rem);
+  --tracking-tight: -0.03em;
+  --leading-tight: 1.04;
+
+  /* Space (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --space-9: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Depth */
+  --shadow-press: 0 6px 0 var(--action-lip), 0 16px 32px var(--action-glow);
+  --shadow-press-down: 0 2px 0 var(--action-lip), 0 6px 14px var(--action-glow);
+  --shadow-float: 0 18px 40px rgb(2 12 17 / 0.38);
+  --shadow-raise: 0 2px 6px rgb(11 34 48 / 0.08), 0 10px 24px rgb(11 34 48 / 0.06);
+
+  /* Fish-scale arcs: decoration only, never an image frame or mask. */
+  --scales-color: rgb(255 255 255 / 0.07);
+  --scales-bg:
+    radial-gradient(
+      circle at 50% 100%,
+      transparent 9px,
+      var(--scales-color) 10px,
+      var(--scales-color) 11.5px,
+      transparent 12.5px
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      transparent 9px,
+      var(--scales-color) 10px,
+      var(--scales-color) 11.5px,
+      transparent 12.5px
+    );
+  --scales-size: 24px 12px;
+  --scales-position: 0 0, 12px 6px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur: 260ms;
+
+  /* Shell metrics */
+  --shell-header-h: 64px;
+  --shell-tab-h: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ice-bg: #0a1c24;
+    --ice-surface: #102a35;
+    --ice-raised: #16343f;
+    --ice-ink: #e8f1f3;
+    --ice-muted: #a3b9bf; /* 8.5:1 on dark --ice-bg */
+    --ice-line: #24434e;
+    --ice-focus: #8fd3dc;
+    --shadow-raise: 0 2px 6px rgb(0 0 0 / 0.3), 0 10px 24px rgb(0 0 0 / 0.25);
+  }
+}
+:root[data-theme='dark'] {
+  --ice-bg: #0a1c24;
+  --ice-surface: #102a35;
+  --ice-raised: #16343f;
+  --ice-ink: #e8f1f3;
+  --ice-muted: #a3b9bf;
+  --ice-line: #24434e;
+  --ice-focus: #8fd3dc;
+  --shadow-raise: 0 2px 6px rgb(0 0 0 / 0.3), 0 10px 24px rgb(0 0 0 / 0.25);
+}

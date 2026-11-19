@@ -59,13 +59,15 @@ test('header separates tasks; species URL and group survive navigation', async (
   await expect(page.locator('.mode-card')).toHaveCount(4);
   await page.getByRole('link', { name: 'Tiến độ', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Tiến độ học của bạn' })).toBeVisible();
-  await page.getByRole('link', { name: 'Học tập', exact: true }).click();
+  await page.getByRole('link', { name: 'Học', exact: true }).click();
   await page.getByRole('link', { name: /Nghêu & vẹm/ }).click();
   await expect(page.locator('.library-card')).toHaveCount(2);
   await page.locator('.library-card').filter({ hasText: 'Vẹm xanh' }).click();
   await expect(page).toHaveURL(/#profile\/green-mussel$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Vẹm xanh.', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Vẹm xanh', exact: true }),
+  ).toBeVisible();
 });
 
 test('seafood identity survives image blocking; AI stays outside identification', async ({

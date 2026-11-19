@@ -36,6 +36,7 @@ import { Db } from './db';
 import type { Prisma } from './generated/prisma/client';
 import {
   CatalogItemResponse,
+  CatalogOverviewResponse,
   CatalogPageResponse,
   SignedUrlResponse,
   GameResponse,
@@ -115,6 +116,11 @@ export class CatalogController {
       learnable === 'true',
       taxon,
     );
+  }
+  @ApiOkResponse({ type: CatalogOverviewResponse })
+  @Get('overview')
+  overview(@Req() req: ActorRequest) {
+    return this.catalog.overview(req.actor);
   }
   @ApiOkResponse({ type: CatalogItemResponse })
   @Get('items/:revisionId')

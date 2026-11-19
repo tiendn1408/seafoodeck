@@ -1,0 +1,44 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-18T17:13:55.133Z",
+        "reason": "agent: canon card deliberately renders the category-standard look as a decision fixture, not product UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-18T17:14:35.806Z",
+        "reason": "agent: throwaway direction-round sketch (decision page renders sub-22px text as skeleton bars), not product UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-11-18T17:14:35.824Z",
+        "reason": "agent: throwaway direction-round sketch (decision page renders sub-22px text as skeleton bars), not product UI"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/challenger-doujin.html"
+        ],
+        "createdAt": "2026-11-18T17:14:35.842Z",
+        "reason": "agent: throwaway direction-round sketch (decision page renders sub-22px text as skeleton bars), not product UI"
+      }
+    ]
+  }
+}

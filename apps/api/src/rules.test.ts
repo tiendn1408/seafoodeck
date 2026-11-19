@@ -14,6 +14,13 @@ import {
 } from './learning';
 import { normalizeCode, validateHs, validateTariffScope } from './hs';
 import { summarizeImportState } from './import-state';
+import {
+  summarizeOverview,
+  likePattern,
+  toOverviewRow,
+  groupTotals,
+  type OverviewRow,
+} from './overview';
 import { passwordHash, passwordMatches } from './security';
 const item = {
   externalId: 'cod-test',
@@ -331,4 +338,101 @@ test('summarizeImportState flags released, live profile image, no provenance', (
   assert.equal(latest.released, true);
   assert.equal(latest.hasProfileImage, true);
   assert.equal(latest.fromImporter, false);
+});
+
+const ovRow = (
+  id: string,
+  group: OverviewRow['taxonomicGroup'],
+  media: OverviewRow['media'] = [],
+) => ({
+  revisionId: 'rev-' + id,
+  itemId: id,
+  vi: 'Tên ' + id,
+  scientific: 'Sci ' + id,
+  taxonomicGroup: group,
+  media,
+});
+const asset = (id: string, role: string, status = 'approved', revokedAt: Date | null = null) => ({
+  id,
+  role,
+  status,
+  revokedAt,
+});
+test('overview counts groups including none and exposes only six keys', () => {
+  const o = summarizeOverview(
+    [ovRow('a', 'fish'), ovRow('b', 'fish'), ovRow('c', 'mollusc'), ovRow('d', null)],
+    7,
+    { id: 'rel', internal: false },
+  );
+  assert.deepEqual(o.groups, { fish: 2, crustacean: 0, mollusc: 1, other: 0, none: 1 });
+  assert.equal(o.learnable, 4);
+  assert.equal(o.hsCases, 7);
+  assert.equal(o.releaseId, 'rel');
+  for (const i of o.items)
+    assert.deepEqual(Object.keys(i).sort(), [
+      'imageId',
+      'itemId',
+      'revisionId',
+      'scientific',
+      'taxonomicGroup',
+      'vi',
+    ]);
+});
+test('overview image: profile first, unapproved dropped for public, kept for internal', () => {
+  const rows = [
+    ovRow('a', 'fish', [asset('idn', 'identification'), asset('pro', 'profile')]),
+    ovRow('b', 'fish', [asset('x', 'identification', 'draft')]),
+    ovRow('c', 'fish', [asset('y', 'profile', 'approved', new Date())]),
+  ];
+  const pub = summarizeOverview(rows, 0, { id: 'r', internal: false });
+  assert.deepEqual(
+    pub.items.map((i) => i.imageId),
+    ['pro', null, null],
+  );
+  const int = summarizeOverview(rows, 0, { id: 'r', internal: true });
+  assert.deepEqual(
+    int.items.map((i) => i.imageId),
+    ['pro', 'x', null],
+  );
+});
+test('likePattern escapes wildcards', () => {
+  assert.equal(likePattern('50%_a'), '%50\\%\\_a%');
+  assert.equal(likePattern('a\\b'), '%a\\\\b%');
+});
+
+test('toOverviewRow uses the Item id (ledger targetId), not the externalId', () => {
+  const row = toOverviewRow({
+    id: 'rev-1',
+    itemId: 'uuid-1',
+    data: { externalId: 'ext-1', taxonomicGroup: 'fish' },
+    names: [
+      { kind: 'vi', label: 'Cá' },
+      { kind: 'scientific', label: 'Piscis' },
+    ],
+    media: [{ asset: asset('a1', 'profile') }],
+  });
+  assert.equal(row.itemId, 'uuid-1');
+  assert.equal(row.revisionId, 'rev-1');
+  assert.equal(row.vi, 'Cá');
+  assert.equal(row.scientific, 'Piscis');
+  assert.equal(row.taxonomicGroup, 'fish');
+  assert.deepEqual(
+    row.media.map((m) => m.id),
+    ['a1'],
+  );
+  assert.equal(summarizeOverview([row], 0, { id: 'r', internal: true }).items[0].itemId, 'uuid-1');
+});
+test('groupTotals: four named groups as counted, none is the remainder of the untaxed total', () => {
+  assert.deepEqual(groupTotals(31, { fish: 10, crustacean: 6, mollusc: 4, other: 1 }), {
+    fish: 10,
+    crustacean: 6,
+    mollusc: 4,
+    other: 1,
+    none: 10,
+  });
+  const g = groupTotals(1000, { fish: 0, crustacean: 0, mollusc: 0, other: 0 });
+  assert.equal(g.none, 1000);
+  assert.equal(g.fish + g.crustacean + g.mollusc + g.other + g.none, 1000);
+  // Never negative, even if counts raced a publish.
+  assert.equal(groupTotals(3, { fish: 2, crustacean: 2, mollusc: 0, other: 0 }).none, 0);
 });
