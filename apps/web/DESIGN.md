@@ -232,13 +232,13 @@ Soft, rounded rectangles with a small number of radii: 8px (controls, skip link,
 - **Missing photo:** a neutral fish silhouette at 40% opacity with "Ảnh đang bổ sung"; never a fake or stock photo. On row cards the words stay for screen readers only.
 
 ### Navigation
-- **Header:** always deep-sea. Transparent over deep screens, solid `deep-900` with a scalloped fish-scale bottom edge over ice screens. Logo (scale-arc mark in salmon plus 800 wordmark) and an internal-release chip (salmon-tinted 1px border, `#ffc9ad` text) at left; theme toggle and sign-out at right (sign-out label shows from 1180px).
+- **Header:** always deep-sea. Transparent over deep screens, solid `deep-900` with a scalloped fish-scale bottom edge over ice screens. Logo (scale-arc mark in salmon plus 800 wordmark) and an internal-release chip (salmon-tinted 1px border, `#ffc9ad` text) at left; theme toggle (ice screens only, since deep screens never change with the theme) and sign-out at right (sign-out label shows from 1180px).
 - **Tabs (desktop):** Học / Thư viện / Ôn tập / Tiến độ, 700 weight, `deep-muted` becoming `deep-ink` when current, with a 3px salmon underline that scales in from the centre.
 - **Tab bar (phone):** fixed, `deep-950`, four equal items with icon and 0.75rem label; the current item shows a salmon bar at the top edge and a salmon icon.
 - **Phone header chip:** on an internal release the wordmark collapses to the mark (still the link's accessible name) so the chip fits on one row; home and profiles keep the wordmark and put the chip on its own line.
 
 ### Float Rope (signature component)
-Haul progress as buoys on a heavy, sagging rope: a 4.5px sand cord with a darker dashed lay drawn over it, buoys positioned along it with `--x`. Buoy states: **empty** (hull dark, sand cap), **caught** (ice-white cap, group-coloured hull, the number on the hull, rises from below on arrival), **missed** (dashed sand ring, dark fill), **current** (salmon 3px ring over a dark gap). Buoys are 46px (38px under 600px), bob 6px on a 4.6s loop with staggered delays, and carry a soft highlight. An ice variant uses translucent ink for the rope (`ice-rope`).
+Haul progress as buoys on a heavy, sagging rope: a 4.5px sand cord with a darker dashed lay drawn over it, buoys positioned along it with `--x`. Buoy states: **empty** (hull dark, sand cap), **caught** (ice-white cap, group-coloured hull, the number on the hull, rises from below on arrival), **missed** (dashed sand ring, dark fill), **current** (salmon 3px ring over a dark gap). Buoys are 46px (38px under 600px), bob 6px on a 4.6s loop with staggered delays, and carry a soft highlight. An ice variant uses translucent ink for the rope (`ice-rope`). Ropes of more than 10 floats (`data-dense`) drop the hull numbers; the cap, hull and dashed-ring states and the accessible label still tell the buoys apart.
 
 ### Mastery Scale
 Four fish scales (58 by 14px), outlined in `ice-muted`, filled in `ice-focus` for each level reached. Decoration-plus-data: the value is also stated in text elsewhere.
