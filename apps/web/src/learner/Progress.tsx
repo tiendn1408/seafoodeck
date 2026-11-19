@@ -4,6 +4,7 @@ import { ErrorNote } from './ErrorNote';
 import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { groupTone, masteryCounts, masteryLevel, skillProgress, type GroupKey } from './haul';
+import { recentSessions, type SessionRow } from './sessions';
 import { useOverview } from './useOverview';
 import './library.css';
 
@@ -33,6 +34,55 @@ function Gauge({ value, color }: { value: number; color: string }) {
       <i />
       <b />
     </span>
+  );
+}
+
+const when = (t: number) =>
+  new Date(t).toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+/** The last few sessions of the release: one line each, the first-try share as a short rope. */
+function History({ rows }: { rows: SessionRow[] }) {
+  return (
+    <section className="progress-sessions" aria-labelledby="progress-sessions">
+      <h2 id="progress-sessions" className="ice-h2">
+        Lịch sử phiên gần đây
+      </h2>
+      {rows.length ? (
+        <ol className="ice-panel progress-sessions-list">
+          {rows.map((r) => (
+            <li key={r.sessionId}>
+              <span className="progress-name">{r.mode}</span>
+              <time className="progress-count" dateTime={new Date(r.at).toISOString()}>
+                {when(r.at)}
+              </time>
+              <span className="progress-session-figures">
+                {r.answered > 0 && (
+                  <span>
+                    Đúng lần đầu{' '}
+                    <strong>
+                      {r.firstTry} / {r.answered}
+                    </strong>{' '}
+                    · {r.percent}%
+                  </span>
+                )}
+                {r.selfRated > 0 && <span>{r.selfRated} thẻ tự đánh giá</span>}
+              </span>
+              {r.percent !== null && <Gauge value={r.percent / 100} color="var(--ice-focus)" />}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="ice-note">
+          Chưa có phiên nào trong bộ nội dung này. Thả lưới ở trang Học để kéo mẻ đầu tiên.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -179,6 +229,7 @@ export function Progress({
           </section>
         </div>
       )}
+      {overview && <History rows={recentSessions(attempts, overview.releaseId)} />}
       {overview && ranked.length > 0 && (
         <section className="progress-species" aria-labelledby="progress-species">
           <h2 id="progress-species" className="ice-h2">

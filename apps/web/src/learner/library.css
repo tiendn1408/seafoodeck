@@ -866,6 +866,44 @@
   align-items: center;
   gap: var(--space-2);
 }
+/* Recent sessions: one line per haul, the first-try share laid as a short rope. */
+.progress-sessions {
+  margin-top: var(--space-7);
+}
+.progress-sessions-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding-block: var(--space-2);
+  list-style: none;
+}
+.progress-sessions-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-4);
+}
+.progress-sessions-list li + li {
+  border-top: 1px solid var(--ice-line);
+}
+.progress-session-figures {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.progress-session-figures strong {
+  color: var(--ice-ink);
+  font-weight: 800;
+}
+.progress-sessions-list .ice-gauge {
+  margin-top: var(--space-1);
+}
 .progress-species {
   margin-top: var(--space-7);
 }
@@ -919,6 +957,23 @@
   .progress-mastery-col {
     padding-left: clamp(var(--space-7), 4vw, var(--space-9));
     border-left: 1px solid var(--ice-line);
+  }
+  /* One line per session on wide screens: mode, time, figures, then the rope. */
+  .progress-sessions-list {
+    padding: var(--space-2) var(--space-8);
+  }
+  .progress-sessions-list li {
+    grid-template-columns: minmax(7rem, 1fr) auto minmax(16rem, 1.6fr) minmax(160px, 1.2fr);
+    align-items: center;
+    column-gap: var(--space-6);
+  }
+  .progress-session-figures,
+  .progress-sessions-list .ice-gauge {
+    grid-column: auto;
+    margin-top: 0;
+  }
+  .progress-sessions-list .ice-gauge {
+    grid-column: 4;
   }
   .progress-species .library-list {
     display: grid;
