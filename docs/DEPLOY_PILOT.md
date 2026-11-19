@@ -4,7 +4,7 @@
 
 ## Chuẩn bị trên máy làm việc
 
-Image dành cho Ubuntu x86_64, hai package `ghcr.io/tiendn1408/seafoodeck-web` và `ghcr.io/tiendn1408/seafoodeck-api`, tag `pilot-internal-20261118-r2`. Digest đã phát hành nằm trong `DELIVERY_0.6.0.md`. Để phát hành lại mã thay đổi phải dùng tag mới, build/test cả hai image rồi chạy `sh scripts/publish-pilot.sh <tag>`; không ghi đè tag đang bàn giao.
+Image dành cho Ubuntu x86_64, hai package `ghcr.io/tiendn1408/seafoodeck-web` và `ghcr.io/tiendn1408/seafoodeck-api`, tag `pilot-internal-20261119-r1`. Digest của tag này nằm ngay dưới và trong `DELIVERY_PHASE2_IMAGES.md`; tag cũ `pilot-internal-20261118-r2` (digest trong `DELIVERY_0.6.0.md`) không được ghi đè. Để phát hành lại mã thay đổi phải dùng tag mới, build/test cả hai image rồi chạy `sh scripts/publish-pilot.sh <tag>`; không ghi đè tag đang bàn giao.
 
 Đăng nhập GHCR trên máy cần push bằng PAT classic `write:packages`; máy chỉ pull package private dùng `read:packages`. Tạo token tại GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic). Không đưa token vào file repo hoặc lệnh có lưu history. Dùng `docker login ghcr.io -u tiendn1408` rồi nhập token ở prompt Password. Trên VPS nếu chạy Docker qua sudo thì đăng nhập bằng `sudo docker login ghcr.io -u tiendn1408`.
 
@@ -20,6 +20,17 @@ sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24
 ```
 
 Nếu thư mục đã có repo, dùng `git pull --ff-only` trên đúng branch thay vì clone lại. Init cố ý từ chối ghi đè secrets đã có. File `.local/pilot.env` và `.local/s3.json` có mật khẩu thật, giữ riêng và backup an toàn. Không gửi nội dung cho agent. Mở env riêng để lấy tài khoản `owner`, mật khẩu quản trị, mã mời học viên. Mặc định production không cho truy cập nội dung fixture. Kho SeaweedFS này dành cho dev/test nội bộ; phải chọn/duyệt kho sử dụng thực tế và smoke test trước pilot khách.
+
+## Bản 0.6 + giao diện mới (tag pilot-internal-20261119-r1)
+
+Hai image linux/amd64 đã push GHCR. Cài mới trên VPS ghi hai digest này vào `WEB_IMAGE_REF` và `API_IMAGE_REF` trong `.local/pilot.env` (lệnh init vẫn ghi sẵn tag r2 cũ, phải thay):
+
+```env
+API_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-api@sha256:5a0459278c35203af3a55eafc074d2b4e9848ef525ea80a594be2551f9c5274e
+WEB_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-web@sha256:0c1e6af44e4e12d0ed8e636ef9ba082aa38b354043dc13516f7785af9ada88f3
+```
+
+Chi tiết build/kiểm thử: `DELIVERY_PHASE2_IMAGES.md`.
 
 ## Khởi tạo stack mới, chưa chuyển cổng domain
 
