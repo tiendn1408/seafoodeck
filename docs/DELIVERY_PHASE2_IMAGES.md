@@ -30,3 +30,14 @@ Chạy đúng chuỗi DEPLOY_PILOT với `compose.pilot.ghcr.yaml` và hai image
 - Production rỗng: `GET /api/v1/catalog/overview` của learner trả 404 "Chưa có bộ học được xuất bản cho phạm vi này." (hành vi của API khi chưa có release, không phải 200). Chưa mở UI học viên trong trình duyệt với trạng thái rỗng này.
 - Chưa thử upload media, nhập prototype, duyệt/xuất bản, bốn chế độ chơi trên bộ dữ liệu thật; không chạy E2E/unit trong lần này.
 - Chưa pull lại từ GHCR trên máy khác; mới kiểm digest bằng `imagetools inspect`.
+
+## r2: trang quản trị riêng (20/11/2026 theo giờ VN)
+
+Tag **`pilot-internal-20261119-r2`**, linux/amd64, dựng từ `main` tại commit `945aea9`. Chỉ khác r1 ở phía web: `#admin` có form đăng nhập riêng, màn đăng nhập người học chỉ còn ô mã mời. Không có migration mới.
+
+```env
+API_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-api@sha256:f2194c069f80598d91db23526005d32590c285a4e2f7479fd99ada72f80fbf96
+WEB_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-web@sha256:1543ff13f916b5c701d15e29b8e87eb0d8fafe36d987d0ebf279fe839799c212
+```
+
+Đã thử trên stack cô lập (health trả release r2; khách không thấy chữ "quản trị" ở `/`; `/#admin` có form; sai mật khẩu và sai mã mời bị từ chối; đăng nhập quản trị và mã mời chạy; stack đã `down -v`). Chưa thử trên VPS thật. Lệnh nâng cấp: [DEPLOY_UPGRADE_r2.md](DEPLOY_UPGRADE_r2.md).
