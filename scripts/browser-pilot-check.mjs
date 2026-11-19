@@ -7,7 +7,7 @@ const origin=env.PUBLIC_ORIGIN,qa=JSON.parse(readFileSync('.local/smoke-evidence
 mkdirSync('.local/screenshots',{recursive:true});
 const browser=await chromium.launch();
 const evidence={};
-async function login(page,admin=false){await page.goto(origin);await page.getByLabel('Mã mời',{exact:true}).waitFor();if(admin){await page.getByRole('button',{name:'Dành cho quản trị'}).click();await page.getByLabel('Tài khoản',{exact:true}).fill(env.ADMIN_USERNAME);await page.getByLabel('Mật khẩu',{exact:true}).fill(env.ADMIN_PASSWORD);}else await page.getByLabel('Mã mời',{exact:true}).fill(env.LEARNER_INVITE_CODE);await page.getByRole('button',{name:'Vào bộ học',exact:true}).click();await page.getByRole('heading',{name:'Luyện nghiệp vụ'}).waitFor();}
+async function login(page,admin=false){await page.goto(admin?origin+'/#admin':origin);await page.getByLabel(admin?'Tài khoản':'Mã mời',{exact:true}).waitFor();if(admin){await page.getByLabel('Tài khoản',{exact:true}).fill(env.ADMIN_USERNAME);await page.getByLabel('Mật khẩu',{exact:true}).fill(env.ADMIN_PASSWORD);}else await page.getByLabel('Mã mời',{exact:true}).fill(env.LEARNER_INVITE_CODE);await page.getByRole('button',{name:admin?'Đăng nhập':'Vào bộ học',exact:true}).click();if(admin)await page.goto(origin+'/#home');await page.getByRole('heading',{name:'Luyện nghiệp vụ'}).waitFor();}
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:1});
  await context.addInitScript(()=>{const Native=window.Audio;window.__qaAudio=[];window.Audio=function(...args){const audio=new Native(...args);window.__qaAudio.push(audio);return audio;};});

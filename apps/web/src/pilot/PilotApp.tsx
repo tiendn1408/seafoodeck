@@ -4,8 +4,9 @@ import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
-import { Login } from '../learner/Login';
+import { Login, StaffLogin } from '../learner/Login';
 import { Home } from '../learner/Home';
+import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
@@ -163,13 +164,18 @@ export default function PilotApp() {
         {error && <ErrorNote message={error} retry={() => location.reload()} />}
         {!auth ? (
           !error && <p role="status">Đang kết nối bộ học…</p>
-        ) : auth.role === 'guest' ? (
-          <Login
-            onLogin={(a) => {
+        ) : loginKind(route, auth.role) ? (
+          (() => {
+            const onLogin = (a: AuthView) => {
               setCsrf(a.csrf);
               setAuth(a);
-            }}
-          />
+            };
+            return loginKind(route, auth.role) === 'staff' ? (
+              <StaffLogin onLogin={onLogin} />
+            ) : (
+              <Login onLogin={onLogin} />
+            );
+          })()
         ) : (
           <>
             {route === 'home' && (

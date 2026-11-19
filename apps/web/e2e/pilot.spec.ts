@@ -24,14 +24,17 @@ const pack = JSON.parse(
   tariffs: { id: string; code: string }[];
 };
 async function login(page: Page, admin = false) {
-  await page.goto('/');
-  await page.getByLabel('Mã mời', { exact: true }).waitFor();
   if (admin) {
-    await page.getByRole('button', { name: 'Dành cho quản trị' }).click();
+    await page.goto('/#admin');
     await page.getByLabel('Tài khoản', { exact: true }).fill(secrets.ADMIN_USERNAME);
     await page.getByLabel('Mật khẩu', { exact: true }).fill(secrets.ADMIN_PASSWORD);
-  } else await page.getByLabel('Mã mời', { exact: true }).fill(secrets.LEARNER_INVITE_CODE);
-  await page.getByRole('button', { name: 'Vào bộ học', exact: true }).click();
+    await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+    await page.goto('/#home');
+  } else {
+    await page.goto('/');
+    await page.getByLabel('Mã mời', { exact: true }).fill(secrets.LEARNER_INVITE_CODE);
+    await page.getByRole('button', { name: 'Vào bộ học', exact: true }).click();
+  }
   await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
 }
 async function start(page: Page, name: string) {

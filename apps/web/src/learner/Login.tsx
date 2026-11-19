@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { api, type AuthView } from '../pilot/api';
 import { ErrorNote } from './ErrorNote';
 
-export function Login({ onLogin }: { onLogin: (a: AuthView) => void }) {
-  const [staff, setStaff] = useState(false),
-    [credential, setCredential] = useState(''),
+type Props = { onLogin: (a: AuthView) => void };
+
+function LoginScreen({
+  title,
+  intro,
+  submit,
+  onLogin,
+  staff,
+}: Props & { title: string; intro: ReactNode; submit: string; staff: boolean }) {
+  const [credential, setCredential] = useState(''),
     [username, setUsername] = useState(''),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
@@ -18,12 +25,8 @@ export function Login({ onLogin }: { onLogin: (a: AuthView) => void }) {
         height="1024"
       />
       <div>
-        <h1>Vào bộ học của bạn.</h1>
-        <p>
-          {staff
-            ? 'Đăng nhập bằng tài khoản quản trị được cấp.'
-            : 'Học tên gọi thủy hải sản thương mại. Nhập mã mời từ người phụ trách, bạn không cần tạo tài khoản.'}
-        </p>
+        <h1>{title}</h1>
+        <p>{intro}</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -59,21 +62,35 @@ export function Login({ onLogin }: { onLogin: (a: AuthView) => void }) {
           </label>
           {error && <ErrorNote message={error} />}
           <button className="btn primary" disabled={busy}>
-            {busy ? 'Đang kiểm tra…' : 'Vào bộ học'}
+            {busy ? 'Đang kiểm tra…' : submit}
             <ArrowRight size={17} />
           </button>
         </form>
-        <button
-          className="pilot-text-button"
-          onClick={() => {
-            setStaff(!staff);
-            setError('');
-            setCredential('');
-          }}
-        >
-          {staff ? 'Dùng mã mời người học' : 'Dành cho quản trị'}
-        </button>
       </div>
     </section>
+  );
+}
+
+export function Login(props: Props) {
+  return (
+    <LoginScreen
+      {...props}
+      staff={false}
+      title="Vào bộ học của bạn."
+      intro="Học tên gọi thủy hải sản thương mại. Nhập mã mời từ người phụ trách, bạn không cần tạo tài khoản."
+      submit="Vào bộ học"
+    />
+  );
+}
+
+export function StaffLogin(props: Props) {
+  return (
+    <LoginScreen
+      {...props}
+      staff
+      title="Đăng nhập quản trị"
+      intro="Đăng nhập bằng tài khoản được cấp."
+      submit="Đăng nhập"
+    />
   );
 }
