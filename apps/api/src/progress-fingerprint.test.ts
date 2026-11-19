@@ -79,3 +79,32 @@ test('scenarioFingerprint changes on prompt, label or correct change', () => {
     base,
   );
 });
+
+test('itemFingerprint is stable across NFC and NFD forms', () => {
+  for (const label of ['Cá hồi', 'ブリ']) {
+    const a = [{ kind: 'vi', label: label.normalize('NFC') }];
+    const b = [{ kind: 'vi', label: label.normalize('NFD') }];
+    assert.notEqual(a[0].label, b[0].label);
+    assert.equal(itemFingerprint(a), itemFingerprint(b));
+  }
+});
+
+test('itemFingerprint has no delimiter collisions', () => {
+  assert.notEqual(
+    itemFingerprint([
+      { kind: 'vi', label: 'a|b' },
+      { kind: 'vi', label: 'c' },
+    ]),
+    itemFingerprint([
+      { kind: 'vi', label: 'a' },
+      { kind: 'vi', label: 'b|c' },
+    ]),
+  );
+});
+
+test('scenarioFingerprint changes when a followUp correct flips', () => {
+  assert.notEqual(
+    scenarioFingerprint({ followUps: [{ label: 'F', correct: true }] }),
+    scenarioFingerprint({ followUps: [{ label: 'F', correct: false }] }),
+  );
+});
