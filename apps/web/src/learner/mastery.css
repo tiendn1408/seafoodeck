@@ -1,0 +1,20 @@
+/* Four-scale memory indicator. Shapes only: never an image frame or mask. */
+.mastery {
+  --mastery-on: var(--ice-focus);
+  --mastery-off: var(--ice-muted);
+  display: block;
+  flex: none;
+  width: 58px;
+  height: 14px;
+  overflow: visible;
+}
+.mastery-scale {
+  fill: transparent;
+  stroke: var(--mastery-off);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+.mastery-scale.on {
+  fill: var(--mastery-on);
+  stroke: var(--mastery-on);
+}

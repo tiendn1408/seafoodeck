@@ -75,15 +75,7 @@
   margin: 12px 0;
   font-size: 13px;
 }
-.pilot-catalog-image {
-  height: 180px;
-  background: #e5ede7;
-}
-.pilot-catalog-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
+
 .pilot-media-placeholder {
   height: 100%;
   min-height: 100px;
@@ -97,17 +89,7 @@
   text-align: center;
   padding: 12px;
 }
-.pilot-card-copy {
-  padding: 18px;
-}
-.pilot-card-copy h2 {
-  font-size: 19px;
-  margin: 8px 0;
-}
-.pilot-card-copy i,
-.pilot-card-copy p {
-  font-size: 13px;
-}
+
 .pilot-pagination,
 .pilot-actions {
   display: flex;
@@ -151,18 +133,7 @@
 .pilot-audio button {
   min-height: 44px;
 }
-.pilot-review-list {
-  display: grid;
-  gap: 8px;
-  margin: 24px 0;
-}
-.pilot-review-list > div {
-  display: flex;
-  gap: 20px;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  padding: 12px 0;
-}
+
 .pilot-admin > section {
   border: 1px solid var(--line);
   padding: 22px;
@@ -240,10 +211,6 @@
   }
   .pilot-footer span {
     display: none;
-  }
-  .pilot-review-list > div {
-    flex-direction: column;
-    gap: 4px;
   }
 }
 .pilot-edit-fields {

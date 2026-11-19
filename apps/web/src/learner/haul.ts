@@ -111,3 +111,11 @@ export function masteryLevel(reviews: ReviewState[], itemId: string): 0 | 1 | 2 
   if (!rs.length) return 0;
   return (Math.min(3, Math.max(...rs.map((r) => r.stage))) + 1) as 1 | 2 | 3 | 4;
 }
+
+/** How many species of the release sit at each mastery level: index 0 (not studied) to 4. */
+export function masteryCounts(o: CatalogOverview, reviews: ReviewState[]): number[] {
+  const scoped = current(o, reviews);
+  const counts = [0, 0, 0, 0, 0];
+  for (const item of o.items) counts[masteryLevel(scoped, item.itemId)]++;
+  return counts;
+}

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { groupTone, itemStatus, masteryLevel, pickHaul, planCast, skillProgress } from './haul';
+import {
+  groupTone,
+  itemStatus,
+  masteryCounts,
+  masteryLevel,
+  pickHaul,
+  planCast,
+  skillProgress,
+} from './haul';
 import type { CatalogOverview } from '../pilot/api';
 import type { ReviewState, Skill } from '../domain/models';
 
@@ -102,5 +110,17 @@ describe('progress', () => {
   it('mastery 0 without reviews, max stage + 1 otherwise', () => {
     expect(masteryLevel([], 'i0')).toBe(0);
     expect(masteryLevel([rv('i0', 'name:en', 1, 1), rv('i0', 'image', 3, 1)], 'i0')).toBe(4);
+  });
+  it('counts species per mastery level for the current release only', () => {
+    const counts = masteryCounts(mk(5), [
+      rv('i0', 'name:en', 0, 1),
+      rv('i1', 'name:en', 1, 1),
+      rv('i1', 'match:ja', 2, 1),
+      rv('i2', 'image', 5, 1),
+      rv('i3', 'name:en', 3, 1, 'old-release'),
+      rv('zz', 'hs', 2, 1),
+    ]);
+    // level 0 (not studied), 1, 2, 3, 4
+    expect(counts).toEqual([2, 1, 0, 1, 1]);
   });
 });

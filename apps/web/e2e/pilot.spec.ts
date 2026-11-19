@@ -150,7 +150,7 @@ test('all four modes: reload, double submit, keyboard match, skipped media, HS a
   expect(Object.values((await ledger(page)).reviews)).toHaveLength(9);
   await page.goto('/#review');
   await expect(page.getByRole('heading', { name: 'Góc ôn tập của bạn.' })).toBeVisible();
-  await expect(page.locator('.pilot-review-list>div')).toHaveCount(9);
+  await expect(page.locator('.review-skill')).toHaveCount(9);
   expect(await page.locator('main').innerText()).not.toMatch(/name:en|match:en/);
 });
 test('Thả lưới mở được một phiên và về được trang chủ', async ({ page }) => {

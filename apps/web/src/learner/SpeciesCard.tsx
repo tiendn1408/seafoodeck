@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { SignedImage } from '../pilot/Media';
 import { groupTone } from './haul';
 import { MissingPhoto } from './MissingPhoto';
@@ -21,10 +21,19 @@ export function SpeciesCard({
   item,
   variant,
   style,
+  href = '#profile/' + item.revisionId,
+  sub,
+  aside,
 }: {
   item: SpeciesCardItem;
   variant: 'float' | 'row' | 'tile';
   style?: CSSProperties;
+  /** Profile link; defaults to the revision id. */
+  href?: string;
+  /** Extra lines under the scientific name (e.g. "English · 日本語", review schedule). */
+  sub?: ReactNode;
+  /** Trailing data indicator (e.g. mastery scales). */
+  aside?: ReactNode;
 }) {
   const tone = groupTone(item.taxonomicGroup);
   return (
@@ -44,13 +53,15 @@ export function SpeciesCard({
       </div>
       <div className="species-card-copy">
         <span className="species-card-tag">{tone.label}</span>
-        <a className="species-card-name" href={'#profile/' + item.revisionId}>
+        <a className="species-card-name" href={href}>
           {item.vi}
         </a>
         <i className="species-card-sci" lang="la">
           {item.scientific}
         </i>
+        {sub}
       </div>
+      {aside && <div className="species-card-aside">{aside}</div>}
     </article>
   );
 }

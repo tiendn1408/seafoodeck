@@ -275,41 +275,7 @@
   color: var(--muted);
   margin-bottom: 18px;
 }
-.group-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 22px;
-}
-.group-filters button {
-  font-size: 12px;
-  padding: 10px 14px;
-  min-height: 44px;
-  border: 1px solid #c8d7cd;
-  border-radius: 6px;
-  color: #4b6b60;
-  background: #f8faf5;
-}
-.group-filters button[aria-pressed='true'] {
-  background: #1f564d;
-  color: #f6f8ef;
-  border-color: #1f564d;
-}
-.group-filters button:hover {
-  border-color: #548b75;
-}
-.library-card {
-  background: #fbfcf9;
-}
-.library-cover {
-  background: #e5ece7;
-}
-.library-cover > span {
-  background: #f7faf0ed;
-}
-.library-photo[hidden] {
-  display: none;
-}
+
 .specimen-missing {
   display: flex;
   flex-direction: column;
@@ -697,38 +663,7 @@
   background-position: right 14px center;
   background-size: 16px 16px;
 }
-.library-heading-art {
-  width: 164px;
-  height: 108px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.library-heading .count-pill {
-  margin-left: auto;
-}
-.review-empty-art {
-  display: block;
-  width: 190px;
-  height: 126px;
-  object-fit: contain;
-  margin: 0 auto 18px;
-}
-@media (max-width: 600px) {
-  .library-heading {
-    position: relative;
-    padding-right: 92px;
-  }
-  .library-heading-art {
-    position: absolute;
-    right: 0;
-    top: 4px;
-    width: 86px;
-    height: 72px;
-  }
-  .library-heading .count-pill {
-    margin-left: 0;
-  }
-}
+
 @media (forced-colors: active) {
   .learning-selection select,
   .select-label select {

@@ -1,32 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Fish } from 'lucide-react';
-import {
-  api,
-  setCsrf,
-  writeLocal,
-  vi,
-  type AuthView,
-  type CatalogPage,
-  type Game,
-  type Score,
-} from './api';
-import { SignedImage, stopAudio } from './Media';
+import { api, setCsrf, writeLocal, type AuthView, type Game, type Score } from './api';
+import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { Login } from '../learner/Login';
 import { Home, type Taxon } from '../learner/Home';
 import { Profile } from '../learner/Profile';
+import { Library } from '../learner/Library';
+import { Review } from '../learner/Review';
+import { Progress } from '../learner/Progress';
 import { Study } from '../learner/study/Study';
-import { groupTone } from '../learner/haul';
-import {
-  LEDGER_KEY,
-  loadLedger,
-  skillLabel,
-  mergeScore,
-  mergeGame,
-  type Ledger,
-} from '../learner/ledger';
+import { LEDGER_KEY, loadLedger, mergeScore, mergeGame, type Ledger } from '../learner/ledger';
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -136,8 +121,7 @@ export default function PilotApp() {
     return () => clearInterval(timer);
   }, []);
   const active = ledger.attempts.filter((a) => a.contentVersion === version && !a.skipped),
-    reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version),
-    due = reviews.filter((r) => Date.parse(r.dueAt) <= now);
+    reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
   const staff = auth && ['admin', 'editor', 'reviewer', 'publisher'].includes(auth.role);
   const signedIn = !!auth && auth.role !== 'guest';
   function logout() {
@@ -167,7 +151,9 @@ export default function PilotApp() {
               ? 'profile-stage'
               : route === 'study' && signedIn
                 ? 'study-stage'
-                : 'content home-content'
+                : ['library', 'review', 'progress'].includes(route) && signedIn
+                  ? 'ice-stage'
+                  : 'content home-content'
         }
       >
         {warning && <ErrorNote message={warning} />}
@@ -201,11 +187,10 @@ export default function PilotApp() {
               />
             )}
             {route === 'library' && (
-              <CatalogScreen
+              <Library
                 taxon={libraryTaxon}
-                onClearTaxon={() => {
-                  setLibraryTaxon('');
-                }}
+                onTaxon={setLibraryTaxon}
+                reviews={reviews}
                 onVersion={setVersion}
               />
             )}
@@ -234,250 +219,22 @@ export default function PilotApp() {
                 </p>
               ))}
             {route === 'review' && (
-              <>
-                <h1>Góc ôn tập của bạn.</h1>
-                <p>Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
-                <VersionLoader onVersion={setVersion} />
-                {reviews.length ? (
-                  <>
-                    <div className="pilot-review-list">
-                      {reviews.map((r) => (
-                        <div key={r.key}>
-                          <strong>{ledger.labels?.[r.targetId] ?? 'Mục học'}</strong>
-                          <span>{skillLabel(r.skill)}</span>
-                          <span>
-                            Mốc {[1, 3, 7, 14][r.stage]} ngày ·{' '}
-                            {new Date(r.dueAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      className="btn primary"
-                      disabled={!due.length || pending}
-                      onClick={() =>
-                        void start(
-                          'review',
-                          undefined,
-                          'en',
-                          undefined,
-                          due.slice(0, 30).map((r) => ({ targetId: r.targetId, skill: r.skill })),
-                        )
-                      }
-                    >
-                      Ôn {due.length} mục đến hạn
-                    </button>
-                  </>
-                ) : (
-                  <div className="empty-card">
-                    <img
-                      className="review-empty-art"
-                      src="/media/illustrations/seafood-review-2d-v2.png"
-                      alt=""
-                      width="1536"
-                      height="1024"
-                    />
-                    <h2>Chưa có mục ôn tập</h2>
-                    <p>Hoàn thành một lượt để lên lịch theo từng kỹ năng.</p>
-                    <a className="btn primary" href="#home">
-                      Mở bộ học
-                    </a>
-                  </div>
-                )}
-              </>
+              <Review
+                ledger={ledger}
+                reviews={reviews}
+                now={now}
+                pending={pending}
+                onStart={start}
+                onVersion={setVersion}
+              />
             )}
             {route === 'progress' && (
-              <>
-                <h1>Tiến độ học của bạn</h1>
-                <VersionLoader onVersion={setVersion} />
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <strong>{active.filter((a) => !a.selfRated).length}</strong>
-                    <span>Câu đã trả lời</span>
-                  </div>
-                  <div className="stat-card">
-                    <strong>
-                      {active.filter((a) => !a.selfRated).length
-                        ? Math.round(
-                            (active.filter((a) => !a.selfRated && a.correct).length /
-                              active.filter((a) => !a.selfRated).length) *
-                              100,
-                          ) + '%'
-                        : '—'}
-                    </strong>
-                    <span>Đúng lần đầu</span>
-                  </div>
-                  <div className="stat-card">
-                    <strong>{active.filter((a) => a.selfRated).length}</strong>
-                    <span>Thẻ tự đánh giá</span>
-                  </div>
-                </div>
-                <p>
-                  Lịch sử bộ cũ được giữ riêng trên thiết bị. Không chuyển điểm sang revision khác.
-                </p>
-              </>
+              <Progress attempts={active} reviews={reviews} onVersion={setVersion} />
             )}
             {route === 'admin' && staff && <Admin />}
           </>
         )}
       </div>
     </AppShell>
-  );
-}
-function VersionLoader({ onVersion }: { onVersion: (id: string) => void }) {
-  useEffect(() => {
-    api<CatalogPage>('/catalog/items?limit=1')
-      .then((d) => onVersion(d.releaseId))
-      .catch(() => {});
-  }, [onVersion]);
-  return null;
-}
-function CatalogScreen({
-  taxon,
-  onClearTaxon,
-  onVersion,
-}: {
-  taxon: Taxon | '';
-  onClearTaxon: () => void;
-  onVersion: (id: string) => void;
-}) {
-  const [data, setData] = useState<CatalogPage | null>(null),
-    [page, setPage] = useState(1),
-    [query, setQuery] = useState(''),
-    [group, setGroup] = useState(''),
-    [error, setError] = useState(''),
-    [retry, setRetry] = useState(0);
-  const requestKey = JSON.stringify([page, query, group, taxon, retry]);
-  const [loadedKey, setLoadedKey] = useState('');
-  useEffect(() => {
-    const c = new AbortController();
-    const timer = setTimeout(() => {
-      api<CatalogPage>(
-        `/catalog/items?page=${page}&limit=12&learnable=false&q=${encodeURIComponent(query)}&group=${encodeURIComponent(group)}${taxon ? `&taxon=${taxon}` : ''}`,
-        undefined,
-        c.signal,
-      )
-        .then((d) => {
-          setData(d);
-          setError('');
-          setLoadedKey(requestKey);
-          onVersion(d.releaseId);
-        })
-        .catch((e) => {
-          if (e.name !== 'AbortError') {
-            setError(e.message);
-            setLoadedKey(requestKey);
-          }
-        });
-    }, 180);
-    return () => {
-      clearTimeout(timer);
-      c.abort();
-    };
-  }, [page, query, group, taxon, retry, onVersion, requestKey]);
-  return (
-    <>
-      <div className="page-heading library-heading">
-        <div>
-          <p>Thủy hải sản thương mại</p>
-          <h1>Thư viện loài.</h1>
-          <p>Tra cứu tên gọi, dấu hiệu nhận biết và dạng hàng.</p>
-        </div>
-        <img
-          className="library-heading-art"
-          src="/media/illustrations/seafood-notebook-2d-v2.png"
-          alt=""
-          width="1536"
-          height="1024"
-        />
-      </div>
-      <label className="search-field">
-        <input
-          type="search"
-          aria-label="Tìm loài theo bốn tên gọi"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Tên Việt, Anh, Nhật, khoa học hoặc bí danh…"
-        />
-      </label>
-      {taxon && (
-        <button className="btn secondary" onClick={onClearTaxon}>
-          Bỏ lọc nhóm {groupTone(taxon).label}
-        </button>
-      )}
-      <div className="group-filters">
-        {['', 'Cá', 'Mực & bạch tuộc', 'Nghêu & vẹm'].map((g) => (
-          <button
-            key={g}
-            aria-pressed={g === group}
-            onClick={() => {
-              setGroup(g);
-              setPage(1);
-            }}
-          >
-            {g || 'Tất cả nhóm'}
-          </button>
-        ))}
-      </div>
-      {loadedKey === requestKey && error ? (
-        <ErrorNote message={error} retry={() => setRetry(retry + 1)} />
-      ) : !data || loadedKey !== requestKey ? (
-        <p role="status">Đang tải danh mục…</p>
-      ) : (
-        <>
-          <p>
-            {data.total} mục · Trang {data.page}
-          </p>
-          {data.items.length ? (
-            <div className="library-grid">
-              {data.items.map((i) => (
-                <a className="library-card" href={'#profile/' + i.externalId} key={i.revisionId}>
-                  <div className="pilot-catalog-image">
-                    {i.media.find((m) => ['profile', 'identification'].includes(m.role)) ? (
-                      <SignedImage
-                        id={i.media.find((m) => ['profile', 'identification'].includes(m.role))!.id}
-                        thumbnail
-                      />
-                    ) : (
-                      <div className="pilot-media-placeholder">
-                        <Fish />
-                        Ảnh loài đang bổ sung
-                      </div>
-                    )}
-                  </div>
-                  <div className="pilot-card-copy">
-                    <small>{i.group}</small>
-                    <h2>{vi(i)}</h2>
-                    <p>{i.names.find((n) => n.kind === 'en')?.label}</p>
-                    <i>{i.names.find((n) => n.kind === 'scientific')?.label}</i>
-                  </div>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p>Không tìm thấy mục phù hợp. Thử tên khác hoặc bỏ bộ lọc.</p>
-          )}
-          <div className="pilot-pagination">
-            <button
-              className="btn secondary"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Trang trước
-            </button>
-            <button
-              className="btn secondary"
-              disabled={page * data.limit >= data.total}
-              onClick={() => setPage(page + 1)}
-            >
-              Trang sau
-            </button>
-          </div>
-        </>
-      )}
-    </>
   );
 }
