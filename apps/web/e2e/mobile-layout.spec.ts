@@ -65,7 +65,9 @@ test('header separates tasks; species URL and group survive navigation', async (
   await page.locator('.library-card').filter({ hasText: 'Vẹm xanh' }).click();
   await expect(page).toHaveURL(/#profile\/green-mussel$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Vẹm xanh.', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Vẹm xanh', exact: true }),
+  ).toBeVisible();
 });
 
 test('seafood identity survives image blocking; AI stays outside identification', async ({

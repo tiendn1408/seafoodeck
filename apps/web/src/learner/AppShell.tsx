@@ -10,6 +10,8 @@ const tabs = [
   { id: 'progress', label: 'Tiến độ', Icon: Target },
 ] as const;
 const adminTab = { id: 'admin', label: 'Quản trị', Icon: ShieldCheck } as const;
+/** Honest label for an internal release; phones show a shorter one, never a second line. */
+const internalLabel = 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt';
 
 /** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện". */
 export function tabFor(route: string): string {
@@ -77,7 +79,16 @@ export function AppShell({
         <span>Seafood Deck</span>
       </a>
       {signedIn && internal && (
-        <span className="shell-chip">Bản kỹ thuật nội bộ · Nội dung chưa duyệt</span>
+        <span className="shell-chip" title={internalLabel}>
+          {desktop ? (
+            internalLabel
+          ) : (
+            <>
+              <span aria-hidden="true">Bản nội bộ · chưa duyệt</span>
+              <span className="shell-chip-full">{internalLabel}</span>
+            </>
+          )}
+        </span>
       )}
     </div>
   );

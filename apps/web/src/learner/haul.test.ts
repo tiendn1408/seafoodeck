@@ -99,7 +99,33 @@ describe('Item-uuid identity', () => {
     expect(pickHaul(o, rs, NOW).map((i) => i.itemId)).toEqual(['uuid-2']);
   });
 });
+describe('groupTone', () => {
+  it('falls back to none for unknown strings and prototype keys', () => {
+    expect(groupTone('mollusc').key).toBe('mollusc');
+    expect(groupTone('seaweed').key).toBe('none');
+    expect(groupTone('constructor')).toEqual({
+      key: 'none',
+      label: 'Chưa phân nhóm',
+      css: 'var(--group-none)',
+    });
+    expect(groupTone('toString').key).toBe('none');
+    expect(groupTone('__proto__').key).toBe('none');
+  });
+});
 describe('progress', () => {
+  it('ignores targetIds outside the overview and never exceeds the total', () => {
+    const o = mk(2);
+    const rs = [
+      rv('i0', 'name:en', 1, 1),
+      rv('stale-item', 'name:en', 2, 1),
+      rv('matching', 'match:en', 1, 1),
+      rv('i1', 'match:en', 1, 1),
+      ...['a', 'b', 'c', 'd', 'e', 'f'].map((id) => rv(id, 'hs', 1, 1)),
+    ];
+    const p = skillProgress(o, rs);
+    expect(p.find((x) => x.key === 'en')).toMatchObject({ done: 2, total: 2 });
+    expect(p.find((x) => x.key === 'hs')).toMatchObject({ done: 4, total: 4 });
+  });
   it('counts an item once per language', () => {
     const o = mk(3);
     const rs = [rv('i0', 'name:en', 1, 1), rv('i0', 'match:en', 2, 1)];

@@ -18,12 +18,11 @@ export function Login({ onLogin }: { onLogin: (a: AuthView) => void }) {
         height="1024"
       />
       <div>
-        <p>Thủy hải sản thương mại</p>
         <h1>Vào bộ học của bạn.</h1>
         <p>
           {staff
             ? 'Đăng nhập bằng tài khoản quản trị được cấp.'
-            : 'Nhập mã mời từ người phụ trách. Bạn không cần tạo tài khoản.'}
+            : 'Học tên gọi thủy hải sản thương mại. Nhập mã mời từ người phụ trách, bạn không cần tạo tài khoản.'}
         </p>
         <form
           onSubmit={(e) => {

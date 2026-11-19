@@ -14,7 +14,7 @@ export function groupTone(g: string | null | undefined): {
   label: string;
   css: string;
 } {
-  const key: GroupKey = g && g in TONES && g !== 'none' ? (g as GroupKey) : 'none';
+  const key: GroupKey = g && g !== 'none' && Object.hasOwn(TONES, g) ? (g as GroupKey) : 'none';
   return { key, label: TONES[key], css: `var(--group-${key})` };
 }
 
@@ -83,14 +83,21 @@ export function skillProgress(
   reviews: ReviewState[],
 ): { key: 'en' | 'ja' | 'scientific' | 'hs'; label: string; done: number; total: number }[] {
   const scoped = current(o, reviews).filter((r) => r.stage >= 1);
+  // Only species of this release count: stale or non-item targetIds never inflate `done`.
+  const itemIds = new Set(o.items.map((i) => i.itemId));
   const lang = (k: 'en' | 'ja' | 'scientific', label: string) => ({
     key: k,
     label,
-    done: new Set(
-      scoped
-        .filter((r) => r.skill === `name:${k}` || r.skill === `match:${k}`)
-        .map((r) => r.targetId),
-    ).size,
+    done: Math.min(
+      o.learnable,
+      new Set(
+        scoped
+          .filter(
+            (r) => itemIds.has(r.targetId) && (r.skill === `name:${k}` || r.skill === `match:${k}`),
+          )
+          .map((r) => r.targetId),
+      ).size,
+    ),
     total: o.learnable,
   });
   return [
@@ -100,7 +107,7 @@ export function skillProgress(
     {
       key: 'hs',
       label: 'HS dạng hàng',
-      done: scoped.filter((r) => r.skill === 'hs').length,
+      done: Math.min(o.hsCases, scoped.filter((r) => r.skill === 'hs').length),
       total: o.hsCases,
     },
   ];

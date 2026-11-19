@@ -239,13 +239,23 @@
   gap: 0;
 }
 .shell[data-layout='phone'] .shell-logo {
-  min-height: 40px;
+  min-height: 44px;
   font-size: 1.0625rem;
 }
 .shell[data-layout='phone'] .shell-chip {
-  margin: 0 0 var(--space-1);
+  margin: -2px 0 var(--space-1);
   padding: 1px 8px;
   font-size: 0.6875rem;
+  max-width: none;
+  white-space: nowrap;
+}
+.shell-chip-full {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .shell[data-tabbar] .shell-main {
   padding-bottom: calc(var(--shell-tab-h) + env(safe-area-inset-bottom, 0px));

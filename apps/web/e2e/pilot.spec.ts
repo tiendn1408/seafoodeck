@@ -277,6 +277,46 @@ for (const viewport of [
       }
     }
   });
+async function checkLayout(page: Page) {
+  const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  const contained = async (selector: string) => {
+    await expect.poll(() => page.locator(selector).count()).toBeGreaterThan(0);
+    const values = await page
+      .locator(selector)
+      .evaluateAll((imgs) => imgs.map((i) => getComputedStyle(i).objectFit));
+    expect(values.every((v) => v === 'contain')).toBe(true);
+  };
+  await page.goto('/#home');
+  await expect(page.locator('.home-catch')).toBeVisible();
+  await contained('.home-catch .species-card-photo img');
+  expect(await fits()).toBe(true);
+  await page.goto('/#library');
+  await expect(page.locator('.library-card').first()).toBeVisible();
+  await contained('.library-card .species-card-photo img');
+  expect(await fits()).toBe(true);
+  // The first species on the page whose photo is published, so the cover has an <img>.
+  const href = await page
+    .locator('.library-card:has(.species-card-photo img) a')
+    .first()
+    .getAttribute('href');
+  expect(href).toMatch(/^#profile\/.+/);
+  await page.goto('/' + href);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await contained('.cover-photo img');
+  expect(await fits()).toBe(true);
+}
+// One login covers both viewports: the login limiter allows 20 attempts per 10 minutes.
+test('home, library and profile never scroll sideways and show whole photos', async ({
+  page,
+}, info) => {
+  await login(page);
+  await test.step(`project viewport (${info.project.name})`, () => checkLayout(page));
+  if (info.project.name === 'mobile')
+    await test.step('320×640 phone', async () => {
+      await page.setViewportSize({ width: 320, height: 640 });
+      await checkLayout(page);
+    });
+});
 test('admin can preview CSV errors and publish/rollback a QA draft through the browser', async ({
   page,
 }) => {
