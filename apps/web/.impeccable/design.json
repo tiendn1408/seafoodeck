@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T03:42:36+00:00",
+  "title": "Design System: Seafood Deck (learner app)",
+  "extensions": {
+    "colorMeta": {
+      "action": {
+        "role": "primary",
+        "displayName": "Salmon Action",
+        "canonical": "#e8743b",
+        "tonalRamp": [
+          "#3a1808",
+          "#6b2c0f",
+          "#a94e1d",
+          "#e8743b",
+          "#f0864f",
+          "#f6a77c",
+          "#fbcdb3",
+          "#fde8dc"
+        ]
+      },
+      "deep-900": {
+        "role": "neutral",
+        "displayName": "Deep Sea",
+        "canonical": "#071c26",
+        "tonalRamp": [
+          "#05141b",
+          "#071c26",
+          "#0b3341",
+          "#0e4554",
+          "#2c6573",
+          "#5b8d99",
+          "#a9c3c9",
+          "#f2f8f9"
+        ]
+      },
+      "ice-bg": {
+        "role": "neutral",
+        "displayName": "Cold Ice",
+        "canonical": "#f3f7f8",
+        "tonalRamp": [
+          "#0b2230",
+          "#4c5e66",
+          "#7d8f96",
+          "#a8b9be",
+          "#d4e0e3",
+          "#e9f1f2",
+          "#f3f7f8",
+          "#ffffff"
+        ]
+      },
+      "group-fish": {
+        "role": "secondary",
+        "displayName": "Tuna Red",
+        "canonical": "#a8243a",
+        "tonalRamp": [
+          "#3f0e17",
+          "#6c1727",
+          "#8a1d31",
+          "#a8243a",
+          "#c2475a",
+          "#d77a89",
+          "#ebb2bb",
+          "#f7dde1"
+        ]
+      },
+      "group-crustacean": {
+        "role": "secondary",
+        "displayName": "Cooked-Shrimp Pink",
+        "canonical": "#ee8a7a",
+        "tonalRamp": [
+          "#3a120c",
+          "#7a2c20",
+          "#b8523f",
+          "#ee8a7a",
+          "#f2a496",
+          "#f6bdb2",
+          "#f9d6cf",
+          "#fcebe7"
+        ]
+      },
+      "group-mollusc": {
+        "role": "secondary",
+        "displayName": "Clam-Flesh Ochre",
+        "canonical": "#c99a2e",
+        "tonalRamp": [
+          "#2b1e05",
+          "#58410b",
+          "#8a6718",
+          "#c99a2e",
+          "#d9b254",
+          "#e5c985",
+          "#f0ddb2",
+          "#f8efd8"
+        ]
+      },
+      "group-other": {
+        "role": "secondary",
+        "displayName": "Sea-Cucumber Grey-Green",
+        "canonical": "#4f6b5e",
+        "tonalRamp": [
+          "#16211c",
+          "#2a3b33",
+          "#3b5248",
+          "#4f6b5e",
+          "#6e8a7d",
+          "#93aaa0",
+          "#bccac3",
+          "#e0e8e4"
+        ]
+      },
+      "group-none": {
+        "role": "neutral",
+        "displayName": "Blue-Grey (no group)",
+        "canonical": "#5e6f78",
+        "tonalRamp": [
+          "#1a2226",
+          "#34414a",
+          "#4a5961",
+          "#5e6f78",
+          "#7e8e96",
+          "#a1adb3",
+          "#c6cfd3",
+          "#e5e9eb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Home hero title and study answer word; 800, tight."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section bands and page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Species names on cards and the cast button label."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Paragraphs and subtitles."
+      },
+      "scientific": {
+        "displayName": "Scientific name",
+        "purpose": "Always italic, muted."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tags, chips, tab bar items, hints."
+      }
+    },
+    "shadows": [
+      {
+        "name": "press",
+        "value": "0 6px 0 #a94e1d, 0 16px 32px rgb(232 116 59 / 0.32)",
+        "purpose": "Resting cast button with its darker bottom lip."
+      },
+      {
+        "name": "press-down",
+        "value": "0 2px 0 #a94e1d, 0 6px 14px rgb(232 116 59 / 0.32)",
+        "purpose": "Active cast button."
+      },
+      {
+        "name": "float",
+        "value": "0 18px 40px rgb(2 12 17 / 0.38)",
+        "purpose": "Cards and photo frames floating on deep water."
+      },
+      {
+        "name": "raise",
+        "value": "0 2px 6px rgb(11 34 48 / 0.08), 0 10px 24px rgb(11 34 48 / 0.06)",
+        "purpose": "Ice tiles; darker in dark theme."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All state transitions."
+      },
+      {
+        "name": "dur-fast",
+        "value": "140ms",
+        "purpose": "Colour and press feedback."
+      },
+      {
+        "name": "dur",
+        "value": "260ms",
+        "purpose": "Underline and skip-link transitions."
+      },
+      {
+        "name": "float-bob",
+        "value": "4.6s ease-in-out infinite, 6px",
+        "purpose": "Buoy bob; pauses when hidden, off under reduced motion."
+      },
+      {
+        "name": "ray-sway",
+        "value": "16s and 23s alternate",
+        "purpose": "Home light rays; pause when hidden, off under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-narrow",
+        "value": "480px"
+      },
+      {
+        "name": "phone",
+        "value": "600px"
+      },
+      {
+        "name": "desktop-shell",
+        "value": "900px"
+      },
+      {
+        "name": "wide-header",
+        "value": "1180px"
+      },
+      {
+        "name": "content-cap",
+        "value": "1240px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Cast Button",
+      "kind": "button",
+      "refersTo": "button-cast",
+      "description": "The one salmon action, pressed with a darker lip.",
+      "html": "<button class=\"ds-cast\">Thả lưới</button>",
+      "css": ".ds-cast{min-height:62px;padding:0 32px;border:0;border-radius:14px;background:#e8743b;color:#1b0f08;font:800 1.1875rem 'Be Vietnam Pro',system-ui,sans-serif;letter-spacing:-0.01em;box-shadow:0 6px 0 #a94e1d,0 16px 32px rgb(232 116 59/0.32);transition:transform 140ms cubic-bezier(.16,1,.3,1),box-shadow 140ms,background-color 140ms}.ds-cast:hover{background:#f0864f}.ds-cast:active{transform:translateY(4px);box-shadow:0 2px 0 #a94e1d,0 6px 14px rgb(232 116 59/0.32)}.ds-cast:focus-visible{outline:3px solid #8fd3dc;outline-offset:3px}"
+    },
+    {
+      "name": "Group Filter Chip",
+      "kind": "chip",
+      "refersTo": "species-tag-fish",
+      "description": "Library filter with group dot and tabular count.",
+      "html": "<button class=\"ds-chip\"><i class=\"ds-dot\"></i>Cá <b>12</b></button>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid #d4e0e3;border-radius:999px;background:#fff;color:#0b2230;font:700 0.875rem 'Be Vietnam Pro',sans-serif}.ds-chip b{font-variant-numeric:tabular-nums}.ds-dot{width:10px;height:10px;border-radius:50%;background:#a8243a}.ds-chip:focus-visible{outline:3px solid #0b6a7c;outline-offset:3px}"
+    },
+    {
+      "name": "Species Tile",
+      "kind": "card",
+      "refersTo": "species-card-tile",
+      "description": "Library card: whole photo, group tag, names, mastery scales.",
+      "html": "<article class=\"ds-card\"><span class=\"ds-tag\">Cá</span><div class=\"ds-photo\"></div><h3>Cá tuyết Đại Tây Dương</h3><p><i>Gadus morhua</i></p></article>",
+      "css": ".ds-card{position:relative;padding:8px;border:1px solid #d4e0e3;border-radius:14px;background:#fff;color:#0b2230;font-family:'Be Vietnam Pro',sans-serif;box-shadow:0 2px 6px rgb(11 34 48/0.08),0 10px 24px rgb(11 34 48/0.06)}.ds-card:hover{border-color:#0b6a7c}.ds-photo{aspect-ratio:4/3;border-radius:10px;background:#e9f1f2}.ds-card h3{margin:12px 4px 2px;font-size:1rem;font-weight:800;letter-spacing:-0.01em}.ds-card p{margin:0 4px;color:#4c5e66;font-size:0.875rem}.ds-tag{position:absolute;top:-9px;left:12px;padding:2px 8px;border-radius:6px;background:#a8243a;color:#fff;font-size:0.6875rem;font-weight:800}"
+    },
+    {
+      "name": "Header and Tabs",
+      "kind": "nav",
+      "refersTo": "header",
+      "description": "Deep-sea header with centred tabs and salmon underline.",
+      "html": "<nav class=\"ds-nav\"><a>Học</a><a aria-current=\"page\">Thư viện</a><a>Ôn tập</a><a>Tiến độ</a></nav>",
+      "css": ".ds-nav{display:flex;justify-content:center;gap:4px;height:64px;background:#071c26;font-family:'Be Vietnam Pro',sans-serif}.ds-nav a{position:relative;display:flex;align-items:center;padding:0 16px;color:#a9c3c9;font-size:0.9375rem;font-weight:700}.ds-nav a:hover,.ds-nav a[aria-current]{color:#f2f8f9}.ds-nav a::after{content:'';position:absolute;left:16px;right:16px;bottom:12px;height:3px;border-radius:3px;background:#e8743b;transform:scaleX(0);transition:transform 260ms cubic-bezier(.16,1,.3,1)}.ds-nav a[aria-current]::after{transform:scaleX(1)}"
+    },
+    {
+      "name": "Float Rope",
+      "kind": "custom",
+      "refersTo": "cover-frame",
+      "description": "Haul progress: buoys on a sagging rope.",
+      "html": "<div class=\"ds-rope\"><span class=\"ds-line\"></span><b class=\"ds-buoy\" style=\"left:15%\">1</b><b class=\"ds-buoy\" style=\"left:50%\">2</b><b class=\"ds-buoy cur\" style=\"left:85%\">3</b></div>",
+      "css": ".ds-rope{position:relative;height:68px;background:#071c26;border-radius:14px}.ds-line{position:absolute;left:0;right:0;top:50%;height:4.5px;border-radius:4px;background:#e8d9b5;opacity:.8}.ds-buoy{position:absolute;top:50%;translate:-50% -50%;display:grid;place-items:center;width:46px;aspect-ratio:1;border-radius:50%;background:linear-gradient(180deg,#f4f8f9 0 40%,rgb(11 34 48/.35) 40% 46%,#a8243a 46% 100%);color:#fff;font:800 .75rem 'Be Vietnam Pro',sans-serif;font-variant-numeric:tabular-nums;box-shadow:0 8px 16px rgb(0 0 0/.42)}.ds-buoy.cur{background:linear-gradient(180deg,rgb(232 217 181/.3) 0 46%,#0a2633 52% 100%);box-shadow:0 0 0 3px #071c26,0 0 0 6px #e8743b}"
+    },
+    {
+      "name": "Mastery Scale",
+      "kind": "custom",
+      "refersTo": "species-card-tile",
+      "description": "Four scales; filled count equals level.",
+      "html": "<svg class=\"ds-mastery\" viewBox=\"0 0 58 14\"><path class=\"on\" d=\"M2 12V7a5 5 0 0 1 10 0v5z\"/><path class=\"on\" d=\"M16 12V7a5 5 0 0 1 10 0v5z\"/><path d=\"M30 12V7a5 5 0 0 1 10 0v5z\"/><path d=\"M44 12V7a5 5 0 0 1 10 0v5z\"/></svg>",
+      "css": ".ds-mastery{width:58px;height:14px;overflow:visible}.ds-mastery path{fill:transparent;stroke:#4c5e66;stroke-width:1.25;stroke-linejoin:round}.ds-mastery path.on{fill:#0b6a7c;stroke:#0b6a7c}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Biển sâu × Ấn bản loài (deep water, species edition)",
+    "overview": "The learner works a fishing boat's day. Working surfaces (home, study) are deep water: ink-blue to deep-sea teal with slow light rays. Reading surfaces (library, review, progress, profile) are cold ice-white. Species appear like magazine covers: the photo whole, the four names beneath it, the scientific name in italic. Brand lives in small, exact details (a scalloped header edge, a buoy, a pressed button) rather than in decoration.\n\nDensity is calm and large-target: phone first, short sessions, one obvious action per screen. Colour carries meaning twice, as taxonomy (four seafood-flesh hues) and as action (one salmon). Everything else is deep teal or ice neutral.",
+    "keyCharacteristics": [
+      "Two tones: deep (never changes with theme) and ice (has a dark variant).",
+      "One action colour, salmon, always on a pressed button with a darker bottom lip.",
+      "Group colours are taken from cooked or raw seafood flesh, not from a generic status palette.",
+      "Progress is a rope with buoys, not a bar.",
+      "Heavy, tight Be Vietnam Pro headings; italic scientific names; tabular numerals for every count."
+    ],
+    "rules": [
+      {
+        "name": "The One Action Colour Rule",
+        "body": "Salmon is the only colour that means \"press this\". Group colours label species and never appear on buttons; no second accent, no purple, no neon.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cold Ice Rule",
+        "body": "Reading surfaces are blue-white (`ice-bg`), never cream or paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The Deep Never Flips Rule",
+        "body": "Deep screens, header and tab bar look the same in light and dark theme. Cards floating on deep water stay light (`#f7fbfc`) whatever the theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Italic Binomial Rule",
+        "body": "Scientific names are italic and nothing else is.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Numeral Rule",
+        "body": "Counts, buoy numbers, scores and dates use `font-variant-numeric: tabular-nums`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Heavy Heading Rule",
+        "body": "Headings are 800 with negative tracking; do not use light weights for display.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "No small caps or uppercase label above a heading. The build uses no `text-transform` anywhere.",
+        "section": "typography"
+      },
+      {
+        "name": "The Pressed Lip Rule",
+        "body": "The lip is reserved for the salmon action button (`shadow-press` and `shadow-press-down`). Do not put a hard offset shadow on cards, chips or anything else.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Whole Photo Rule",
+        "body": "Species photos are always shown whole (contain), never masked or cropped.",
+        "section": "components"
+      },
+      {
+        "name": "The Scales As Decoration Rule",
+        "body": "Fish-scale arcs appear only as header edge, cover-frame fade, empty states and the logo mark.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do show every species photo whole (`object-fit: contain`) on a calm panel; letterbox it rather than crop it.",
+      "Do use salmon only for the one primary action per screen and for current-state markers (active tab, current buoy).",
+      "Do set scientific names in italic and numerals tabular.",
+      "Do pair every group fill with its `-ink` colour; keep text at 4.5:1 or better (all recorded pairs are 5.3:1 or more).",
+      "Do give every control a 44px target and a 3px focus ring: `deep-accent` on deep, `ice-focus` on ice, offset 3px.",
+      "Do respect `env(safe-area-inset-*)` on header, tab bar and main.",
+      "Do pause ambient animation when the page is hidden and remove it for reduced motion."
+    ],
+    "donts": [
+      "Don't use scale arcs as an image frame, mask or clip; they are decoration only.",
+      "Don't put an eyebrow, kicker or uppercase label above a heading.",
+      "Don't introduce a second action colour or use group colours on buttons.",
+      "Don't use cream or paper tones for reading surfaces, or let deep screens change with the theme.",
+      "Don't replace the rope with a progress bar or the bottom bar with a sidebar.",
+      "Don't fabricate a photo when none exists; show the silhouette.",
+      "Don't use light weights for headings or faux italics."
+    ]
+  }
+}
