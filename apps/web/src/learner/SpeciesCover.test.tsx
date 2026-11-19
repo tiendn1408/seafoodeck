@@ -88,4 +88,38 @@ describe('SpeciesCover', () => {
     expect(host.textContent).not.toContain('Blue mussel');
     expect(host.querySelector('button')!.textContent).toBe('Chạm để lật thẻ');
   });
+
+  it('uses a supplied photo and credit instead of the catalogue photo (study questions)', () => {
+    const masked = render(
+      <SpeciesCover
+        item={item()}
+        reveal={{ names: false }}
+        mode="image"
+        photo={<img src="/q.jpg" alt="Ảnh loài cần đoán" />}
+        credit={<p>credit-here</p>}
+      />,
+    );
+    expect(masked.querySelector('img')!.getAttribute('src')).toBe('/q.jpg');
+    expect(masked.textContent).not.toContain('Ảnh đang bổ sung');
+    expect(masked.textContent).not.toContain('credit-here');
+    const shown = render(
+      <SpeciesCover
+        item={item()}
+        reveal={{ names: true }}
+        mode="image"
+        photo={<img src="/q.jpg" alt="" />}
+        credit={<p>credit-here</p>}
+      />,
+    );
+    expect(shown.textContent).toContain('credit-here');
+    expect(shown.querySelector('h1')!.textContent).toBe('Vẹm xanh');
+  });
+
+  it('can reveal the name without the three rows', () => {
+    const host = render(
+      <SpeciesCover item={item()} reveal={{ names: true, rows: false }} mode="image" />,
+    );
+    expect(host.querySelector('h1')!.textContent).toBe('Vẹm xanh');
+    expect(host.querySelector('.cover-names')).toBeNull();
+  });
 });

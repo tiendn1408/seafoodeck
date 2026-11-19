@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Fish } from 'lucide-react';
+import { Fish } from 'lucide-react';
 import {
   api,
   setCsrf,
-  readLocal,
   writeLocal,
   vi,
   type AuthView,
   type CatalogPage,
   type Game,
-  type ApiQuestion,
   type Score,
-  type Reveal,
 } from './api';
-import { SignedImage, Pronunciation, stopAudio } from './Media';
+import { SignedImage, stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { Login } from '../learner/Login';
 import { Home, type Taxon } from '../learner/Home';
 import { Profile } from '../learner/Profile';
+import { Study } from '../learner/study/Study';
 import { groupTone } from '../learner/haul';
 import {
   LEDGER_KEY,
@@ -29,12 +27,6 @@ import {
   mergeGame,
   type Ledger,
 } from '../learner/ledger';
-const modeNames: Record<string, string> = {
-  flashcard: 'Flashcard tên loài',
-  match: 'Ghép tên thương mại',
-  image: 'Đoán hình nguyên liệu',
-  hs: 'HS theo dạng hàng',
-};
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -161,7 +153,7 @@ export default function PilotApp() {
   return (
     <AppShell
       route={route}
-      tone={route === 'home' || route.startsWith('profile/') ? 'deep' : 'ice'}
+      tone={route === 'home' || route === 'study' || route.startsWith('profile/') ? 'deep' : 'ice'}
       staff={!!staff}
       internal={!!auth?.internal}
       signedIn={signedIn}
@@ -173,7 +165,9 @@ export default function PilotApp() {
             ? 'home-stage'
             : route.startsWith('profile/') && signedIn
               ? 'profile-stage'
-              : `content home-content ${route === 'study' ? 'pilot-study-content' : ''}`
+              : route === 'study' && signedIn
+                ? 'study-stage'
+                : 'content home-content'
         }
       >
         {warning && <ErrorNote message={warning} />}
@@ -228,13 +222,14 @@ export default function PilotApp() {
                 <Study
                   key={game.id}
                   game={game}
+                  ledger={ledger}
                   onChange={setGame}
                   onRecord={record}
                   onRetry={() => start('review', undefined, 'en', game.id)}
                   pending={pending}
                 />
               ) : (
-                <p role="status">
+                <p className="study-status" role="status">
                   {pending ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học.'}
                 </p>
               ))}
@@ -484,441 +479,5 @@ function CatalogScreen({
         </>
       )}
     </>
-  );
-}
-function Study({
-  game,
-  onChange,
-  onRecord,
-  onRetry,
-  pending,
-}: {
-  game: Game;
-  onChange: (g: Game) => void;
-  onRecord: (s: Score, g: Game) => void;
-  onRetry: () => void;
-  pending: boolean;
-}) {
-  const [cursor, setCursor] = useState(() =>
-    game.questions.findIndex((q) => !q.result) < 0
-      ? game.questions.length
-      : game.questions.findIndex((q) => !q.result),
-  );
-  const q = game.questions[cursor];
-  if (!q) {
-    const scores = game.questions.flatMap((q) => (q.result ? [q.result] : [])),
-      answered = scores.filter((s) => s.answered && !s.selfRated),
-      wrong = scores.filter((s) => s.answered && !s.correct),
-      skipped = scores.filter((s) => s.skipped);
-    return (
-      <section className="pilot-summary">
-        <h1>Tổng kết lượt học</h1>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <strong>{answered.length}</strong>
-            <span>Câu đã trả lời</span>
-          </div>
-          <div className="stat-card">
-            <strong>
-              {answered.length
-                ? Math.round((answered.filter((s) => s.correct).length / answered.length) * 100) +
-                  '%'
-                : '—'}
-            </strong>
-            <span>Đúng lần đầu</span>
-          </div>
-          <div className="stat-card">
-            <strong>{skipped.length}</strong>
-            <span>Câu bỏ qua</span>
-          </div>
-        </div>
-        <p>
-          {scores.filter((s) => s.selfRated).length} thẻ tự đánh giá · không cộng vào tỷ lệ chấm tự
-          động.
-        </p>
-        {!answered.length && <p>Chưa có câu chấm tự động được trả lời.</p>}
-        {(wrong.length > 0 || skipped.length > 0) && (
-          <button className="btn primary" disabled={pending} onClick={onRetry}>
-            Ôn lỗi và câu bỏ qua
-          </button>
-        )}
-        <a href="#home" className="btn secondary">
-          Về học tập
-        </a>
-      </section>
-    );
-  }
-  return (
-    <QuestionView
-      key={q.id}
-      game={game}
-      q={q}
-      index={cursor}
-      onScore={(s) => {
-        onRecord(s, game);
-        onChange({
-          ...game,
-          questions: game.questions.map((x) => (x.id === q.id ? { ...x, result: s } : x)),
-        });
-      }}
-      onNext={() => {
-        stopAudio();
-        setCursor(cursor + 1);
-      }}
-      onRefresh={async () => {
-        const fresh = await api<Game>('/learning/sessions/' + game.id);
-        onChange(fresh);
-        return fresh.questions.find((x) => x.id === q.id);
-      }}
-    />
-  );
-}
-function QuestionView({
-  game,
-  q,
-  index,
-  onScore,
-  onNext,
-  onRefresh,
-}: {
-  game: Game;
-  q: ApiQuestion;
-  index: number;
-  onScore: (s: Score) => void;
-  onNext: () => void;
-  onRefresh: () => Promise<ApiQuestion | undefined>;
-}) {
-  const draftKey = `seafood-deck:draft:${game.id}:${q.id}`;
-  const [draft, setDraft] = useState(() =>
-    readLocal<{
-      optionId?: string;
-      followUpId?: string;
-      pairs?: Record<string, string>;
-      flipped?: boolean;
-    }>(draftKey, {}),
-  );
-  const [reveal, setReveal] = useState<Reveal | null>(null),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(false),
-    [left, setLeft] = useState(''),
-    [image, setImage] = useState(q.image?.url),
-    [broken, setBroken] = useState(q.unavailable),
-    [refreshed, setRefreshed] = useState(false);
-  const [imageGeneration, setImageGeneration] = useState(0);
-  const tokenKey = draftKey + ':key';
-  const [token] = useState(() => readLocal(tokenKey, '') || crypto.randomUUID());
-  useEffect(() => {
-    writeLocal(tokenKey, token);
-  }, [token, tokenKey]);
-  async function flip() {
-    try {
-      setReveal(await api<Reveal>(`/learning/sessions/${game.id}/questions/${q.id}/reveal`, {}));
-      update({ ...draft, flipped: true });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-  useEffect(() => {
-    if (!draft.flipped || q.type !== 'flashcard') return;
-    let alive = true;
-    api<Reveal>(`/learning/sessions/${game.id}/questions/${q.id}/reveal`, {})
-      .then((r) => {
-        if (alive) setReveal(r);
-      })
-      .catch((e) => {
-        if (alive) setError(e.message);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [draft.flipped, q.type, q.id, game.id]);
-  function update(next: typeof draft) {
-    setDraft(next);
-    writeLocal(draftKey, next);
-  }
-  async function submit(answer: unknown) {
-    if (busy || q.result) return;
-    setBusy(true);
-    setError('');
-    try {
-      const score = await api<Score>(`/learning/sessions/${game.id}/questions/${q.id}/attempts`, {
-        key: token,
-        answer,
-      });
-      onScore(score);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  const done = !!q.result;
-  return (
-    <section className={'pilot-question ' + (q.type === 'flashcard' ? 'pilot-flash' : '')}>
-      <div className="pilot-question-top">
-        <span>{modeNames[q.type] || (q.type === 'listening' ? 'Nghe và chọn tên' : 'Ôn tập')}</span>
-        <span>
-          Câu {index + 1} / {game.questions.length}
-        </span>
-        <a href="#home">Tạm dừng</a>
-      </div>
-      {error && <ErrorNote message={error} />}
-      <div className="pilot-question-body">
-        <p className="pilot-question-meta">{q.catalog}</p>
-        <h1>{q.prompt}</h1>
-        {q.type === 'flashcard' ? (
-          <>
-            <div className="pilot-flash-face">
-              <p>{q.front}</p>
-              {reveal ? (
-                <>
-                  <h2>{reveal.label}</h2>
-                  <p>{reveal.pronunciation || 'Hướng dẫn đọc đang bổ sung.'}</p>
-                  <Pronunciation
-                    initialUrl={reveal.audio?.url}
-                    onRefresh={async () => {
-                      const fresh = await api<Reveal>(
-                        `/learning/sessions/${game.id}/questions/${q.id}/reveal`,
-                        {},
-                      );
-                      return fresh.audio?.url;
-                    }}
-                  />
-                </>
-              ) : (
-                <button className="pilot-flip" onClick={() => void flip()}>
-                  Chạm để lật thẻ
-                </button>
-              )}
-            </div>
-            {reveal && !done && (
-              <div className="pilot-actions">
-                <button
-                  className="btn secondary"
-                  disabled={busy}
-                  onClick={() => void submit({ rating: 'again' })}
-                >
-                  Cần ôn
-                </button>
-                <button
-                  className="btn primary"
-                  disabled={busy}
-                  onClick={() => void submit({ rating: 'known' })}
-                >
-                  Đã nhớ
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {q.type === 'listening' && (
-              <Pronunciation
-                initialUrl={q.audio?.url}
-                onRefresh={async () => {
-                  const fresh = await onRefresh();
-                  return fresh?.audio?.url;
-                }}
-              />
-            )}
-            {q.type === 'image' && (
-              <div className="pilot-quiz-image">
-                {broken || !image ? (
-                  <div className="pilot-media-placeholder">
-                    <p>Ảnh chưa tải được hoặc đã thu hồi.</p>
-                    <button
-                      className="btn secondary"
-                      onClick={() =>
-                        void onRefresh()
-                          .then((f) => {
-                            setImage(f?.image?.url);
-                            setImageGeneration((n) => n + 1);
-                            setBroken(!f?.image);
-                            setRefreshed(false);
-                          })
-                          .catch((e) => setError(e.message))
-                      }
-                    >
-                      Thử tải lại
-                    </button>
-                  </div>
-                ) : (
-                  <img
-                    key={imageGeneration}
-                    src={image}
-                    alt="Mẫu nguyên liệu cần nhận diện"
-                    width="640"
-                    height="420"
-                    onError={() => {
-                      if (!refreshed) {
-                        setRefreshed(true);
-                        void onRefresh()
-                          .then((f) => {
-                            setImage(f?.image?.url);
-                            setImageGeneration((n) => n + 1);
-                            if (!f?.image) setBroken(true);
-                          })
-                          .catch(() => setBroken(true));
-                      } else setBroken(true);
-                    }}
-                  />
-                )}
-              </div>
-            )}
-            {q.type === 'match' ? (
-              <div className="pilot-match">
-                <div>
-                  {q.left?.map((o) => (
-                    <button
-                      key={o.id}
-                      className={'pilot-option ' + (left === o.id ? 'selected' : '')}
-                      disabled={done}
-                      aria-pressed={left === o.id}
-                      onClick={() => setLeft(o.id)}
-                    >
-                      {o.label}
-                      {draft.pairs?.[o.id] && (
-                        <small>{q.right?.find((r) => r.id === draft.pairs![o.id])?.label}</small>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div>
-                  {q.right?.map((o) => (
-                    <button
-                      key={o.id}
-                      className="pilot-option"
-                      disabled={done || !left}
-                      onClick={() => {
-                        const pairs = { ...draft.pairs };
-                        for (const [l, r] of Object.entries(pairs)) if (r === o.id) delete pairs[l];
-                        pairs[left] = o.id;
-                        update({ ...draft, pairs });
-                        setLeft('');
-                      }}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="pilot-options">
-                {q.options?.map((o) => (
-                  <button
-                    key={o.id}
-                    className={'pilot-option ' + (draft.optionId === o.id ? 'selected' : '')}
-                    aria-pressed={draft.optionId === o.id}
-                    disabled={done}
-                    onClick={() => update({ ...draft, optionId: o.id })}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {q.followUps?.length && !done ? (
-              <label className="select-label">
-                Nếu chọn “Chưa đủ thông tin”, cần hỏi gì?
-                <select
-                  aria-label="Dữ kiện cần hỏi thêm"
-                  value={draft.followUpId ?? ''}
-                  onChange={(e) => update({ ...draft, followUpId: e.target.value })}
-                >
-                  <option value="">Chọn dữ kiện</option>
-                  {q.followUps.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {!done && (
-              <div className="pilot-actions">
-                <button
-                  className="btn primary"
-                  disabled={
-                    busy ||
-                    (q.type === 'match'
-                      ? Object.keys(draft.pairs ?? {}).length !== q.left?.length
-                      : !draft.optionId) ||
-                    (q.type === 'image' && broken)
-                  }
-                  onClick={() =>
-                    void submit(
-                      q.type === 'match'
-                        ? { pairs: draft.pairs }
-                        : {
-                            optionId: draft.optionId,
-                            ...(draft.followUpId ? { followUpId: draft.followUpId } : {}),
-                          },
-                    )
-                  }
-                >
-                  Nộp câu trả lời
-                </button>
-                {['image', 'listening'].includes(q.type) && (
-                  <button
-                    className="btn secondary"
-                    disabled={busy}
-                    onClick={() => void submit({ skip: true })}
-                  >
-                    {q.type === 'listening' ? 'Bỏ qua bản thu' : 'Bỏ qua ảnh'}
-                  </button>
-                )}
-              </div>
-            )}
-          </>
-        )}
-        {q.result && (
-          <div className="pilot-feedback" role="status">
-            <strong>
-              {q.result.skipped
-                ? 'Đã bỏ qua'
-                : q.result.selfRated
-                  ? 'Đã lưu tự đánh giá'
-                  : q.result.correct
-                    ? 'Chính xác'
-                    : 'Chưa chính xác'}
-            </strong>
-            {!q.result.selfRated && <p>{q.result.explanation}</p>}
-            {q.result.correctOption && (
-              <p>Đáp án: {q.options?.find((o) => o.id === q.result!.correctOption)?.label}</p>
-            )}
-            {q.result.correctPairs && (
-              <ul>
-                {Object.entries(q.result.correctPairs).map(([l, r]) => (
-                  <li key={l}>
-                    {q.left?.find((o) => o.id === l)?.label} —{' '}
-                    {q.right?.find((o) => o.id === r)?.label}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {q.result.source && (
-              <details>
-                <summary>Nguồn và ghi công</summary>
-                <p>{q.result.source}</p>
-              </details>
-            )}
-          </div>
-        )}
-      </div>
-      {done && (
-        <div className="pilot-question-next">
-          <button
-            className="btn primary"
-            onClick={(e) => {
-              if (e.detail > 1) return;
-              onNext();
-            }}
-          >
-            {index === game.questions.length - 1 ? 'Xem tổng kết' : 'Tiếp tục'}
-            <ArrowRight size={17} />
-          </button>
-        </div>
-      )}
-    </section>
   );
 }

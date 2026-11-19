@@ -37,6 +37,10 @@ function Row({ code, label, children }: { code: string; label: string; children:
  *
  * - `reveal.names=false` hides the three rows (flashcard answer side); in `mode="image"` it
  *   also hides the Vietnamese name, the group/family and the credit, leaving only the photo.
+ * - `reveal.rows=false` reveals the name but keeps the three rows hidden (a study question
+ *   whose species could not be resolved to a full catalogue entry).
+ * - `photo` / `credit` replace the catalogue photo and its credit: a study question shows its
+ *   own signed image, credited from the answer. The credit is hidden while masked.
  * - `rope` sits above the cover (session progress); `children` is the answer area under the
  *   names.
  */
@@ -45,18 +49,28 @@ export function SpeciesCover({
   reveal,
   mode,
   rope,
+  photo: photoSlot,
+  credit,
   children,
 }: {
   item: CatalogItem;
-  reveal: { names: boolean };
+  reveal: { names: boolean; rows?: boolean };
   mode: CoverMode;
   rope?: ReactNode;
+  photo?: ReactNode;
+  credit?: ReactNode;
   children?: ReactNode;
 }) {
   const tone = groupTone(item.taxonomicGroup);
   const photo = coverPhoto(item);
   const vi = nameOf(item, 'vi') || item.sku;
   const masked = mode === 'image' && !reveal.names;
+  const rows = reveal.names && reveal.rows !== false;
+  const caption = masked
+    ? null
+    : photoSlot !== undefined
+      ? credit
+      : photo && <MediaCredit id={photo.id} />;
   const family = item.family
     ? item.familyVi
       ? `${item.family} (${item.familyVi})`
@@ -81,17 +95,15 @@ export function SpeciesCover({
       {rope && <div className="cover-rope">{rope}</div>}
       <figure className="cover-frame">
         <div className="cover-photo">
-          {photo ? (
+          {photoSlot !== undefined ? (
+            photoSlot
+          ) : photo ? (
             <SignedImage id={photo.id} alt={masked ? 'Ảnh loài cần đoán' : vi} />
           ) : (
             <MissingPhoto />
           )}
         </div>
-        {photo && !masked && (
-          <figcaption className="cover-credit">
-            <MediaCredit id={photo.id} />
-          </figcaption>
-        )}
+        {caption && <figcaption className="cover-credit">{caption}</figcaption>}
       </figure>
       <div className="cover-text">
         {!masked && (
@@ -101,7 +113,7 @@ export function SpeciesCover({
           </p>
         )}
         {!masked && <h1 className="cover-title">{vi}</h1>}
-        {reveal.names && (
+        {rows && (
           <dl className="cover-names">
             <Row code="EN" label="Tiếng Anh">
               {en ? (
