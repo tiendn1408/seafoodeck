@@ -19,13 +19,17 @@ Production không cần seed: tạo env bằng `--production --origin https://..
 
 ## Tài khoản học viên (phase 2.5a, chỉ API)
 
-Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Trình duyệt chưa dùng các route này. Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
+Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
 
 ```sh
 docker compose --env-file .local/pilot.env run --rm --no-deps api node dist/rebuild-progress.js
 ```
 
 Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; không in bí mật). Không chạy script này trên VPS/production (nó tạo người dùng QA và đăng/rollback release nội bộ); script từ chối host không phải loopback. Mỗi lần chạy để lại người dùng `qa-*`, thêm một release nội bộ vào lịch sử (release nền phải nằm trong 20 release gần nhất) và đăng nhập khoảng 11 lần, nên thường cần `docker compose --env-file .local/pilot.env restart api` giữa các lần chạy. Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
+
+## Web học viên trên tài khoản (phase 2.5b)
+
+Trang mở bằng form tài khoản học viên. Tiến độ của học viên tài khoản nằm trên server: Trang chủ, Ôn tập, Tiến độ, Thành tích và mức nhớ ở Thư viện đều đọc `/me/*`; trình duyệt không còn sổ tiến độ cục bộ. Nút "Học thử bằng mã mời" giữ luồng mã mời cũ, với Trang chủ rút gọn và không lưu tiến độ. Tài khoản phải đổi mật khẩu chỉ vào được màn đổi mật khẩu. Web này cần API cùng bản (2.5a trở lên, kèm các sửa API của 2.5b): nâng cấp web và API cùng lúc, sao lưu DB trước. `npm run test:e2e` chạy với stack local, tạo các học viên `qa-e2e-*` qua API quản trị (mật khẩu ngẫu nhiên, không in) và để chúng lại trong DB local. Chi tiết: [DELIVERY_25B.md](docs/DELIVERY_25B.md).
 
 ## Nhập dữ liệu prototype
 
