@@ -150,30 +150,31 @@ export class LoginLimiter {
   }
   private blocked = () => new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
   /**
-   * Gate before verifying a credential: throws 429 when the IP (20 failures / 10 min) or, with a
-   * username, the lowercased name (10 failures / 10 min) is already over its limit. Never counts.
+   * Gate AND reserve, synchronously and before any await in the login flow: throws 429 when the IP
+   * (20 / 10 min) or, with a username, the lowercased name (10 / 10 min) is already full, without
+   * counting further; otherwise takes one slot in each bucket. A failed login keeps its slot.
    */
   check(ip: string, username?: string) {
-    this.prune(Date.now());
-    if ((this.buckets.get(ip)?.count ?? 0) >= 20) throw this.blocked();
-    if (username !== undefined && (this.names.get(username.toLowerCase())?.count ?? 0) >= 10)
-      throw this.blocked();
-  }
-  /** Counts one failed authentication (unknown user, disabled account, wrong credential). */
-  fail(ip: string, username?: string) {
     const now = Date.now();
     this.prune(now);
+    const name = username?.toLowerCase();
     const bucket = this.buckets.get(ip) ?? { count: 0, until: now + 600000 };
+    const named = name === undefined ? undefined : this.names.get(name);
+    if (bucket.count >= 20 || (named?.count ?? 0) >= 10) throw this.blocked();
     bucket.count++;
     this.buckets.set(ip, bucket);
-    if (username === undefined) return;
-    const name = username.toLowerCase();
-    const named = this.names.get(name) ?? { count: 0, until: now + 600000 };
-    named.count++;
-    this.names.set(name, named);
+    if (name === undefined) return;
+    const next = named ?? { count: 0, until: now + 600000 };
+    next.count++;
+    this.names.set(name, next);
   }
-  /** After a successful login: clears the per-username bucket (the IP bucket only ages out). */
-  reset(_ip: string, username?: string) {
+  /**
+   * After a successful login: refunds the IP slot taken by `check` and clears the bucket of the
+   * username that just authenticated (never any other), so successes never consume the budget.
+   */
+  succeed(ip: string, username?: string) {
+    const bucket = this.buckets.get(ip);
+    if (bucket && bucket.count > 0) bucket.count--;
     if (username !== undefined) this.names.delete(username.toLowerCase());
   }
   private passwordChecks = new Map<string, { count: number; until: number }>();

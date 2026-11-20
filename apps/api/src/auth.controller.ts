@@ -40,8 +40,8 @@ export class AuthController {
     const ip = req.ip ?? 'unknown';
     const username = data.username || undefined;
     this.limiter.check(ip, username);
+    // check() reserved a slot; a failure keeps it, so concurrent guesses cannot outrun the limit.
     const reject = (message: string): never => {
-      this.limiter.fail(ip, username);
       throw new UnauthorizedException(message);
     };
     let role = 'learner',
@@ -58,7 +58,7 @@ export class AuthController {
       hash(data.credential) !== hash(process.env.LEARNER_INVITE_CODE)
     )
       return reject('Mã mời không hợp lệ.');
-    this.limiter.reset(ip, username);
+    this.limiter.succeed(ip, username);
     const after = await this.auth.create(
       res,
       role,

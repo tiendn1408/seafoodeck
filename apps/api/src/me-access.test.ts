@@ -71,42 +71,57 @@ test('student and manager stay out of staff routes', () => {
   assert.equal(status(() => requireRole(req('manager', 'u1'), ['editor', 'admin'])).status, 403);
 });
 
-test('LoginLimiter blocks the 11th failure for one username across IPs', () => {
+test('LoginLimiter blocks the 11th reservation for one username across IPs, case-insensitively', () => {
   const limiter = new LoginLimiter();
-  for (let i = 0; i < 10; i++) {
-    limiter.check(`10.0.0.${i}`, 'Alice');
-    limiter.fail(`10.0.0.${i}`, 'Alice');
-  }
-  assert.equal(status(() => limiter.check('10.0.1.1', 'alice')).status, 429);
+  for (let i = 0; i < 10; i++) limiter.check(`10.0.0.${i}`, i % 2 ? 'Alice' : 'alice');
+  assert.equal(status(() => limiter.check('10.0.1.1', 'ALICE')).status, 429);
   assert.equal(status(() => limiter.check('10.0.1.2', 'bob')).status, 200);
 });
 
-test('LoginLimiter keeps the 20-failures-per-IP bucket without usernames', () => {
+test('LoginLimiter keeps the 20-per-IP bucket without usernames', () => {
   const limiter = new LoginLimiter();
-  for (let i = 0; i < 20; i++) limiter.fail('10.0.0.1');
+  for (let i = 0; i < 20; i++) limiter.check('10.0.0.1');
   assert.equal(status(() => limiter.check('10.0.0.1')).status, 429);
   assert.equal(status(() => limiter.check('10.0.0.2')).status, 200);
   const mixed = new LoginLimiter();
-  for (let i = 0; i < 20; i++) mixed.fail('10.0.0.9', `user${i}`);
+  for (let i = 0; i < 20; i++) mixed.check('10.0.0.9', `user${i}`);
   assert.equal(status(() => mixed.check('10.0.0.9', 'fresh')).status, 429);
 });
 
-test('LoginLimiter: checks alone never count; reset clears the username bucket only', () => {
+test('LoginLimiter: a blocked check does not count; succeed refunds the IP and clears only that name', () => {
   const limiter = new LoginLimiter();
-  for (let i = 0; i < 25; i++) limiter.check('10.0.0.1', 'alice');
-  assert.equal(status(() => limiter.check('10.0.0.1', 'alice')).status, 200);
-  for (let i = 0; i < 10; i++) limiter.fail('10.0.0.2', 'alice');
-  assert.equal(status(() => limiter.check('10.0.0.3', 'alice')).status, 429);
-  limiter.reset('10.0.0.3', 'alice');
+  for (let i = 0; i < 25; i++) {
+    limiter.check('10.0.0.1', 'alice');
+    limiter.succeed('10.0.0.1', 'alice');
+  }
+  for (let i = 0; i < 10; i++) limiter.check('10.0.0.2', 'alice');
+  limiter.check('10.0.0.2', 'bob');
+  for (let i = 0; i < 5; i++)
+    assert.equal(status(() => limiter.check('10.0.0.3', 'alice')).status, 429);
+  limiter.succeed('10.0.0.3', 'bob');
+  assert.equal(
+    status(() => limiter.check('10.0.0.3', 'alice')).status,
+    429,
+    'bob success keeps alice',
+  );
+  limiter.succeed('10.0.0.2', 'alice');
   assert.equal(status(() => limiter.check('10.0.0.3', 'alice')).status, 200);
+  // Refund never goes below zero.
+  const fresh = new LoginLimiter();
+  for (let i = 0; i < 5; i++) fresh.succeed('1.1.1.1', 'x');
+  for (let i = 0; i < 20; i++) fresh.check('1.1.1.1');
+  assert.equal(status(() => fresh.check('1.1.1.1')).status, 429);
 });
 
-test('login: correct passwords never trip the limiter; 11th failure blocks even a right password', async () => {
-  const saved = scrypt('correct-horse-16ch');
-  const user = { id: 'u1', role: 'student', passwordHash: saved, disabledAt: null };
-  const limiter = new LoginLimiter();
-  const login = async (username: string, credential: string) => {
-    const ctrl = new AuthController(fakeAuth(), accountDb(user).db, limiter);
+const slowLogin = (user: Record<string, unknown> | null, limiter: LoginLimiter) => {
+  const { db } = accountDb(user);
+  const find = db.user.findUnique;
+  (db.user as { findUnique: unknown }).findUnique = async (a: unknown) => {
+    await new Promise((r) => setImmediate(r));
+    return find(a as never);
+  };
+  return async (username: string, credential: string) => {
+    const ctrl = new AuthController(fakeAuth(), db, limiter);
     try {
       await ctrl.login({ username, credential }, loginReq, {} as Response);
       return 200;
@@ -114,16 +129,69 @@ test('login: correct passwords never trip the limiter; 11th failure blocks even 
       return (e as HttpException).getStatus();
     }
   };
+};
+const tally = (codes: number[]) => {
+  const t: Record<number, number> = {};
+  for (const c of codes) t[c] = (t[c] ?? 0) + 1;
+  return t;
+};
+
+test('login: 30 concurrent wrong guesses for one username verify exactly 10, the rest get 429', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const login = slowLogin(user, new LoginLimiter());
+  const codes = await Promise.all(Array.from({ length: 30 }, () => login('carol', 'wrong')));
+  assert.deepEqual(tally(codes), { 401: 10, 429: 20 });
+});
+
+test('login: concurrent and sequential correct logins never consume the budget', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const limiter = new LoginLimiter();
+  const login = slowLogin(user, limiter);
+  assert.deepEqual(
+    tally(
+      await Promise.all(
+        Array.from({ length: 20 }, (_, i) => login(`alice${i}`, 'correct-horse-16ch')),
+      ),
+    ),
+    { 200: 20 },
+  );
   for (let i = 0; i < 25; i++) assert.equal(await login('alice', 'correct-horse-16ch'), 200);
+  // IP bucket is back to 0: a full 20 reservations still fit.
+  for (let i = 0; i < 20; i++) assert.equal(status(() => limiter.check(loginReq.ip!)).status, 200);
+});
+
+test('login: 11th failure blocks even a right password; others unaffected; invite path is IP-only', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const limiter = new LoginLimiter();
+  const login = slowLogin(user, limiter);
   for (let i = 0; i < 10; i++) assert.equal(await login('carol', 'wrong'), 401);
   assert.equal(await login('carol', 'correct-horse-16ch'), 429);
-  assert.equal(await login('dave', 'correct-horse-16ch'), 200, 'other usernames unaffected');
-  // A success clears the username bucket.
-  const l2 = new LoginLimiter();
-  for (let i = 0; i < 5; i++) l2.fail('9.9.9.9', 'erin');
-  l2.reset('9.9.9.9', 'erin');
-  for (let i = 0; i < 9; i++) l2.fail('9.9.9.9', 'erin');
-  assert.equal(status(() => l2.check('9.9.9.9', 'erin')).status, 200);
+  assert.equal(await login('dave', 'correct-horse-16ch'), 200);
+  const invite = new LoginLimiter();
+  const ctrl = new AuthController(fakeAuth(), accountDb(null).db, invite);
+  const tryInvite = () =>
+    ctrl.login({ username: '', credential: 'bad' }, loginReq, {} as Response).then(
+      () => 200,
+      (e: HttpException) => e.getStatus(),
+    );
+  const codes: number[] = [];
+  for (let i = 0; i < 21; i++) codes.push(await tryInvite());
+  assert.deepEqual(tally(codes), { 401: 20, 429: 1 });
 });
 
 const fakeDb = (session: object | null, user: object | null) =>
