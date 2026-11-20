@@ -96,29 +96,39 @@ export class DeleteUserDto {
   @MaxLength(80)
   confirmUsername!: string;
 }
-/** One CSV line. Lengths are capped here; the username pattern is judged per row by the service. */
+/** One CSV line. Only sanity caps here; the real per-row rules are judged by the service. */
 export class BulkUserRowDto {
-  @ApiProperty({ maxLength: 50, description: 'Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row.' })
+  @ApiProperty({
+    maxLength: 200,
+    description: 'Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row (a failing row is `invalid`).',
+  })
   @Transform(trim)
   @IsString()
-  @MaxLength(50)
+  @MaxLength(200)
   username!: string;
-  @ApiProperty({ required: false, nullable: true, type: String, maxLength: 80 })
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    type: String,
+    maxLength: 200,
+    description: 'At most 80 characters after trimming, checked per row.',
+  })
   @Transform(trim)
   @IsOptional()
   @IsString()
-  @MaxLength(80)
+  @MaxLength(200)
   displayName?: string | null;
   @ApiProperty({
     required: false,
     nullable: true,
     type: String,
-    maxLength: 150,
-    description: 'At least 8 characters. Blank: the server generates one and forces a change.',
+    maxLength: 500,
+    description:
+      '8 to 128 characters, checked per row. Blank: the server generates one and forces a change.',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(500)
   password?: string | null;
 }
 export class BulkCreateUsersDto {

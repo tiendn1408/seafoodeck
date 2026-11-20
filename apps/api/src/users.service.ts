@@ -97,6 +97,24 @@ export const escapeLike = (text: string) => text.replace(/[\\%_]/g, (ch) => `\\$
 const missing = () => new NotFoundException('Không tìm thấy người dùng.');
 const SERIALIZABLE = { isolationLevel: 'Serializable' } as const;
 const TAKEN = 'Tên đăng nhập đã tồn tại.';
+const SYSTEM_ERROR = 'Lỗi hệ thống, vui lòng thử lại.';
+const PASSWORD_MAX = 128;
+const DISPLAY_NAME_MAX = 80;
+/** Per-row rules of a bulk create (the DTO only caps sizes); undefined when the row is fine. */
+function bulkRowProblem(
+  username: string,
+  displayName: string | null,
+  password: string | undefined,
+): string | undefined {
+  if (!USERNAME_PATTERN.test(username))
+    return 'Tên đăng nhập phải có 3–50 ký tự: chữ, số, dấu _ hoặc -.';
+  if (displayName && displayName.length > DISPLAY_NAME_MAX)
+    return `Tên hiển thị tối đa ${DISPLAY_NAME_MAX} ký tự.`;
+  const min = passwordMinFor(STUDENT);
+  if (password !== undefined && (password.length < min || password.length > PASSWORD_MAX))
+    return `Mật khẩu phải có từ ${min} đến ${PASSWORD_MAX} ký tự.`;
+  return undefined;
+}
 
 /**
  * Admin user management. Lock and delete run in a Serializable transaction (retried on
@@ -108,6 +126,8 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
   /** Pause between Serializable retries; undefined uses the real jittered sleep (tests inject one). */
   retryWait?: (ms: number) => Promise<void>;
+  /** Hashes one bulk row's password (async scrypt); replaceable in tests. */
+  hashPassword: (password: string) => Promise<string> = passwordHashAsync;
   constructor(private db: Db) {}
 
   async list(query: UserListQuery) {
@@ -167,7 +187,8 @@ export class UsersService {
               data.disabledAt = new Date();
               audits.push({ action: 'user.disable', detail: {} });
             }
-          } else if (dto.disabled === false) {
+          } else if (dto.disabled === false && user.disabledAt) {
+            // Unlocking an active user changes nothing and is not audited.
             data.disabledAt = null;
             audits.push({ action: 'user.enable', detail: {} });
           }
@@ -243,24 +264,40 @@ export class UsersService {
 
   /**
    * Bulk student creation. Rows are checked in input order (`line` is 1-based): username format,
-   * then a case-insensitive duplicate of an earlier line (the first occurrence wins), then the
-   * password rule, then an existing account. Each row that passes is created in its own
-   * transaction, so one failing row never undoes the others. `dryRun` reports the same verdicts
-   * and writes nothing. A blank password gets a generated one (forced change on first login)
-   * that appears only in this response; a typed password is never echoed back. Hashes are
-   * computed one after another with async scrypt (about 18 ms each, so a 500-row batch takes
-   * roughly 9 s) off the event loop, so other requests keep being served meanwhile.
+   * display name and password lengths, then a case-insensitive duplicate of an earlier valid line
+   * (the first valid occurrence wins), then an existing account. Each row that passes is created
+   * in its own transaction, so one failing row never undoes the others. `dryRun` reports the same
+   * verdicts and writes nothing. A blank password gets a generated one (forced change on first
+   * login) that appears only in this response; a typed password is never echoed back.
+   *
+   * Once an account exists its generated password lives only in this response, so after the
+   * first create nothing may turn the request into a 500: an unexpected error on a row becomes
+   * that row's `invalid` (system error), and a failing summary Audit is logged (code only), not
+   * thrown. The actor is checked up front (401, nothing done) and again inside every row's
+   * transaction; if it gets locked mid-batch the remaining rows are refused, the earlier ones kept.
+   *
+   * Hashes are computed one after another with async scrypt (about 18 ms each, so a 500-row batch
+   * takes roughly 9 s) off the event loop, so other requests keep being served meanwhile.
    */
   async bulkCreate(actorId: string, rows: BulkRowInput[], dryRun = false): Promise<BulkResult> {
+    await this.requireActiveActor(this.db, actorId);
     const firstLine = new Map<string, number>();
     const results: BulkRowResult[] = [];
+    let actorRefused = false;
     for (const [index, row] of rows.entries()) {
       const line = index + 1;
       const username = row.username.trim();
       const verdict = (status: BulkRowResult['status'], message?: string) =>
         results.push({ line, username, status, ...(message ? { message } : {}) });
-      if (!USERNAME_PATTERN.test(username)) {
-        verdict('invalid', 'Tên đăng nhập phải có 3–50 ký tự: chữ, số, dấu _ hoặc -.');
+      if (actorRefused) {
+        verdict('invalid', SESSION_EXPIRED);
+        continue;
+      }
+      const displayName = row.displayName?.trim() || null;
+      const typed = row.password && row.password.trim() ? row.password : undefined;
+      const problem = bulkRowProblem(username, displayName, typed);
+      if (problem) {
+        verdict('invalid', problem);
         continue;
       }
       const key = normalizeUsername(username);
@@ -270,32 +307,36 @@ export class UsersService {
         continue;
       }
       firstLine.set(key, line);
-      const typed = row.password && row.password.trim() ? row.password : undefined;
-      if (typed !== undefined && typed.length < passwordMinFor(STUDENT)) {
-        verdict('invalid', `Mật khẩu phải có ít nhất ${passwordMinFor(STUDENT)} ký tự.`);
-        continue;
-      }
-      if (dryRun) {
-        if (await findUserByUsername(this.db, username)) verdict('duplicate', TAKEN);
-        else verdict('created');
-        continue;
-      }
-      const temporaryPassword = typed === undefined ? generateTempPassword(STUDENT) : undefined;
-      const outcome = await this.createStudent(actorId, {
-        username,
-        displayName: row.displayName?.trim() || null,
-        passwordHash: await passwordHashAsync(typed ?? temporaryPassword!),
-        mustChangePassword: temporaryPassword !== undefined,
-      });
-      if (outcome === 'created')
-        results.push({
-          line,
+      try {
+        if (dryRun) {
+          if (await findUserByUsername(this.db, username)) verdict('duplicate', TAKEN);
+          else verdict('created');
+          continue;
+        }
+        const temporaryPassword = typed === undefined ? generateTempPassword(STUDENT) : undefined;
+        const created = await this.createStudent(actorId, {
           username,
-          status: 'created',
-          ...(temporaryPassword ? { temporaryPassword } : {}),
+          displayName,
+          passwordHash: await this.hashPassword(typed ?? temporaryPassword!),
+          mustChangePassword: temporaryPassword !== undefined,
         });
-      else if (outcome === 'duplicate') verdict('duplicate', TAKEN);
-      else verdict('invalid', 'Không tạo được tài khoản này, vui lòng thử lại.');
+        if (created)
+          results.push({
+            line,
+            username,
+            status: 'created',
+            ...(temporaryPassword ? { temporaryPassword } : {}),
+          });
+        else verdict('duplicate', TAKEN);
+      } catch (error) {
+        if (error instanceof UnauthorizedException) {
+          actorRefused = true;
+          verdict('invalid', SESSION_EXPIRED);
+        } else {
+          this.logFailure('a row', error);
+          verdict('invalid', SYSTEM_ERROR);
+        }
+      }
     }
     const count = (status: BulkRowResult['status']) =>
       results.filter((r) => r.status === status).length;
@@ -305,13 +346,20 @@ export class UsersService {
       failed: count('invalid'),
     };
     if (!dryRun)
-      await this.db.audit.create({
-        data: { actorId, action: 'user.bulk-create', targetId: 'users', detail: summary },
-      });
+      try {
+        await this.db.audit.create({
+          data: { actorId, action: 'user.bulk-create', targetId: 'users', detail: summary },
+        });
+      } catch (error) {
+        this.logFailure('the summary Audit', error);
+      }
     return { dryRun, ...summary, rows: results };
   }
 
-  /** One row of a bulk create, in its own transaction; a lost unique-index race is a duplicate. */
+  /**
+   * One row of a bulk create in its own transaction (actor re-checked inside it). Returns false
+   * for an existing account, including a lost unique-index race (P2002); other errors propagate.
+   */
   private async createStudent(
     actorId: string,
     data: {
@@ -320,10 +368,11 @@ export class UsersService {
       passwordHash: string;
       mustChangePassword: boolean;
     },
-  ): Promise<'created' | 'duplicate' | 'failed'> {
+  ): Promise<boolean> {
     try {
       return await this.db.$transaction(async (tx) => {
-        if (await findUserByUsername(tx, data.username)) return 'duplicate' as const;
+        await this.requireActiveActor(tx, actorId);
+        if (await findUserByUsername(tx, data.username)) return false;
         const row = await tx.user.create({
           data: { ...data, role: STUDENT },
           select: { id: true },
@@ -336,17 +385,20 @@ export class UsersService {
             detail: { role: STUDENT, bulk: true },
           },
         });
-        return 'created' as const;
+        return true;
       });
     } catch (error) {
-      const code = (error as { code?: unknown } | null)?.code;
-      if (code === 'P2002') return 'duplicate';
-      // Only the error code: messages from the driver may echo the row's values.
-      this.logger.error(
-        `bulk create: a row failed (${typeof code === 'string' ? code : 'no code'})`,
-      );
-      return 'failed';
+      if ((error as { code?: unknown } | null)?.code === 'P2002') return false;
+      throw error;
     }
+  }
+
+  /** Only the error code: driver messages may echo a row's values. */
+  private logFailure(what: string, error: unknown) {
+    const code = (error as { code?: unknown } | null)?.code;
+    this.logger.error(
+      `bulk create: ${what} failed (${typeof code === 'string' ? code : 'no code'})`,
+    );
   }
 
   /**
@@ -354,7 +406,7 @@ export class UsersService {
    * row inside the same Serializable transaction (so a concurrent lock of the actor conflicts) and
    * answer like an expired session, exactly as the guards do.
    */
-  private async requireActiveActor(tx: Tx, actorId: string) {
+  private async requireActiveActor(tx: Pick<Tx, 'user'>, actorId: string) {
     const actor = await tx.user.findUnique({
       where: { id: actorId },
       select: { id: true, disabledAt: true },

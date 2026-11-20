@@ -309,7 +309,12 @@ export class BulkUserResultRowResponse {
   @ApiProperty() username!: string;
   @ApiProperty({ enum: ['created', 'duplicate', 'invalid'] })
   status!: 'created' | 'duplicate' | 'invalid';
-  @ApiProperty({ required: false }) message?: string;
+  @ApiProperty({
+    required: false,
+    description:
+      'Why the row was not created. `invalid` also covers a transient server error on that row (retry it) and an expired session.',
+  })
+  message?: string;
   @ApiProperty({
     required: false,
     description: 'Only for a generated password on a real run; shown once, never stored in clear.',

@@ -131,6 +131,10 @@ const memoryDb = (users: U[]) => {
     raceOn: undefined as string | undefined,
     /** Lowercased username whose create fails with an unexpected error. */
     breakOn: undefined as string | undefined,
+    /** Audit action whose create throws (e.g. only the bulk summary row). */
+    failAuditAction: undefined as string | undefined,
+    /** Runs on the same state as a successful user.create (inside its transaction). */
+    afterCreate: undefined as ((s: State) => void) | undefined,
     created: 0,
     /** The last `where` given to user.findMany. */
     lastFindManyWhere: undefined as Row | undefined,
@@ -151,6 +155,8 @@ const memoryDb = (users: U[]) => {
         },
         findFirst: async (a: { where: Row; select?: Record<string, boolean> }) => {
           await read();
+          if (mem.failOn === 'user.findFirst')
+            throw new Error('injected failure in user.findFirst');
           return pick(
             [...get().users.values()].find((u) => matches(u, a.where)),
             a.select,
@@ -203,6 +209,7 @@ const memoryDb = (users: U[]) => {
             ...a.data,
           };
           s.users.set(row.id, row);
+          mem.afterCreate?.(s);
           return pick(row, a.select);
         },
         update: async (a: { where: { id: string }; data: Partial<U> }) => {
@@ -254,6 +261,7 @@ const memoryDb = (users: U[]) => {
       audit: {
         create: async (a: { data: Row }) => {
           await write('audit.create');
+          if (mem.failAuditAction === a.data.action) throw new Error('injected audit failure');
           get().audits.push(a.data);
           return a.data;
         },
@@ -932,6 +940,7 @@ test('PATCH displayName "" is stored as null; DELETE without confirmUsername is 
 });
 
 // ---- Bulk create (Review Focus 3) -----------------------------------------------------------
+const SYSTEM_ERROR = 'Lỗi hệ thống, vui lòng thử lại.';
 const BULK_ROWS = [
   { username: 'Binh' },
   { username: 'binh', password: 'another-pass-1' },
@@ -1085,7 +1094,7 @@ test('bulk create: a lost unique-index race is that row duplicate, an unexpected
     ],
   );
   assert.deepEqual([out.created, out.skipped, out.failed], [1, 1, 1]);
-  assert.equal(out.rows[1].message!.includes('connection reset'), false);
+  assert.equal(out.rows[1].message, SYSTEM_ERROR);
   assert.deepEqual(
     [...mem.state.users.values()].map((u) => u.username),
     ['root', 'Lan'],
@@ -1096,10 +1105,22 @@ test('bulk create: a lost unique-index race is that row duplicate, an unexpected
   );
 });
 
-test('bulk create validation: 1 to 500 rows, typed and length-limited fields, nothing unknown', async () => {
+test('bulk create validation: 1 to 500 rows, typed fields with sanity caps only, nothing unknown', async () => {
   const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ username: `hs_${i}` }));
   const ok = await validateAs(BulkCreateUsersDto, { rows: rows(500), dryRun: true }, 'body');
   assert.equal(ok.ok, true);
+  // Too long for an account, but judged per row by the service, not by the pipe.
+  const perRow = await validateAs(
+    BulkCreateUsersDto,
+    {
+      rows: [
+        { username: 'x'.repeat(200) },
+        { username: 'Lan', displayName: 'x'.repeat(200), password: 'x'.repeat(500) },
+      ],
+    },
+    'body',
+  );
+  assert.equal(perRow.ok, true);
   const trimmed = await validateAs(
     BulkCreateUsersDto,
     { rows: [{ username: ' An ', displayName: ' Lan ', password: ' p a s s word ' }] },
@@ -1122,9 +1143,9 @@ test('bulk create validation: 1 to 500 rows, typed and length-limited fields, no
     { rows: ['Lan'] },
     { rows: [{}] },
     { rows: [{ username: 5 }] },
-    { rows: [{ username: 'x'.repeat(51) }] },
-    { rows: [{ username: 'Lan', displayName: 'x'.repeat(81) }] },
-    { rows: [{ username: 'Lan', password: 'x'.repeat(151) }] },
+    { rows: [{ username: 'x'.repeat(201) }] },
+    { rows: [{ username: 'Lan', displayName: 'x'.repeat(201) }] },
+    { rows: [{ username: 'Lan', password: 'x'.repeat(501) }] },
     { rows: [{ username: 'Lan', role: 'admin' }] },
     { rows: [{ username: 'Lan' }], dryRun: 'yes' },
     { rows: [{ username: 'Lan' }], role: 'admin' },
@@ -1133,6 +1154,146 @@ test('bulk create validation: 1 to 500 rows, typed and length-limited fields, no
     assert.equal(r.ok, false, JSON.stringify(bad).slice(0, 80));
     assert.equal(!r.ok && r.status, 400);
   }
+});
+
+test('bulk create: lengths are judged per row, the other rows still process', async () => {
+  const mem = memoryDb([admin('root')]);
+  const out = await ctrl(mem).bulkCreate(adminReq('root'), {
+    rows: [
+      { username: 'x'.repeat(51) },
+      { username: 'Lan', displayName: 'x'.repeat(81) },
+      { username: 'Minh', password: 'p'.repeat(129) },
+      { username: 'Nam', password: 'p'.repeat(128), displayName: 'd'.repeat(80) },
+      { username: 'Oanh', password: 'p'.repeat(8) },
+      { username: 'Phuc', password: 'p'.repeat(7) },
+    ],
+  });
+  assert.deepEqual(
+    out.rows.map((r) => r.status),
+    ['invalid', 'invalid', 'invalid', 'created', 'created', 'invalid'],
+  );
+  assert.deepEqual([out.created, out.skipped, out.failed], [2, 0, 4]);
+  for (const r of out.rows.filter((x) => x.status === 'invalid'))
+    assert.ok(isVietnamese(r.message!), r.message!);
+  assert.match(out.rows[1].message!, /80/);
+  assert.match(out.rows[2].message!, /128/);
+  assert.equal(JSON.stringify(out).includes('p'.repeat(129)), false);
+});
+
+test('bulk create: an invalid row does not claim its name; a later row with that name is judged on its own', async () => {
+  const mem = memoryDb([admin('root')]);
+  const out = await ctrl(mem).bulkCreate(adminReq('root'), {
+    rows: [{ username: 'An1', password: 'short' }, { username: 'an1' }, { username: 'AN1' }],
+  });
+  assert.deepEqual(
+    out.rows.map((r) => [r.line, r.status]),
+    [
+      [1, 'invalid'],
+      [2, 'created'],
+      [3, 'duplicate'],
+    ],
+  );
+  assert.match(out.rows[2].message!, /dòng 2\b/);
+});
+
+test('bulk create never loses generated passwords: a failing hash or summary Audit leaves a 200 with the other rows', async () => {
+  const mem = memoryDb([admin('root')]);
+  mem.failAuditAction = 'user.bulk-create';
+  const svc = service(mem);
+  svc.hashPassword = async (password) => {
+    if (password === 'khoa-password') throw new Error('scrypt failed');
+    return passwordHash(password);
+  };
+  const { result: out, logged } = await captureLogs(() =>
+    new AdminUsersController(svc).bulkCreate(adminReq('root'), {
+      rows: [
+        { username: 'Lan' },
+        { username: 'Khoa', password: 'khoa-password' },
+        { username: 'Minh' },
+      ],
+    }),
+  );
+  assert.deepEqual(
+    out.rows.map((r) => [r.username, r.status, 'temporaryPassword' in r]),
+    [
+      ['Lan', 'created', true],
+      ['Khoa', 'invalid', false],
+      ['Minh', 'created', true],
+    ],
+  );
+  assert.equal(out.rows[1].message, SYSTEM_ERROR);
+  assert.deepEqual([out.created, out.skipped, out.failed], [2, 0, 1]);
+  for (const r of [out.rows[0], out.rows[2]]) {
+    const stored = [...mem.state.users.values()].find((u) => u.username === r.username)!;
+    assert.ok(passwordMatches(r.temporaryPassword!, stored.passwordHash));
+  }
+  assert.equal(
+    mem.state.audits.some((a) => a.action === 'user.bulk-create'),
+    false,
+  );
+  for (const secret of ['khoa-password', out.rows[0].temporaryPassword!])
+    assert.equal(
+      logged.some((l) => l.includes(secret)),
+      false,
+    );
+  // Dry run: a failing lookup is that row's system error, not a 500.
+  mem.failOn = 'user.findFirst';
+  const dry = await ctrl(mem).bulkCreate(adminReq('root'), {
+    rows: [{ username: 'Oanh' }, { username: 'x' }],
+    dryRun: true,
+  });
+  assert.deepEqual(
+    dry.rows.map((r) => [r.status, r.message]),
+    [
+      ['invalid', SYSTEM_ERROR],
+      ['invalid', dry.rows[1].message],
+    ],
+  );
+  assert.deepEqual([dry.created, dry.skipped, dry.failed], [0, 0, 2]);
+});
+
+test('bulk create re-checks the actor: a locked or deleted admin creates nothing; a lock mid-batch stops the remaining rows', async () => {
+  const mem = memoryDb([admin('root'), admin('a2', { disabledAt: new Date() })]);
+  for (const actor of ['a2', 'gone']) {
+    for (const dryRun of [false, true]) {
+      const r = await outcome(
+        ctrl(mem).bulkCreate(adminReq(actor), { rows: [{ username: 'Lan' }], dryRun }),
+      );
+      assert.equal(r.status, 401);
+      assert.equal(r.message, SESSION_EXPIRED);
+    }
+  }
+  assert.equal(mem.state.users.size, 2);
+  assert.equal(mem.state.audits.length, 0);
+  // root is locked by someone else while its batch runs: right after the first account is created.
+  mem.afterCreate = (s) => {
+    s.users.get('root')!.disabledAt = new Date();
+    mem.afterCreate = undefined;
+  };
+  const out = await ctrl(mem).bulkCreate(adminReq('root'), {
+    rows: [{ username: 'Lan' }, { username: 'Minh' }, { username: 'Nam' }],
+  });
+  assert.deepEqual(
+    out.rows.map((r) => [r.status, 'temporaryPassword' in r]),
+    [
+      ['created', true],
+      ['invalid', false],
+      ['invalid', false],
+    ],
+  );
+  assert.equal(out.rows[1].message, SESSION_EXPIRED);
+  assert.deepEqual([...mem.state.users.values()].map((u) => u.username).sort(), [
+    'Lan',
+    'a2',
+    'root',
+  ]);
+});
+
+test('unlocking a user who is not locked writes no user.enable Audit', async () => {
+  const mem = memoryDb([admin('root'), user({ id: 'u1', username: 'An' })]);
+  const row = await ctrl(mem).update(adminReq('root'), 'u1', { disabled: false });
+  assert.equal(row.disabled, false);
+  assert.equal(mem.state.audits.length, 0);
 });
 
 /** Minimal express Response that records the session cookie it is given. */

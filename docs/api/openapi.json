@@ -2866,19 +2866,20 @@
         "properties": {
           "username": {
             "type": "string",
-            "maxLength": 50,
-            "description": "Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row."
+            "maxLength": 200,
+            "description": "Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row (a failing row is `invalid`)."
           },
           "displayName": {
             "type": "string",
             "nullable": true,
-            "maxLength": 80
+            "maxLength": 200,
+            "description": "At most 80 characters after trimming, checked per row."
           },
           "password": {
             "type": "string",
             "nullable": true,
-            "maxLength": 150,
-            "description": "At least 8 characters. Blank: the server generates one and forces a change."
+            "maxLength": 500,
+            "description": "8 to 128 characters, checked per row. Blank: the server generates one and forces a change."
           }
         },
         "required": [
@@ -2925,7 +2926,8 @@
             ]
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Why the row was not created. `invalid` also covers a transient server error on that row (retry it) and an expired session."
           },
           "temporaryPassword": {
             "type": "string",
