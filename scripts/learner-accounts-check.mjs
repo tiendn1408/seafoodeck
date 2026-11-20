@@ -1,13 +1,17 @@
-// End-to-end check of phase 2.5a learner accounts against the local Docker pilot stack.
+// End-to-end check of phase 2.5a learner accounts against the LOCAL Docker pilot stack.
 // Reads .local/pilot.env itself and never prints secrets, passwords, invite codes or tokens.
-// Creates QA users `qa-student-<time>`, `qa-student2-<time>`, `qa-mustchange-<time>`, `qa-manager-<time>`
-// with random passwords that are kept in memory only. Publishes one internal release with the same
-// revisions as the current one (check f) and rolls back to the original right after.
+// Side effects: creates QA users (`qa-student-*`, `qa-student2-*`, `qa-mustchange-*`, `qa-manager-*`,
+// and with --stress `qa-stress-*`) with random in-memory passwords that stay in the DB, and publishes one
+// internal release with the same revisions as the current one (check f), rolling back right after.
+// Refuses non-loopback origins (PILOT_ORIGIN) unless --allow-nonlocal is given. Never run on VPS/production.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {randomBytes, randomUUID} from 'node:crypto';
+import {refuseNonLocal} from './local-origin.mjs';
+const origin=process.env.PILOT_ORIGIN??'http://127.0.0.1:18089';
+const refusal=refuseNonLocal(origin,process.argv.slice(2));
+if(refusal){console.error(refusal);process.exit(2);}
 const env=Object.fromEntries(readFileSync('.local/pilot.env','utf8').trim().split('\n').filter(l=>l.includes('=')).map(l=>{const p=l.indexOf('=');return [l.slice(0,p),l.slice(p+1)];}));
-const origin=process.env.PILOT_ORIGIN??env.PUBLIC_ORIGIN??'http://127.0.0.1:18089';
 const results=[];
 const secret=()=>randomBytes(18).toString('base64url');
 class Client {
@@ -16,8 +20,9 @@ class Client {
  async ok(path,body,options){const r=await this.req(path,body,options);const want=(options?.method??(body===undefined?'GET':'POST'))==='POST'?201:200;assert.equal(r.status,want,`Unexpected ${r.status} at ${path}: ${JSON.stringify(r.data?.message)}`);return r.data;}
  async login(credential,username){await this.ok('/auth/me');const r=await this.req('/auth/login',username?{username,credential}:{credential});assert.equal(r.status,201,`login ${username??'invite'} -> ${r.status} ${JSON.stringify(r.data?.message)}`);await this.ok('/auth/me');return r.data;}
 }
+const SKIP=Symbol('skip');
 async function check(id,name,fn){
- try{const details=await fn();results.push({id,name,ok:true,details});console.log(`PASS (${id}) ${name}`+(details?' '+JSON.stringify(details):''));}
+ try{const details=await fn();if(details?.[SKIP]){results.push({id,name,ok:true,skipped:true,details:details.reason});console.log(`SKIP (${id}) ${name}: not applicable: ${details.reason}`);return;}results.push({id,name,ok:true,details});console.log(`PASS (${id}) ${name}`+(details?' '+JSON.stringify(details):''));}
  catch(e){results.push({id,name,ok:false,error:e.message});console.log(`FAIL (${id}) ${name}: ${e.message}`);}
 }
 const attempt=(c,s,q,answer,key=randomUUID())=>c.req(`/learning/sessions/${s}/questions/${q}/attempts`,{key,answer});
@@ -77,7 +82,7 @@ await check('i','skipped name-matching question: logged, ReviewProgress and mast
 });
 await check('j','listening target logged against its item without breaking /me/mastery',async()=>{
  const s=await student.req('/learning/sessions',{mode:'listening',kind:'en'});
- if(s.status===400)return {applicable:false,reason:s.data.message};
+ if(s.status===400)return {[SKIP]:true,reason:s.data.message};
  assert.equal(s.status,201);const q=s.data.questions[0];const r=await attempt(student,s.data.id,q.id,{optionId:q.options[0].id});assert.equal(r.status,201);
  const mastery=await student.ok('/me/mastery');assert.ok(Object.keys(mastery).length>0);const p=await progress(student);assert.ok(p.sessions.some(x=>x.sessionId===s.data.id));
  return {applicable:true,correct:r.data.correct,progress:r.data.progress};
@@ -124,7 +129,7 @@ await check('g','role separation: invite learner, second student, manager',async
  const s2=new Client();await s2.login(users.student2.password,users.student2.username);
  const p2=await progress(s2);assert.equal(p2.sessions.length,0);assert.equal(p2.figures.selfRated,0);assert.equal(p2.figures.answered,0);
  const r2=await s2.ok('/me/review');assert.equal(r2.due.length+r2.scheduled.length,0);
- assert.ok(Object.values(await s2.ok('/me/mastery')).every(m=>m.status==='new'&&m.level===0));
+ const m2=await s2.ok('/me/mastery');assert.ok(Object.keys(m2).length>0);assert.ok(Object.values(m2).every(m=>m.status==='new'&&m.level===0));
  assert.equal((await s2.req(`/learning/sessions/${flashA.id}`)).status,404);assert.equal((await s2.req(`/learning/sessions/${flashA.id}/summary`)).status,404);
  assert.equal((await attempt(s2,flashA.id,flashA.questions[0].id,{rating:'known'})).status,404);
  const manager=new Client();await manager.login(users.manager.password,users.manager.username);
@@ -155,7 +160,8 @@ if(process.argv.includes('--stress')){
  await check('s1','stress: one student, 9 concurrent answers x 10 rounds',async()=>{const r=await hammer(await stressUser('a'));verdict(r);return r;});
  await check('s2','stress: two students at once, isolated',async()=>{const [b,c]=await Promise.all([stressUser('b'),stressUser('c')]);const t0=Date.now();const [rb,rc]=await Promise.all([hammer(b),hammer(c)]);verdict(rb);verdict(rc);return {b:rb,c:rc,ms:Date.now()-t0};});
 }
-console.log('\nSummary:');for(const r of results)console.log(`${r.ok?'PASS':'FAIL'} (${r.id}) ${r.name}`);
-const failed=results.filter(r=>!r.ok);
-if(failed.length){console.log(`${failed.length} check(s) failed.`);process.exit(1);}
-console.log(`All ${results.length} learner-account checks passed. QA users stay in the local DB; no secrets printed.`);
+console.log('\nSummary:');for(const r of results)console.log(`${r.ok?(r.skipped?'SKIP':'PASS'):'FAIL'} (${r.id}) ${r.name}`);
+const failed=results.filter(r=>!r.ok),skipped=results.filter(r=>r.skipped),passed=results.length-failed.length-skipped.length;
+const tally=`${passed} passed, ${skipped.length} skipped, ${failed.length} failed`;
+if(failed.length){console.log(`${tally}.`);process.exit(1);}
+console.log(`${tally}. QA users stay in the local DB; one extra internal release was published and rolled back; no secrets printed.`);

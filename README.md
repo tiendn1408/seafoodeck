@@ -25,7 +25,7 @@ Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `
 docker compose --env-file .local/pilot.env run --rm --no-deps api node dist/rebuild-progress.js
 ```
 
-Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; tạo người dùng QA, không in bí mật). Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
+Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; không in bí mật). Không chạy script này trên VPS/production (nó tạo người dùng QA và đăng/rollback release nội bộ); script từ chối host không phải loopback. Mỗi lần chạy để lại người dùng `qa-*`, thêm một release nội bộ vào lịch sử (release nền phải nằm trong 20 release gần nhất) và đăng nhập khoảng 11 lần, nên thường cần `docker compose --env-file .local/pilot.env restart api` giữa các lần chạy. Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
 
 ## Nhập dữ liệu prototype
 

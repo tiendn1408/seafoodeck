@@ -22,7 +22,7 @@
     "pilot:init": "node scripts/init-pilot.mjs",
     "smoke:pilot": "node scripts/smoke-pilot.mjs",
     "contract:generate": "node scripts/export-contract.mjs",
-    "test:scripts": "node --test \"scripts/prototype/*.test.mjs\""
+    "test:scripts": "node --test \"scripts/prototype/*.test.mjs\" \"scripts/*.test.mjs\""
   },
   "devDependencies": {
     "json5": "2.2.3"
