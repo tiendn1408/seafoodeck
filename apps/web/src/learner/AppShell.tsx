@@ -22,11 +22,12 @@ const tabs = [
 ] as const;
 const adminTab = { id: 'admin', label: 'Quản trị', Icon: ShieldCheck } as const;
 type Tab = (typeof tabs)[number] | typeof adminTab;
-/** Tabs per kind; staff also get "Quản trị" (a top tab on desktop, a header icon on phones). */
+/** Tabs per kind; staff and admins also get "Quản trị" (a top tab on desktop, a header icon on phones). */
 const tabsFor: Record<Kind, readonly Tab[]> = {
   student: tabs,
   // Ôn tập / Tiến độ read /me/*, which admits account students only.
   staff: tabs.slice(0, 2),
+  admin: tabs.slice(0, 2),
   trial: tabs.slice(0, 2),
   manager: tabs.slice(1, 2),
   guest: [],
@@ -34,11 +35,13 @@ const tabsFor: Record<Kind, readonly Tab[]> = {
 /** Honest label for an internal release; phones show a shorter one, never a second line. */
 const internalLabel = 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt';
 
-/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện".
+/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện",
+ * admin sub-pages (admin/users) to "Quản trị".
  * "account" is owned by no tab: the header's account entry is marked current instead. */
 export function tabFor(route: string): string {
   if (route === 'study') return 'home';
   if (route.startsWith('profile/')) return 'library';
+  if (route.startsWith('admin/')) return 'admin';
   return route;
 }
 
@@ -99,7 +102,7 @@ export function AppShell({
 }) {
   const desktop = useMedia('(min-width: 900px)');
   const current = tabFor(route);
-  const staff = kind === 'staff';
+  const staff = kind === 'staff' || kind === 'admin';
   const bar = signedIn ? tabsFor[kind] : [];
   const links = staff && signedIn ? [...bar, adminTab] : bar;
   const accountLabel = userName?.trim() || 'Tài khoản';

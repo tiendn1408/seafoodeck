@@ -83,6 +83,12 @@ describe('AppShell navigation by kind (phone)', () => {
     expect(host.querySelector('.shell-actions a[href="#admin"]')).not.toBeNull();
     expect(host.querySelector('a[href="#account"]')).toBeNull();
   });
+  it('admin: same as staff (Học, Thư viện, admin shield icon)', () => {
+    const host = shell('ice', 'admin', 'admin/users');
+    expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
+    expect(host.querySelector('.shell-actions a[href="#admin"]')).not.toBeNull();
+    expect(host.querySelector('a[href="#account"]')).toBeNull();
+  });
   it('guest: no navigation and no logout', () => {
     const host = document.createElement('div');
     host.innerHTML = renderToString(
@@ -117,6 +123,12 @@ describe('AppShell navigation by kind (desktop)', () => {
   });
   it('staff: Học, Thư viện plus Quản trị', () => {
     expect(navLabels(desktop('staff'))).toEqual(['Học', 'Thư viện', 'Quản trị']);
+  });
+  it('admin: Học, Thư viện plus Quản trị, current on the users screen too', () => {
+    expect(tabFor('admin/users')).toBe('admin');
+    const host = desktop('admin', 'admin/users');
+    expect(navLabels(host)).toEqual(['Học', 'Thư viện', 'Quản trị']);
+    expect(host.querySelector('nav a[href="#admin"]')?.getAttribute('aria-current')).toBe('page');
   });
   it('on #account no tab is current; the account entry is', () => {
     expect(tabFor('account')).toBe('account');

@@ -1,6 +1,7 @@
 import type { AuthView } from '../pilot/api';
 
-export type Kind = 'guest' | 'trial' | 'student' | 'manager' | 'staff';
+/** `admin` is staff-like (content area, no /me/*) and also manages accounts. */
+export type Kind = 'guest' | 'trial' | 'student' | 'manager' | 'staff' | 'admin';
 
 export function kindOf(auth: AuthView | null): Kind {
   switch (auth?.role) {
@@ -11,6 +12,7 @@ export function kindOf(auth: AuthView | null): Kind {
     case 'manager':
       return 'manager';
     case 'admin':
+      return 'admin';
     case 'editor':
     case 'reviewer':
     case 'publisher':
@@ -28,6 +30,8 @@ const ALLOWED: Record<Exclude<Kind, 'guest'>, string[]> = {
   manager: ['home', 'library'],
   // Staff browse and try the deck like a trial (no /me/*: it admits account students only).
   staff: ['home', 'library', 'study', 'admin'],
+  // Admins get the staff routes plus account management.
+  admin: ['home', 'library', 'study', 'admin', 'admin/users'],
 };
 
 /** Every fixed route a signed-in kind may open (species profiles follow "library"). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthView } from '../pilot/api';
-import { kindOf, routeAllowed } from './role';
+import { kindOf, routeAllowed, routesFor, type Kind } from './role';
 
 const auth = (role: string): AuthView => ({ role, internal: false, csrf: 'c', expiresAt: '' });
 
@@ -11,8 +11,8 @@ describe('kindOf', () => {
     expect(kindOf(auth('learner'))).toBe('trial');
     expect(kindOf(auth('student'))).toBe('student');
     expect(kindOf(auth('manager'))).toBe('manager');
-    for (const r of ['admin', 'editor', 'reviewer', 'publisher'])
-      expect(kindOf(auth(r))).toBe('staff');
+    expect(kindOf(auth('admin'))).toBe('admin');
+    for (const r of ['editor', 'reviewer', 'publisher']) expect(kindOf(auth(r))).toBe('staff');
     expect(kindOf(auth('wizard'))).toBe('guest');
     expect(kindOf(auth(''))).toBe('guest');
   });
@@ -40,5 +40,29 @@ describe('routeAllowed', () => {
       expect(routeAllowed('staff', r)).toBe(true);
     // Review and progress read /me/*, which admits account students only (403 for staff).
     for (const r of ['review', 'progress', 'account']) expect(routeAllowed('staff', r)).toBe(false);
+  });
+  it('admins get what staff get plus the users screen; still no /me-backed pages', () => {
+    for (const r of ['home', 'library', 'study', 'profile/x', 'admin', 'admin/users'])
+      expect(routeAllowed('admin', r)).toBe(true);
+    for (const r of ['review', 'progress', 'account', 'manager', 'manager/learner/x'])
+      expect(routeAllowed('admin', r)).toBe(false);
+  });
+  it('only admins may open admin/users', () => {
+    const table: [Kind, boolean][] = [
+      ['admin', true],
+      ['staff', false],
+      ['manager', false],
+      ['student', false],
+      ['trial', false],
+    ];
+    for (const [kind, allowed] of table) {
+      expect(routeAllowed(kind, 'admin/users'), kind).toBe(allowed);
+      expect(routesFor(kind).includes('admin/users'), kind).toBe(allowed);
+    }
+  });
+  it('routesFor lists the fixed routes per kind', () => {
+    expect(routesFor('admin')).toEqual(['home', 'library', 'study', 'admin', 'admin/users']);
+    expect(routesFor('staff')).toEqual(['home', 'library', 'study', 'admin']);
+    expect(routesFor('guest')).toEqual([]);
   });
 });

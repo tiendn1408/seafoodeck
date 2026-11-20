@@ -247,14 +247,16 @@ describe('PilotApp forced password flow', () => {
 });
 
 describe('PilotApp role-aware routes', () => {
-  it('trial, manager and staff never request /me or /me/* on any route their kind allows', async () => {
+  it('trial, manager, staff and admin never request /me or /me/* on any route their kind allows', async () => {
     // Every allowed route comes from the route table, so new routes are covered automatically.
     const views = [
       view('learner'),
       { ...view('learner'), userId: undefined }, // real invite sessions carry no userId
       view('manager'),
-      view('admin'), // staff sessions carry a userId, but /me/* admits students only
+      view('editor'), // staff sessions carry a userId, but /me/* admits students only
+      view('admin'), // admin kind, with a userId, including #admin/users
     ];
+    const visited: string[] = [];
     for (const v of views) {
       const kind = kindOf(v);
       const hashes = [...routesFor(kind), 'profile/x'].filter((r) => routeAllowed(kind, r));
@@ -268,9 +270,13 @@ describe('PilotApp role-aware routes', () => {
         await tick();
         expect(location.hash, `${v.role} ${hash}`).toBe('#' + hash);
         expect(host.querySelector('.shell')).not.toBeNull();
+        visited.push(`${v.role} ${hash}`);
         unmountAll();
       }
     }
+    expect(visited).toContain('admin admin/users');
+    expect(visited).not.toContain('editor admin/users');
+    expect(calls).toContain('GET /admin/users?page=1&limit=20');
     const me = calls.filter((c) => {
       const p = c.split(' ')[1].split('?')[0];
       return p === '/me' || p.startsWith('/me/');
@@ -302,6 +308,11 @@ describe('PilotApp role-aware routes', () => {
       ['manager', '#review'],
       ['manager', '#study'],
       ['student', '#admin'],
+      ['student', '#admin/users'],
+      ['learner', '#admin/users'],
+      ['manager', '#admin/users'],
+      ['editor', '#admin/users'],
+      ['publisher', '#admin/users'],
       ['admin', '#account'],
       ['admin', '#review'],
       ['admin', '#progress'],
@@ -318,6 +329,44 @@ describe('PilotApp role-aware routes', () => {
       expect(host.querySelector('#account-title, .ice-stage')).toBeNull();
       unmountAll();
     }
+  });
+
+  it('an admin on #admin/users sees the users screen under the Nội dung | Người dùng tabs', async () => {
+    location.hash = '#admin/users';
+    routes['GET /auth/me'] = () => json(view('admin'));
+    routes['GET /admin/users?page=1&limit=20'] = () =>
+      json({ items: [], total: 0, page: 1, limit: 20 });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(location.hash).toBe('#admin/users');
+    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
+    expect([...tabs!.querySelectorAll('a')].map((a) => a.textContent)).toEqual([
+      'Nội dung',
+      'Người dùng',
+    ]);
+    expect(tabs!.querySelector('[aria-current="page"]')?.textContent).toBe('Người dùng');
+    expect(host.querySelector('h1')?.textContent).toBe('Người dùng');
+  });
+
+  it('an editor on #admin gets the content page without the users tab', async () => {
+    location.hash = '#admin';
+    routes['GET /auth/me'] = () => json(view('editor'));
+    const host = mount(<PilotApp />);
+    await tick();
+    expect(host.textContent).toContain('Biên tập và xuất bản');
+    expect(host.querySelector('a[href="#admin/users"]')).toBeNull();
+  });
+
+  it('an admin on #admin gets the content page with both tabs', async () => {
+    location.hash = '#admin';
+    routes['GET /auth/me'] = () => json(view('admin'));
+    const host = mount(<PilotApp />);
+    await tick();
+    expect(host.textContent).toContain('Biên tập và xuất bản');
+    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
+    expect(tabs?.querySelector('[aria-current="page"]')?.textContent).toBe('Nội dung');
+    expect(tabs?.querySelector('a[href="#admin/users"]')).not.toBeNull();
   });
 
   it('student home resumes the server session id; a legacy local key is ignored', async () => {
