@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { HttpException } from '@nestjs/common';
+import { BadRequestException, type HttpException } from '@nestjs/common';
 import type { AuthSession } from './generated/prisma/client';
 import type { Db } from './db';
 import type { Catalog } from './catalog';
@@ -9,7 +9,7 @@ import type { Media } from './media';
 import { Learning, canonical } from './learning';
 import { hash } from './security';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
-import { ProgressService, summarize, touchedTargets } from './progress.service';
+import { ProgressService, REVIEW_CANDIDATES, summarize, touchedTargets } from './progress.service';
 
 const NOW = Date.parse('2026-06-10T00:00:00.000Z');
 const DAY = 86_400_000;
@@ -180,11 +180,14 @@ test('context maps the overview and scopes rows with activeRows', async () => {
 function learning(db: Db, due: { targetId: string; skill: string }[] = []) {
   const asked: number[] = [];
   const progress = new ProgressService(db, catalogFake);
-  progress.dueForReview = async (_a: AuthSession, limit: number) => (asked.push(limit), due);
+  progress.dueForReview = async (_a: AuthSession, limit: number) => (
+    asked.push(limit),
+    due.slice(0, limit)
+  );
   return { l: new Learning(db, catalogFake, {} as Media, progress), asked };
 }
 
-test('student review ignores client reviewTargets and uses due items (default limit 8)', async () => {
+test('student review ignores client reviewTargets and uses due items', async () => {
   const { db, calls } = fakeDb();
   const { l, asked } = learning(db, [{ targetId: 'item-B', skill: 'name:en' }]);
   const err = await errorOf(() =>
@@ -194,20 +197,114 @@ test('student review ignores client reviewTargets and uses due items (default li
   );
   // The due item lacks data in this fake, so it is skipped silently and nothing is left.
   assert.deepEqual(err, { status: 400, message: 'Chưa có mục nào đến hạn ôn.' });
-  assert.deepEqual(asked, [8]);
+  assert.deepEqual(asked, [REVIEW_CANDIDATES]);
   const looked = (calls['revision.findFirst'] ?? []).map(
     (a) => (a as { where: { itemId: string } }).where.itemId,
   );
   assert.deepEqual(looked, ['item-B']);
 });
 
-test('student review with nothing due is a 400 and honours limit', async () => {
+test('student review with nothing due is a 400; limit outside 1..30 is rejected', async () => {
   const { l, asked } = learning(fakeDb().db, []);
   const err = await errorOf(() =>
     l.start(student, 'review', 'en', undefined, undefined, undefined, false, undefined, 5),
   );
   assert.deepEqual(err, { status: 400, message: 'Chưa có mục nào đến hạn ôn.' });
-  assert.deepEqual(asked, [5]);
+  assert.deepEqual(asked, [REVIEW_CANDIDATES]);
+  for (const bad of [0, 31, 2.5])
+    assert.deepEqual(
+      await errorOf(() =>
+        l.start(student, 'review', 'en', undefined, undefined, undefined, false, undefined, bad),
+      ),
+      { status: 400, message: 'Số mục ôn phải từ 1 đến 30.' },
+    );
+});
+
+/**
+ * Builds server-chosen sessions with a stubbed per-target build: `fail` targets throw a 400,
+ * `empty` targets build no matching question, every other due target builds one flashcard.
+ */
+function buildable(due: string[], fail: string[], empty: string[]) {
+  const store = sessionStore();
+  const tried: string[] = [];
+  const { db } = fakeDb([], {
+    gameSession: { ...store.gameSession, delete: async () => ({}) },
+    revision: {
+      findMany: async () => [],
+      findFirst: async ({ where }: { where: { itemId: string } }) => ({ id: where.itemId }),
+    },
+    question: {
+      findMany: async ({ where }: { where: { sessionId: string } }) => {
+        const itemId = where.sessionId.replace('tmp-', '');
+        if (empty.includes(itemId)) return [];
+        return [
+          {
+            private: {
+              type: 'flashcard',
+              targetId: itemId,
+              skill: 'name:en',
+              prompt: 'p',
+              explanation: 'e',
+            },
+          },
+        ];
+      },
+    },
+  });
+  const { l, asked } = learning(
+    db,
+    due.map((targetId) => ({ targetId, skill: 'name:en' })),
+  );
+  const real = l.start.bind(l);
+  l.start = (async (...args: Parameters<Learning['start']>) => {
+    if (args[6] !== true) return real(...args);
+    const itemId = args[3]!;
+    tried.push(itemId);
+    if (fail.includes(itemId)) throw new BadRequestException('Chưa có mục đủ bốn tên để học.');
+    return { id: 'tmp-' + itemId };
+  }) as Learning['start'];
+  return { l, asked, store, tried };
+}
+const builtTargets = (store: ReturnType<typeof sessionStore>) =>
+  (store.created[0].data.questions as { create: { private: { targetId: string } }[] }).create.map(
+    (c) => c.private.targetId,
+  );
+
+test('server-chosen review builds past unbuildable due items up to limit', async () => {
+  const { l, store, tried } = buildable(
+    ['item-A', 'item-B', 'item-C', 'item-D', 'item-E', 'item-F'],
+    ['item-A', 'item-B'],
+    ['item-C'],
+  );
+  const game = await l.start(
+    student,
+    'review',
+    'en',
+    undefined,
+    undefined,
+    undefined,
+    false,
+    undefined,
+    2,
+  );
+  assert.deepEqual(builtTargets(store), ['item-D', 'item-E']);
+  assert.equal(game.questions.length, 2);
+  assert.equal(store.created[0].data.mode, 'review');
+  assert.equal(store.created[0].data.reviewOfId, undefined);
+  assert.deepEqual(tried, ['item-A', 'item-B', 'item-C', 'item-D', 'item-E'], 'stops at limit');
+});
+
+test('server-chosen review: more blocked due rows than limit still yields a session', async () => {
+  const blocked = Array.from({ length: 10 }, (_, i) => 'item-x' + i);
+  const { l, store } = buildable([...blocked, 'item-ok'], blocked, []);
+  await l.start(student, 'review', 'en', undefined, undefined, undefined, false, undefined, 3);
+  assert.deepEqual(builtTargets(store), ['item-ok']);
+  const none = buildable(blocked, blocked, []);
+  assert.deepEqual(await errorOf(() => none.l.start(student, 'review', 'en')), {
+    status: 400,
+    message: 'Chưa có mục nào đến hạn ôn.',
+  });
+  assert.equal(none.store.created.length, 0);
 });
 
 test('non-student review keeps honouring client reviewTargets', async () => {

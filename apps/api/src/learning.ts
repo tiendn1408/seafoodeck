@@ -14,7 +14,13 @@ import { hash } from './security';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
 import { buildLogRows, recordAttempt, withSerializableRetry } from './progress-record';
 import type { SubmitContext } from './progress-record';
-import { FINGERPRINT_KINDS, ProgressService, studentId, summarize } from './progress.service';
+import {
+  FINGERPRINT_KINDS,
+  REVIEW_CANDIDATES,
+  ProgressService,
+  studentId,
+  summarize,
+} from './progress.service';
 type Option = { id: string; label: string };
 export interface PrivateQuestion {
   type: string;
@@ -230,14 +236,16 @@ export class Learning {
     const serverChosen = mode === 'review' && actor.role === 'student' && !reviewOf;
     if (serverChosen) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 30)
-        throw new BadRequestException('Tối đa 30 mục ôn mỗi lượt.');
-      reviewTargets = await this.progress.dueForReview(actor, limit);
+        throw new BadRequestException('Số mục ôn phải từ 1 đến 30.');
+      // Ask for more than `limit`: due items that can no longer be built must not starve the rest.
+      reviewTargets = await this.progress.dueForReview(actor, REVIEW_CANDIDATES);
       if (!reviewTargets.length) throw new BadRequestException('Chưa có mục nào đến hạn ôn.');
     } else if (actor.role === 'student') reviewTargets = undefined;
     if (reviewTargets?.length) {
-      if (mode !== 'review' || reviewTargets.length > 30)
+      if (mode !== 'review' || (!serverChosen && reviewTargets.length > 30))
         throw new BadRequestException('Tối đa 30 mục ôn mỗi lượt.');
       for (const target of reviewTargets) {
+        if (serverChosen && questions.length >= limit) break;
         if (!target || typeof target.targetId !== 'string' || typeof target.skill !== 'string')
           throw new BadRequestException('Mục ôn không hợp lệ.');
         const [category, direction] = target.skill.split(':');

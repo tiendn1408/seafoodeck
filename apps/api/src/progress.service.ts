@@ -10,6 +10,8 @@ import type { ReviewRow } from './progress-review';
 
 /** Name kinds that make up an item's content fingerprint (same as the submit log). */
 export const FINGERPRINT_KINDS = ['vi', 'en', 'ja', 'scientific'];
+/** Safety bound on due rows tried when building one server-chosen review session. */
+export const REVIEW_CANDIDATES = 100;
 /** Item id of a target: listening targets carry a `/listening/<kind>` suffix. */
 export const itemOf = (targetId: string) => targetId.split('/listening/')[0];
 /** Progress rows are written only for account students. */
