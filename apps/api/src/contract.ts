@@ -177,7 +177,8 @@ export class MeResponse {
   @ApiProperty() role!: string;
   @ApiProperty() mustChangePassword!: boolean;
 }
-export class PasswordChangedResponse {
+/** The rotated session after a password change (same fields as /auth/me) plus `changed`. */
+export class PasswordChangedResponse extends AuthMeResponse {
   @ApiProperty() changed!: boolean;
 }
 export class CreatedUserResponse {
@@ -279,4 +280,51 @@ export class MeProgressResponse {
 export class MeMasteryEntryResponse {
   @ApiProperty({ enum: ['new', 'due', 'learning'] }) status!: 'new' | 'due' | 'learning';
   @ApiProperty({ enum: [0, 1, 2, 3, 4] }) level!: 0 | 1 | 2 | 3 | 4;
+}
+export class AdminUserRowResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() username!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() role!: string;
+  @ApiProperty() disabled!: boolean;
+  @ApiProperty() mustChangePassword!: boolean;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty({ nullable: true, type: String }) lastLoginAt!: string | null;
+}
+export class AdminUserPageResponse {
+  @ApiProperty({ type: [AdminUserRowResponse] }) items!: AdminUserRowResponse[];
+  @ApiProperty() total!: number;
+  @ApiProperty() page!: number;
+  @ApiProperty() limit!: number;
+}
+export class TemporaryPasswordResponse {
+  @ApiProperty({ description: 'Shown once; never stored or logged in clear.' })
+  temporaryPassword!: string;
+}
+export class DeletedUserResponse {
+  @ApiProperty() deleted!: boolean;
+}
+export class BulkUserResultRowResponse {
+  @ApiProperty({ description: '1-based position in the submitted rows.' }) line!: number;
+  @ApiProperty() username!: string;
+  @ApiProperty({ enum: ['created', 'duplicate', 'invalid'] })
+  status!: 'created' | 'duplicate' | 'invalid';
+  @ApiProperty({
+    required: false,
+    description:
+      'Why the row was not created. `invalid` also covers a transient server error on that row (retry it) and an expired session.',
+  })
+  message?: string;
+  @ApiProperty({
+    required: false,
+    description: 'Only for a generated password on a real run; shown once, never stored in clear.',
+  })
+  temporaryPassword?: string;
+}
+export class BulkCreateUsersResponse {
+  @ApiProperty() dryRun!: boolean;
+  @ApiProperty() created!: number;
+  @ApiProperty({ description: 'Rows with status duplicate.' }) skipped!: number;
+  @ApiProperty({ description: 'Rows with status invalid.' }) failed!: number;
+  @ApiProperty({ type: [BulkUserResultRowResponse] }) rows!: BulkUserResultRowResponse[];
 }

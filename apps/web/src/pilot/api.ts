@@ -189,6 +189,23 @@ export interface Reveal {
   source: string;
   audioAssetId: string | null;
 }
+/** One row of GET /admin/users (admin only). */
+export interface AdminUserRow {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: string;
+  disabled: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+export interface AdminUserPage {
+  items: AdminUserRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -215,7 +232,7 @@ export async function api<T>(
   path: string,
   body?: unknown,
   signal?: AbortSignal,
-  method?: 'POST' | 'PATCH',
+  method?: 'POST' | 'PATCH' | 'DELETE',
 ): Promise<T> {
   let response: Response;
   try {

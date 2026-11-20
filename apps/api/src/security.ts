@@ -8,7 +8,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scrypt, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { Request, Response } from 'express';
 import type { AuthSession } from './generated/prisma/client';
 import { Db } from './db';
@@ -18,6 +18,15 @@ export const opaque = () => randomBytes(32).toString('base64url');
 export function passwordHash(password: string) {
   const salt = opaque();
   return `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
+}
+/** Same format as passwordHash, computed on the libuv pool so long batches do not block requests. */
+export function passwordHashAsync(password: string): Promise<string> {
+  const salt = opaque();
+  return new Promise((resolve, reject) =>
+    scrypt(password, salt, 64, (error, key) =>
+      error ? reject(error) : resolve(`${salt}:${key.toString('hex')}`),
+    ),
+  );
 }
 export function passwordMatches(password: string, saved: string) {
   const [salt, digest] = saved.split(':');
@@ -45,37 +54,80 @@ export function revokeUserSessions(
 }
 export type ActorRequest = Request & { actor: AuthSession };
 const cookie = 'seafoodeck_session';
+/** One wording for expired, missing and locked sessions alike, so a lock is never revealed. */
+export const SESSION_EXPIRED = 'Phiên hết hạn. Vui lòng nhập lại mã mời.';
+const ttlMs = () => Number(process.env.AUTH_TTL_HOURS ?? 24) * 3600000;
+type AccountState = { disabledAt: Date | null; mustChangePassword: boolean } | null;
+const accountCache = Symbol('seafoodeck.account');
+type CachedRequest = Request & {
+  [accountCache]?: { userId: string; state: Promise<AccountState> };
+};
+/**
+ * The account fields every request needs (lock and forced password change), read once per request
+ * and shared by MustChangePasswordGuard and Auth.actor through a Symbol slot on the request object,
+ * so it dies with the request. Callers only reach this for sessions that carry a userId.
+ */
+function accountState(db: Pick<Db, 'user'>, req: Request, userId: string) {
+  const r = req as CachedRequest;
+  const hit = r[accountCache];
+  if (hit && hit.userId === userId) return hit.state;
+  const state = db.user.findUnique({
+    where: { id: userId },
+    select: { disabledAt: true, mustChangePassword: true },
+  });
+  r[accountCache] = { userId, state };
+  return state;
+}
+/** Locked or deleted account: drop the leftover session row and answer like an expired session. */
+async function dropSession(db: Pick<Db, 'authSession'>, sessionId: string) {
+  await db.authSession.deleteMany({ where: { id: sessionId } });
+}
+/** A new session's token and row data (fresh CSRF); persist `data`, then `Auth.setCookie(token)`. */
+export function sessionDraft(role: string, internal: boolean, userId?: string) {
+  const token = opaque();
+  return {
+    token,
+    data: {
+      id: hash(token),
+      role,
+      internal,
+      userId,
+      csrf: opaque(),
+      expiresAt: new Date(Date.now() + ttlMs()),
+    },
+  };
+}
 @Injectable()
 export class Auth {
   constructor(private db: Db) {}
   async actor(req: Request, res?: Response) {
     const token = req.cookies?.[cookie];
     const row = token && (await this.db.authSession.findUnique({ where: { id: hash(token) } }));
-    if (row && row.expiresAt.getTime() > Date.now())
-      return { ...row, internal: row.internal && process.env.ALLOW_INTERNAL_DEMO === 'true' };
-    if (!res) throw new UnauthorizedException('Phiên hết hạn. Vui lòng nhập lại mã mời.');
+    if (row && row.expiresAt.getTime() > Date.now()) {
+      // Account sessions only: invite learners and guests never cost a user lookup.
+      const account = row.userId && (await accountState(this.db, req, row.userId));
+      const locked = !!row.userId && (!account || !!account.disabledAt);
+      if (!locked)
+        return { ...row, internal: row.internal && process.env.ALLOW_INTERNAL_DEMO === 'true' };
+      await dropSession(this.db, row.id);
+    }
+    if (!res) throw new UnauthorizedException(SESSION_EXPIRED);
     return this.create(res, 'guest', false);
   }
   async create(res: Response, role: string, internal: boolean, userId?: string) {
-    const token = opaque();
-    const row = await this.db.authSession.create({
-      data: {
-        id: hash(token),
-        role,
-        internal,
-        userId,
-        csrf: opaque(),
-        expiresAt: new Date(Date.now() + Number(process.env.AUTH_TTL_HOURS ?? 24) * 3600000),
-      },
-    });
+    const { token, data } = sessionDraft(role, internal, userId);
+    const row = await this.db.authSession.create({ data });
+    this.setCookie(res, token);
+    return row;
+  }
+  setCookie(res: Response, token: string) {
     res.cookie(cookie, token, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE !== 'false',
       sameSite: 'strict',
       path: '/',
-      maxAge: Number(process.env.AUTH_TTL_HOURS ?? 24) * 3600000,
+      maxAge: ttlMs(),
     });
-    return row;
   }
   checkWrite(req: Request, actor: AuthSession) {
     if (req.headers['x-csrf-token'] !== actor.csrf)
@@ -193,9 +245,10 @@ export class LoginLimiter {
 export const AllowWhilePasswordChange = () => SetMetadata('allowWhilePasswordChange', true);
 /**
  * Global guard. Runs before controller guards, so it resolves the session cookie itself and
- * reads the flag fresh from the user row (never cached on the session, so clearing it takes
- * effect on the very next request). Invite-code learners, guests and unauthenticated requests
- * have no userId and are untouched.
+ * reads the flags fresh from the user row (never cached on the session, so clearing or locking
+ * takes effect on the very next request; the row is shared with Auth.actor for this request
+ * only). A locked or deleted account gets the expired-session 401 and loses the session row.
+ * Invite-code learners, guests and unauthenticated requests have no userId and are untouched.
  */
 @Injectable()
 export class MustChangePasswordGuard implements CanActivate {
@@ -211,18 +264,20 @@ export class MustChangePasswordGuard implements CanActivate {
       ])
     )
       return true;
-    const token = ctx.switchToHttp().getRequest<Request>().cookies?.[cookie];
+    const req = ctx.switchToHttp().getRequest<Request>();
+    const token = req.cookies?.[cookie];
     if (!token) return true;
     const session = await this.db.authSession.findUnique({
       where: { id: hash(token) },
-      select: { userId: true, expiresAt: true },
+      select: { id: true, userId: true, expiresAt: true },
     });
     if (!session?.userId || session.expiresAt.getTime() <= Date.now()) return true;
-    const user = await this.db.user.findUnique({
-      where: { id: session.userId },
-      select: { mustChangePassword: true },
-    });
-    if (user?.mustChangePassword)
+    const user = await accountState(this.db, req, session.userId);
+    if (!user || user.disabledAt) {
+      await dropSession(this.db, session.id);
+      throw new UnauthorizedException(SESSION_EXPIRED);
+    }
+    if (user.mustChangePassword)
       throw new ForbiddenException({
         message: 'Cần đổi mật khẩu trước.',
         code: 'MUST_CHANGE_PASSWORD',

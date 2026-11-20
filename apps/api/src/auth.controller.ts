@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { Auth, LoginLimiter, passwordCheck, hash, AllowWhilePasswordChange } from './security';
 import { AuthMeResponse } from './contract';
 import { Db } from './db';
+import { findUserByUsername } from './users';
 import type { AuthSession } from './generated/prisma/client';
 class LoginDto {
   @ApiProperty() @IsString() @MaxLength(150) credential!: string;
@@ -51,7 +52,7 @@ export class AuthController {
     let role = 'learner',
       userId: string | undefined;
     if (data.username) {
-      const user = await this.db.user.findUnique({ where: { username: data.username } });
+      const user = await findUserByUsername(this.db, data.username);
       // Disabled accounts share the wrong-password response and its scrypt cost.
       if (!passwordCheck(data.credential, user?.passwordHash) || !user || user.disabledAt)
         return reject('Thông tin đăng nhập không hợp lệ.');

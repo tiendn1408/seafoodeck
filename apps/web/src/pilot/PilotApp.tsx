@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, setAuthRequiredHandler, setCsrf, type AuthView, type Game, type MeHome } from './api';
 import { stopAudio } from './Media';
 import { Admin } from './Admin';
+import { UsersAdmin } from './UsersAdmin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
@@ -217,7 +218,8 @@ export default function PilotApp() {
     refreshed.current = game.id;
     refreshProgress();
   }, [game]);
-  const staff = kind === 'staff';
+  // Admins are staff-like everywhere (content area, no /me/*) and also manage accounts.
+  const staff = kind === 'staff' || kind === 'admin';
   // True while logout waits for self-ratings still being saved in the background.
   const [saving, setSaving] = useState(false);
   const leaving = useRef(false);
@@ -380,7 +382,8 @@ export default function PilotApp() {
                 onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}
               />
             )}
-            {route === 'admin' && staff && <Admin />}
+            {route === 'admin' && staff && <Admin usersTab={kind === 'admin'} />}
+            {route === 'admin/users' && kind === 'admin' && <UsersAdmin selfId={auth.userId} />}
           </>
         )}
       </div>

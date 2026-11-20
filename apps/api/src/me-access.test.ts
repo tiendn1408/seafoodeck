@@ -12,17 +12,18 @@ import {
   LoginLimiter,
   MustChangePasswordGuard,
   AdminOnlyGuard,
+  AccessGuard,
+  Auth,
   passwordMinFor,
   passwordHash,
   passwordMatches,
-  type Auth,
   type ActorRequest,
 } from './security';
 import type { Request, Response } from 'express';
 import { MeController, MeProgressController } from './me.controller';
 import type { ProgressService } from './progress.service';
 import { AuthController } from './auth.controller';
-import { UserDto } from './admin-extra.controller';
+import { UserDto, AdminExtraController } from './admin-extra.controller';
 import { CatalogController } from './controllers';
 import type { Db } from './db';
 
@@ -115,8 +116,8 @@ test('LoginLimiter: a blocked check does not count; succeed refunds the IP and c
 
 const slowLogin = (user: Record<string, unknown> | null, limiter: LoginLimiter) => {
   const { db } = accountDb(user);
-  const find = db.user.findUnique;
-  (db.user as { findUnique: unknown }).findUnique = async (a: unknown) => {
+  const find = db.user.findFirst;
+  (db.user as { findFirst: unknown }).findFirst = async (a: unknown) => {
     await new Promise((r) => setImmediate(r));
     return find(a as never);
   };
@@ -280,19 +281,41 @@ const accountDb = (user: Record<string, unknown> | null) => {
     (op: string, result: unknown = {}) =>
     async (args: Record<string, unknown>) => {
       calls.push({ op, args });
-      return typeof result === 'function' ? (result as () => unknown)() : result;
+      return typeof result === 'function' ? (result as (a: unknown) => unknown)(args) : result;
     };
   const db = {
-    user: { findUnique: rec('user.findUnique', () => user), update: rec('user.update') },
-    authSession: { deleteMany: rec('authSession.deleteMany'), delete: rec('authSession.delete') },
+    user: {
+      findUnique: rec('user.findUnique', () => user),
+      // Mimics a case-insensitive `equals` match when the fake row has a username.
+      findFirst: rec('user.findFirst', (args?: unknown) => {
+        const want = (args as { where?: { username?: { equals?: string } } } | undefined)?.where
+          ?.username?.equals;
+        const have = user?.username;
+        if (typeof want === 'string' && typeof have === 'string')
+          return want.toLowerCase() === have.toLowerCase() ? user : null;
+        return user;
+      }),
+      update: rec('user.update'),
+      create: rec('user.create', (args?: unknown) => {
+        if (user?.createError) throw user.createError;
+        return { id: 'new-id', ...(args as { data: object }).data };
+      }),
+    },
+    authSession: {
+      deleteMany: rec('authSession.deleteMany'),
+      delete: rec('authSession.delete'),
+      create: rec('authSession.create', (args?: unknown) => (args as { data: object }).data),
+    },
     audit: { create: rec('audit.create') },
     $transaction: async (fn: (tx: unknown) => unknown) => fn(db),
   };
   return { db: db as unknown as Db, calls };
 };
+const meCtrl = (db: Db, limiter: LoginLimiter) => new MeController(db, limiter, new Auth(db));
+const noCookies = { cookie: () => undefined } as unknown as Response;
 const accountReq = (userId = 'u1') =>
   ({
-    actor: { id: 'current-sid', role: 'student', userId },
+    actor: { id: 'current-sid', role: 'student', internal: false, userId },
     ip: '10.0.0.1',
   }) as unknown as ActorRequest;
 const httpStatus = async (p: Promise<unknown>) =>
@@ -308,40 +331,48 @@ test('POST /me/password verifies current, enforces role minimum and rejects unch
     passwordHash: scrypt('temp-pass'),
     disabledAt: null,
   };
-  const me = () => new MeController(accountDb(student).db, new LoginLimiter());
-  assert.equal(
-    await httpStatus(me().password(accountReq(), { current: 'wrong-pass', next: 'brand-new1' })),
-    400,
-  );
-  assert.equal(
-    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'temp-pass' })),
-    400,
-  );
-  assert.equal(
-    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'short12' })),
-    400,
-  );
-  assert.equal(
-    await httpStatus(me().password(accountReq(), { current: 'temp-pass', next: 'eightch8' })),
-    200,
-  );
-  const manager = { ...student, role: 'manager' };
-  const asManager = () => new MeController(accountDb(manager).db, new LoginLimiter());
+  const me = () => meCtrl(accountDb(student).db, new LoginLimiter());
   assert.equal(
     await httpStatus(
-      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(15) }),
+      me().password(accountReq(), { current: 'wrong-pass', next: 'brand-new1' }, noCookies),
     ),
     400,
   );
   assert.equal(
     await httpStatus(
-      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(16) }),
+      me().password(accountReq(), { current: 'temp-pass', next: 'temp-pass' }, noCookies),
+    ),
+    400,
+  );
+  assert.equal(
+    await httpStatus(
+      me().password(accountReq(), { current: 'temp-pass', next: 'short12' }, noCookies),
+    ),
+    400,
+  );
+  assert.equal(
+    await httpStatus(
+      me().password(accountReq(), { current: 'temp-pass', next: 'eightch8' }, noCookies),
+    ),
+    200,
+  );
+  const manager = { ...student, role: 'manager' };
+  const asManager = () => meCtrl(accountDb(manager).db, new LoginLimiter());
+  assert.equal(
+    await httpStatus(
+      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(15) }, noCookies),
+    ),
+    400,
+  );
+  assert.equal(
+    await httpStatus(
+      asManager().password(accountReq(), { current: 'temp-pass', next: 'x'.repeat(16) }, noCookies),
     ),
     200,
   );
 });
 
-test('POST /me/password clears the flag, keeps this session, revokes others, audits no secret', async () => {
+test('POST /me/password clears the flag, rotates this session, revokes the rest, audits no secret', async () => {
   const user = {
     id: 'u1',
     role: 'student',
@@ -350,10 +381,11 @@ test('POST /me/password clears the flag, keeps this session, revokes others, aud
     mustChangePassword: true,
   };
   const { db, calls } = accountDb(user);
-  await new MeController(db, new LoginLimiter()).password(accountReq(), {
-    current: 'temp-pass',
-    next: 'my-new-secret',
-  });
+  const body = await meCtrl(db, new LoginLimiter()).password(
+    accountReq(),
+    { current: 'temp-pass', next: 'my-new-secret' },
+    noCookies,
+  );
   const update = calls.find((c) => c.op === 'user.update')!.args as {
     where: { id: string };
     data: { passwordHash: string; mustChangePassword: boolean };
@@ -361,34 +393,45 @@ test('POST /me/password clears the flag, keeps this session, revokes others, aud
   assert.equal(update.where.id, 'u1');
   assert.equal(update.data.mustChangePassword, false);
   assert.ok(passwordMatches('my-new-secret', update.data.passwordHash));
+  const created = calls.find((c) => c.op === 'authSession.create')!.args as {
+    data: { id: string; csrf: string };
+  };
+  assert.notEqual(created.data.id, 'current-sid');
   assert.deepEqual(calls.find((c) => c.op === 'authSession.deleteMany')!.args, {
-    where: { userId: 'u1', id: { not: 'current-sid' } },
+    where: { userId: 'u1', id: { not: created.data.id } },
   });
+  assert.equal((body as { csrf: string }).csrf, created.data.csrf);
   const audit = JSON.stringify(calls.find((c) => c.op === 'audit.create')!.args);
   assert.match(audit, /user\.password_change/);
   for (const secret of ['temp-pass', 'my-new-secret', update.data.passwordHash])
     assert.equal(audit.includes(secret), false);
+  assert.equal(audit.includes(created.data.csrf), false);
+  assert.equal(JSON.stringify(body).includes(update.data.passwordHash), false);
 });
 
 test('POST /me/password blocks the 11th current-password check per user', async () => {
   const user = { id: 'u1', role: 'student', passwordHash: scrypt('temp-pass'), disabledAt: null };
-  const me = new MeController(accountDb(user).db, new LoginLimiter());
+  const me = meCtrl(accountDb(user).db, new LoginLimiter());
   for (let i = 0; i < 10; i++)
     assert.equal(
-      await httpStatus(me.password(accountReq(), { current: `wrong${i}`, next: 'brand-new1' })),
+      await httpStatus(
+        me.password(accountReq(), { current: `wrong${i}`, next: 'brand-new1' }, noCookies),
+      ),
       400,
     );
   assert.equal(
-    await httpStatus(me.password(accountReq(), { current: 'temp-pass', next: 'brand-new1' })),
+    await httpStatus(
+      me.password(accountReq(), { current: 'temp-pass', next: 'brand-new1' }, noCookies),
+    ),
     429,
   );
-  const other = new MeController(
+  const other = meCtrl(
     accountDb({ ...user, id: 'u2' }).db,
     (me as unknown as { limiter: LoginLimiter }).limiter,
   );
   assert.equal(
     await httpStatus(
-      other.password(accountReq('u2'), { current: 'temp-pass', next: 'brand-new1' }),
+      other.password(accountReq('u2'), { current: 'temp-pass', next: 'brand-new1' }, noCookies),
     ),
     200,
   );
@@ -542,4 +585,381 @@ test('login returns the same profile fields as GET /auth/me; invite login stays 
     if (prev === undefined) delete process.env.LEARNER_INVITE_CODE;
     else process.env.LEARNER_INVITE_CODE = prev;
   }
+});
+
+test('login matches the username case-insensitively and keeps stored case', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    username: 'An',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const { db, calls } = accountDb(user);
+  const ctrl = new AuthController(fakeAuth(), db, new LoginLimiter());
+  await ctrl.login({ username: 'aN', credential: 'correct-horse-16ch' }, loginReq, {} as Response);
+  assert.deepEqual(calls.find((c) => c.op === 'user.findFirst')!.args, {
+    where: { username: { equals: 'aN', mode: 'insensitive' } },
+  });
+  assert.equal(calls.filter((c) => c.op === 'user.update').length, 1);
+});
+
+test('login limiter budget is shared between An and aN', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    username: 'An',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const limiter = new LoginLimiter();
+  const { db } = accountDb(user);
+  const ctrl = new AuthController(fakeAuth(), db, limiter);
+  const go = (username: string, credential: string) =>
+    httpStatus(ctrl.login({ username, credential }, loginReq, {} as Response));
+  for (let i = 0; i < 10; i++) assert.equal(await go(i % 2 ? 'An' : 'aN', 'wrong'), 401);
+  assert.equal(await go('AN', 'correct-horse-16ch'), 429);
+});
+
+test('POST /admin/users rejects a case-insensitive duplicate with 409 and a Vietnamese message', async () => {
+  const dto = { username: 'an', password: '12345678', role: 'student' } as UserDto;
+  const adminReq = { actor: { role: 'admin', userId: 'admin1' } } as unknown as ActorRequest;
+  const existing = { id: 'u1', username: 'An' };
+  const { db, calls } = accountDb(existing);
+  await assert.rejects(new AdminExtraController(db).user(adminReq, dto), (e: HttpException) => {
+    assert.equal(e.getStatus(), 409);
+    assert.equal((e.getResponse() as { message: string }).message, 'Tên đăng nhập đã tồn tại.');
+    return true;
+  });
+  assert.equal(
+    calls.some((c) => c.op === 'user.create'),
+    false,
+  );
+  // Unique-index race: the DB raises P2002 after the lookup saw nothing.
+  const race = accountDb(null);
+  (race.db.user as { create: unknown }).create = async () => {
+    throw Object.assign(new Error('unique'), { code: 'P2002' });
+  };
+  assert.equal(await httpStatus(new AdminExtraController(race.db).user(adminReq, dto)), 409);
+  // Stored with the typed case when free.
+  const free = accountDb(null);
+  const made = await new AdminExtraController(free.db).user(adminReq, { ...dto, username: 'Lan' });
+  assert.equal(made.username, 'Lan');
+});
+
+// ---- Locked accounts and session rotation (2.5c task 2) --------------------------------------
+type Row = Record<string, unknown> & { id: string };
+/** In-memory sessions + users, counting user lookups and noting writes made inside a transaction. */
+const memoryDb = (users: Row[]) => {
+  const sessions = new Map<string, Row>();
+  const userRows = new Map(users.map((u) => [u.id, { ...u }]));
+  const log = { userFinds: 0, writes: [] as { op: string; inTx: boolean }[] };
+  const pick = (row: Row | undefined, select?: Record<string, boolean>) =>
+    !row ? null : select ? Object.fromEntries(Object.keys(select).map((k) => [k, row[k]])) : row;
+  const build = (inTx: boolean) => ({
+    authSession: {
+      findUnique: async (a: { where: { id: string }; select?: Record<string, boolean> }) =>
+        pick(sessions.get(a.where.id), a.select),
+      create: async (a: { data: Row }) => {
+        log.writes.push({ op: 'authSession.create', inTx });
+        sessions.set(a.data.id, { ...a.data, userId: a.data.userId ?? null });
+        return sessions.get(a.data.id);
+      },
+      delete: async (a: { where: { id: string } }) => {
+        log.writes.push({ op: 'authSession.delete', inTx });
+        sessions.delete(a.where.id);
+        return {};
+      },
+      deleteMany: async (a: { where: { id?: string | { not: string }; userId?: string } }) => {
+        log.writes.push({ op: 'authSession.deleteMany', inTx });
+        let count = 0;
+        for (const [id, s] of sessions) {
+          const w = a.where;
+          if (w.userId !== undefined && s.userId !== w.userId) continue;
+          if (typeof w.id === 'string' && id !== w.id) continue;
+          if (typeof w.id === 'object' && id === w.id.not) continue;
+          sessions.delete(id);
+          count++;
+        }
+        return { count };
+      },
+    },
+    user: {
+      findUnique: async (a: { where: { id: string }; select?: Record<string, boolean> }) => {
+        log.userFinds++;
+        return pick(userRows.get(a.where.id), a.select);
+      },
+      update: async (a: { where: { id: string }; data: object }) => {
+        log.writes.push({ op: 'user.update', inTx });
+        const next = { ...userRows.get(a.where.id)!, ...a.data } as Row;
+        userRows.set(a.where.id, next);
+        return next;
+      },
+    },
+    audit: {
+      create: async (a: object) => {
+        log.writes.push({ op: 'audit.create', inTx });
+        return a;
+      },
+    },
+  });
+  const db = {
+    ...build(false),
+    $transaction: async (fn: (tx: unknown) => unknown) => fn(build(true)),
+  };
+  return { db: db as unknown as Db, sessions, userRows, log };
+};
+/** Minimal express Response that records the session cookie it is given. */
+const cookieJar = () => {
+  const jar = { token: undefined as string | undefined };
+  const res = {
+    cookie: (name: string, value: string) => {
+      if (name === 'seafoodeck_session') jar.token = value;
+    },
+  } as unknown as Response;
+  return { jar, res };
+};
+const cookieReq = (token: string | undefined, method = 'GET', csrf?: string) =>
+  ({
+    method,
+    cookies: token ? { seafoodeck_session: token } : {},
+    headers: csrf ? { 'x-csrf-token': csrf } : {},
+    ip: '10.0.0.9',
+  }) as unknown as ActorRequest;
+const httpCtx = (r: ActorRequest, handler: (...args: never[]) => unknown, cls: object) =>
+  ({
+    switchToHttp: () => ({ getRequest: () => r }),
+    getHandler: () => handler,
+    getClass: () => cls,
+  }) as unknown as ExecutionContext;
+/** Runs the global guard then AccessGuard on one request, like Nest does for a controller route. */
+const throughGuards = async (
+  db: Db,
+  r: ActorRequest,
+  handler: (...args: never[]) => unknown,
+  cls: object,
+) => {
+  const auth = new Auth(db);
+  const ctx = httpCtx(r, handler, cls);
+  try {
+    await new MustChangePasswordGuard(db, new Reflector()).canActivate(ctx);
+    await new AccessGuard(auth).canActivate(ctx);
+    return { status: 200, message: '' };
+  } catch (e) {
+    const body = (e as HttpException).getResponse() as { message: string };
+    return { status: (e as HttpException).getStatus(), message: body.message };
+  }
+};
+const signIn = async (db: Db, role: string, userId?: string) => {
+  const { jar, res } = cookieJar();
+  const row = await new Auth(db).create(res, role, false, userId);
+  return { token: jar.token!, row };
+};
+const an = (extra: Record<string, unknown> = {}): Row => ({
+  id: 'u1',
+  username: 'An',
+  role: 'student',
+  displayName: 'An',
+  passwordHash: scrypt('temp-pass'),
+  disabledAt: null,
+  mustChangePassword: false,
+  ...extra,
+});
+const expiredMessage = 'Phiên hết hạn. Vui lòng nhập lại mã mời.';
+
+test('locked user: GET /catalog/overview is 401 with the expired-session message and the session row is deleted', async () => {
+  const mem = memoryDb([an({ disabledAt: new Date() })]);
+  const { token, row } = await signIn(mem.db, 'student', 'u1');
+  const r = await throughGuards(
+    mem.db,
+    cookieReq(token),
+    CatalogController.prototype.overview,
+    CatalogController,
+  );
+  assert.deepEqual(r, { status: 401, message: expiredMessage });
+  assert.equal(mem.sessions.has(row.id), false);
+  // The same lock with the mustChangePassword flag set still answers 401, never the 403 code.
+  const flagged = memoryDb([an({ disabledAt: new Date(), mustChangePassword: true })]);
+  const second = await signIn(flagged.db, 'student', 'u1');
+  assert.deepEqual(
+    await throughGuards(
+      flagged.db,
+      cookieReq(second.token),
+      CatalogController.prototype.overview,
+      CatalogController,
+    ),
+    { status: 401, message: expiredMessage },
+  );
+  assert.equal(flagged.sessions.has(second.row.id), false);
+});
+
+test('locked user: routes allowed during a password change and Auth.actor alone also reject', async () => {
+  for (const [handler, cls] of [
+    [MeController.prototype.get, MeController],
+    [MeController.prototype.password, MeController],
+  ] as const) {
+    const mem = memoryDb([an({ disabledAt: new Date() })]);
+    const { token, row } = await signIn(mem.db, 'student', 'u1');
+    const method = handler === MeController.prototype.password ? 'POST' : 'GET';
+    assert.deepEqual(
+      await throughGuards(mem.db, cookieReq(token, method, row.csrf), handler, cls),
+      {
+        status: 401,
+        message: expiredMessage,
+      },
+    );
+    assert.equal(mem.sessions.has(row.id), false);
+  }
+  // Auth.actor without the guard in front (POST /auth/logout, /auth/login): 401 and deleted.
+  const mem = memoryDb([an({ disabledAt: new Date() })]);
+  const { token, row } = await signIn(mem.db, 'student', 'u1');
+  await assert.rejects(new Auth(mem.db).actor(cookieReq(token)), (e: HttpException) => {
+    assert.equal(e.getStatus(), 401);
+    assert.equal((e.getResponse() as { message: string }).message, expiredMessage);
+    return true;
+  });
+  assert.equal(mem.sessions.has(row.id), false);
+  // GET /auth/me (actor with res) treats the locked session exactly like an expired one: a fresh
+  // guest session, not the account.
+  const boot = memoryDb([an({ disabledAt: new Date() })]);
+  const locked = await signIn(boot.db, 'student', 'u1');
+  const { jar, res } = cookieJar();
+  const guest = await new Auth(boot.db).actor(cookieReq(locked.token), res);
+  assert.equal(guest.role, 'guest');
+  assert.equal(guest.userId ?? null, null);
+  assert.notEqual(jar.token, locked.token);
+  assert.equal(boot.sessions.has(locked.row.id), false);
+  // A session whose user row no longer exists is rejected the same way.
+  const gone = memoryDb([]);
+  const orphan = await signIn(gone.db, 'student', 'ghost');
+  await assert.rejects(new Auth(gone.db).actor(cookieReq(orphan.token)), (e: HttpException) => {
+    assert.equal(e.getStatus(), 401);
+    return true;
+  });
+  assert.equal(gone.sessions.has(orphan.row.id), false);
+});
+
+test('MustChangePasswordGuard and Auth.actor share one user lookup per request, never across requests', async () => {
+  const mem = memoryDb([an()]);
+  const { token } = await signIn(mem.db, 'student', 'u1');
+  const first = await throughGuards(
+    mem.db,
+    cookieReq(token),
+    CatalogController.prototype.overview,
+    CatalogController,
+  );
+  assert.equal(first.status, 200);
+  assert.equal(mem.log.userFinds, 1);
+  const second = await throughGuards(
+    mem.db,
+    cookieReq(token),
+    CatalogController.prototype.overview,
+    CatalogController,
+  );
+  assert.equal(second.status, 200);
+  assert.equal(mem.log.userFinds, 2, 'a new request looks the user up again');
+  // Allowed route: the guard skips, Auth.actor does its own single lookup.
+  await throughGuards(mem.db, cookieReq(token), MeController.prototype.get, MeController);
+  assert.equal(mem.log.userFinds, 3);
+  // A lock applied between two requests takes effect on the next one.
+  mem.userRows.set('u1', { ...mem.userRows.get('u1')!, disabledAt: new Date() });
+  assert.equal(
+    (
+      await throughGuards(
+        mem.db,
+        cookieReq(token),
+        CatalogController.prototype.overview,
+        CatalogController,
+      )
+    ).status,
+    401,
+  );
+});
+
+test('invite learner and guest sessions trigger no user lookup', async () => {
+  for (const role of ['learner', 'guest']) {
+    const mem = memoryDb([an()]);
+    const { token } = await signIn(mem.db, role);
+    const r = await throughGuards(
+      mem.db,
+      cookieReq(token),
+      CatalogController.prototype.overview,
+      CatalogController,
+    );
+    assert.equal(r.status, role === 'learner' ? 200 : 401);
+    await new Auth(mem.db).actor(cookieReq(token));
+    assert.equal(mem.log.userFinds, 0, role);
+  }
+});
+
+test('POST /me/password rotates token and CSRF, kills the old cookie and every other session, in one transaction', async () => {
+  const mem = memoryDb([an({ mustChangePassword: true }), { ...an(), id: 'u2', username: 'Binh' }]);
+  const current = await signIn(mem.db, 'student', 'u1');
+  const otherDevice = await signIn(mem.db, 'student', 'u1');
+  const someoneElse = await signIn(mem.db, 'student', 'u2');
+  const auth = new Auth(mem.db);
+  const r = cookieReq(current.token, 'POST', current.row.csrf);
+  r.actor = await auth.actor(r);
+  mem.log.writes.length = 0;
+  const { jar, res } = cookieJar();
+  const body = (await new MeController(mem.db, new LoginLimiter(), auth).password(
+    r,
+    { current: 'temp-pass', next: 'my-new-secret' },
+    res,
+  )) as Record<string, unknown>;
+  assert.ok(jar.token, 'a new cookie is set');
+  assert.notEqual(jar.token, current.token);
+  assert.notEqual(body.csrf, current.row.csrf);
+  assert.equal(body.role, 'student');
+  assert.equal(body.internal, false);
+  assert.equal(body.userId, 'u1');
+  assert.equal(body.displayName, 'An');
+  assert.equal(body.mustChangePassword, false);
+  assert.equal(body.changed, true);
+  assert.equal(typeof body.expiresAt, 'string');
+  assert.equal('passwordHash' in body, false);
+  // New session is live and carries the returned CSRF; old and other sessions are gone.
+  const fresh = await auth.actor(cookieReq(jar.token));
+  assert.equal(fresh.csrf, body.csrf);
+  assert.equal(fresh.userId, 'u1');
+  assert.equal(fresh.role, 'student');
+  await assert.rejects(auth.actor(cookieReq(current.token)), (e: HttpException) => {
+    assert.equal(e.getStatus(), 401);
+    return true;
+  });
+  assert.equal(mem.sessions.has(current.row.id), false);
+  assert.equal(mem.sessions.has(otherDevice.row.id), false);
+  assert.equal(mem.sessions.has(someoneElse.row.id), true);
+  assert.equal(mem.sessions.size, 2);
+  // Every write sits inside the transaction.
+  const ops = mem.log.writes.map((w) => w.op);
+  for (const op of ['user.update', 'authSession.create', 'authSession.deleteMany', 'audit.create'])
+    assert.ok(ops.includes(op), op);
+  assert.deepEqual(
+    mem.log.writes.filter((w) => !w.inTx),
+    [],
+  );
+  assert.equal(mem.userRows.get('u1')!.mustChangePassword, false);
+  assert.ok(passwordMatches('my-new-secret', mem.userRows.get('u1')!.passwordHash as string));
+});
+
+test('POST /me/password failure keeps the current session and sets no cookie', async () => {
+  const mem = memoryDb([an()]);
+  const current = await signIn(mem.db, 'student', 'u1');
+  const auth = new Auth(mem.db);
+  const r = cookieReq(current.token, 'POST', current.row.csrf);
+  r.actor = await auth.actor(r);
+  const { jar, res } = cookieJar();
+  assert.equal(
+    await httpStatus(
+      new MeController(mem.db, new LoginLimiter(), auth).password(
+        r,
+        { current: 'wrong-pass', next: 'my-new-secret' },
+        res,
+      ),
+    ),
+    400,
+  );
+  assert.equal(jar.token, undefined);
+  assert.equal(mem.sessions.has(current.row.id), true);
 });

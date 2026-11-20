@@ -1076,6 +1076,86 @@
         "tags": [
           "Admin"
         ]
+      },
+      "get": {
+        "operationId": "AdminUsersController_list",
+        "parameters": [
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "editor",
+                "reviewer",
+                "publisher",
+                "manager",
+                "student",
+                "admin"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Matches username or display name, ignoring case.",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserPageResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/items/by-external/{externalId}": {
@@ -1217,6 +1297,145 @@
           "Admin"
         ]
       }
+    },
+    "/api/v1/admin/users/bulk": {
+      "post": {
+        "operationId": "AdminUsersController_bulkCreate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCreateUsersDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkCreateUsersResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "patch": {
+        "operationId": "AdminUsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserRowResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminUsersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedUserResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/reset-password": {
+      "post": {
+        "operationId": "AdminUsersController_resetPassword",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemporaryPasswordResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
     }
   },
   "info": {
@@ -1339,11 +1558,40 @@
       "PasswordChangedResponse": {
         "type": "object",
         "properties": {
+          "role": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "csrf": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Account sessions only."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Account sessions only."
+          },
+          "mustChangePassword": {
+            "type": "boolean",
+            "description": "Account sessions only."
+          },
           "changed": {
             "type": "boolean"
           }
         },
         "required": [
+          "role",
+          "internal",
+          "csrf",
+          "expiresAt",
           "changed"
         ]
       },
@@ -2544,6 +2792,233 @@
         },
         "required": [
           "confirmed"
+        ]
+      },
+      "AdminUserRowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "role",
+          "disabled",
+          "mustChangePassword",
+          "createdAt",
+          "lastLoginAt"
+        ]
+      },
+      "AdminUserPageResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserRowResponse"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "BulkUserRowDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row (a failing row is `invalid`)."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "At most 80 characters after trimming, checked per row."
+          },
+          "password": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "8 to 128 characters, checked per row. Blank: the server generates one and forces a change."
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "BulkCreateUsersDto": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkUserRowDto"
+            }
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false,
+            "description": "Only check format and duplicates: nothing is created and no password returned."
+          }
+        },
+        "required": [
+          "rows"
+        ]
+      },
+      "BulkUserResultRowResponse": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "number",
+            "description": "1-based position in the submitted rows."
+          },
+          "username": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "duplicate",
+              "invalid"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Why the row was not created. `invalid` also covers a transient server error on that row (retry it) and an expired session."
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "description": "Only for a generated password on a real run; shown once, never stored in clear."
+          }
+        },
+        "required": [
+          "line",
+          "username",
+          "status"
+        ]
+      },
+      "BulkCreateUsersResponse": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "created": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Rows with status duplicate."
+          },
+          "failed": {
+            "type": "number",
+            "description": "Rows with status invalid."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkUserResultRowResponse"
+            }
+          }
+        },
+        "required": [
+          "dryRun",
+          "created",
+          "skipped",
+          "failed",
+          "rows"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 80
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "true locks the account and revokes its sessions; false unlocks it."
+          }
+        }
+      },
+      "TemporaryPasswordResponse": {
+        "type": "object",
+        "properties": {
+          "temporaryPassword": {
+            "type": "string",
+            "description": "Shown once; never stored or logged in clear."
+          }
+        },
+        "required": [
+          "temporaryPassword"
+        ]
+      },
+      "DeleteUserDto": {
+        "type": "object",
+        "properties": {
+          "confirmUsername": {
+            "type": "string",
+            "description": "Must equal the user's username (case-insensitive)."
+          }
+        },
+        "required": [
+          "confirmUsername"
+        ]
+      },
+      "DeletedUserResponse": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
         ]
       }
     }
