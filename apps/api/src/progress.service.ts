@@ -423,7 +423,7 @@ export function lastAnsweredAt(log: LogRow[]): string | undefined {
 
 /**
  * Catalog items remembered for a week or more: some active row at SRS stage >= 2 (7-day interval),
- * i.e. masteryLevel >= 3. Feeds the `solid50` badge ("50 loài ở mức nhớ ≥ 1 tuần").
+ * i.e. masteryLevel >= 3. Feeds the `solid50` badge ("50 loài lên mốc 7 ngày").
  */
 export function solidSpecies(o: OverviewData, rows: ReviewRow[]): number {
   return o.items.filter((i) => masteryLevel(rows, i.itemId) >= 3).length;

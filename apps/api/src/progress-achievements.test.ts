@@ -107,6 +107,13 @@ test('badges: earnedAt null when not reached', () => {
   );
 });
 
+test('badges: the solid50 label says what the web goal says (mốc 7 ngày)', () => {
+  const solid = badges({ species: 0, solid: 0, reviewSessions: 0, streak: 0, at: [] }).find(
+    (b) => b.id === 'solid50',
+  );
+  assert.equal(solid?.label, '50 loài lên mốc 7 ngày');
+});
+
 test('badges: reached ones carry a date', () => {
   const at = Array.from(
     { length: 12 },

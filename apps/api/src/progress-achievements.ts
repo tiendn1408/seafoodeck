@@ -116,7 +116,7 @@ const BADGES: {
 }[] = [
   { id: 'first10', label: '10 loài đầu tiên', need: 10, value: (s) => s.species, nth: true },
   { id: 'streak7', label: '7 ngày liên tiếp', need: 7, value: (s) => s.streak, nth: false },
-  { id: 'solid50', label: '50 loài ở bậc 2 trở lên', need: 50, value: (s) => s.solid, nth: false },
+  { id: 'solid50', label: '50 loài lên mốc 7 ngày', need: 50, value: (s) => s.solid, nth: false },
   { id: 'species100', label: '100 loài', need: 100, value: (s) => s.species, nth: true },
   { id: 'review10', label: '10 phiên ôn', need: 10, value: (s) => s.reviewSessions, nth: false },
 ];
