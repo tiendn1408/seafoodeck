@@ -21,6 +21,8 @@ export const ROLE_LABEL: Record<string, string> = {
 };
 const SELF_REASON = 'Không thể khóa hoặc xóa tài khoản bạn đang dùng.';
 const ONCE = 'Mật khẩu chỉ hiện lúc này. Đưa cho người dùng và yêu cầu họ đổi ngay.';
+const ONCE_SELF =
+  'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại".';
 
 /** Same alphabet as the server's temporary passwords: no 0 O o 1 l I. */
 export const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -67,6 +69,12 @@ interface Secret {
   seq: number;
   username: string;
   password: string;
+  /**
+   * The acting admin's own password: the server now answers MUST_CHANGE_PASSWORD on every
+   * guarded route, so any request would swap this screen for the forced password screen and lose
+   * the password. The list stays paused until the panel is closed.
+   */
+  self: boolean;
 }
 let secretSeq = 0;
 
@@ -88,8 +96,13 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
     // The one-time password lives only here: gone when the panel closes or the screen unmounts.
     [secret, setSecret] = useState<Secret | null>(null);
   const ids = useId();
+  const paused = !!secret?.self;
+  const unlocking = useRef(false);
+  const head = useRef<HTMLHeadingElement>(null);
+  const focusHead = useRef(false);
 
   useEffect(() => {
+    if (paused) return;
     const trimmed = query.trim();
     if (trimmed === q) return;
     const t = setTimeout(() => {
@@ -97,7 +110,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       setPage(1);
     }, SEARCH_DELAY);
     return () => clearTimeout(t);
-  }, [query, q]);
+  }, [query, q, paused]);
 
   const params = new URLSearchParams();
   if (role) params.set('role', role);
@@ -110,17 +123,34 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
   const loading = settled?.key !== key;
   const loadError = settled?.key === key ? settled.error : '';
   useEffect(() => {
+    if (paused) return;
     const ctrl = new AbortController();
+    let current = true;
     api<AdminUserPage>(path, undefined, ctrl.signal)
       .then((d) => {
+        if (!current) return;
+        // The last row of a later page went away (deleted, or locked under "active"): step back.
+        if (!d.items.length && d.total > 0 && d.page > 1) {
+          setPage(Math.ceil(d.total / d.limit));
+          return;
+        }
         setData(d);
         setSettled({ key, error: '' });
       })
       .catch((e: Error) => {
-        if (e.name !== 'AbortError') setSettled({ key, error: e.message });
+        if (current && e.name !== 'AbortError') setSettled({ key, error: e.message });
       });
-    return () => ctrl.abort();
-  }, [path, key]);
+    return () => {
+      current = false;
+      ctrl.abort();
+    };
+  }, [path, key, paused]);
+  useEffect(() => {
+    if (focusHead.current && !loading) {
+      focusHead.current = false;
+      head.current?.focus();
+    }
+  }, [data, loading]);
 
   const refresh = () => setReload((n) => n + 1);
   const open = (next: Pending) => {
@@ -128,13 +158,14 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
     setRowError('');
     setPending(next);
   };
-  async function run(work: () => Promise<void>) {
+  async function run(work: () => Promise<boolean | void>) {
     setBusy(true);
     setActionError('');
     try {
-      await work();
+      // `false` from the work skips the list refresh (own password reset: see Secret.self).
+      const again = await work();
       setPending(null);
-      refresh();
+      if (again !== false) refresh();
     } catch (e) {
       setActionError((e as Error).message);
     } finally {
@@ -142,6 +173,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
     }
   }
   async function unlock(user: AdminUserRow) {
+    if (unlocking.current) return;
+    unlocking.current = true;
+    setBusy(true);
     setRowError('');
     setNotice('');
     try {
@@ -150,6 +184,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       refresh();
     } catch (e) {
       setRowError((e as Error).message);
+    } finally {
+      unlocking.current = false;
+      setBusy(false);
     }
   }
 
@@ -161,7 +198,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       <AdminTabs current="users" />
       <header className="users-head">
         <div>
-          <h1>Người dùng</h1>
+          <h1 ref={head} tabIndex={-1}>
+            Người dùng
+          </h1>
           <p>Tạo tài khoản, khóa, đặt lại mật khẩu hoặc xóa người dùng.</p>
         </div>
         <button type="button" className="users-primary" onClick={() => open({ kind: 'create' })}>
@@ -173,13 +212,25 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
         {notice}
       </p>
 
-      {secret && <SecretPanel key={secret.seq} secret={secret} onClose={() => setSecret(null)} />}
+      {secret && (
+        <SecretPanel
+          key={secret.seq}
+          secret={secret}
+          onClose={() => {
+            const self = secret.self;
+            setSecret(null);
+            // Now the list may load again; for an own reset its 403 starts the forced flow.
+            if (self) refresh();
+          }}
+        />
+      )}
 
       <div className="users-filters">
         <label className="users-field">
           Vai trò
           <select
             value={role}
+            disabled={paused}
             onChange={(e) => {
               setRole(e.target.value);
               setPage(1);
@@ -197,6 +248,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           Trạng thái
           <select
             value={status}
+            disabled={paused}
             onChange={(e) => {
               setStatus(e.target.value);
               setPage(1);
@@ -212,6 +264,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           <input
             type="search"
             value={query}
+            disabled={paused}
             maxLength={80}
             autoCapitalize="none"
             autoCorrect="off"
@@ -286,42 +339,45 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           <span className="users-muted">Chưa đăng nhập</span>
                         )}
                       </td>
-                      <td className="users-actions">
-                        {u.disabled ? (
+                      <td>
+                        <div className="users-actions">
+                          {u.disabled ? (
+                            <button
+                              type="button"
+                              className="users-secondary"
+                              disabled={busy || paused}
+                              onClick={() => void unlock(u)}
+                            >
+                              Mở khóa<span className="users-sr"> {u.username}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="users-secondary"
+                              disabled={self}
+                              title={self ? SELF_REASON : undefined}
+                              onClick={() => open({ kind: 'lock', user: u })}
+                            >
+                              Khóa<span className="users-sr"> {u.username}</span>
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="users-secondary"
-                            onClick={() => void unlock(u)}
+                            onClick={() => open({ kind: 'reset', user: u })}
                           >
-                            Mở khóa<span className="users-sr"> {u.username}</span>
+                            Đặt lại mật khẩu<span className="users-sr"> {u.username}</span>
                           </button>
-                        ) : (
                           <button
                             type="button"
                             className="users-secondary"
                             disabled={self}
                             title={self ? SELF_REASON : undefined}
-                            onClick={() => open({ kind: 'lock', user: u })}
+                            onClick={() => open({ kind: 'delete', user: u })}
                           >
-                            Khóa<span className="users-sr"> {u.username}</span>
+                            Xóa<span className="users-sr"> {u.username}</span>
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          className="users-secondary"
-                          onClick={() => open({ kind: 'reset', user: u })}
-                        >
-                          Đặt lại mật khẩu<span className="users-sr"> {u.username}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="users-secondary"
-                          disabled={self}
-                          title={self ? SELF_REASON : undefined}
-                          onClick={() => open({ kind: 'delete', user: u })}
-                        >
-                          Xóa<span className="users-sr"> {u.username}</span>
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -333,7 +389,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
             <button
               type="button"
               className="users-secondary"
-              disabled={page <= 1 || loading}
+              disabled={page <= 1 || loading || paused}
               onClick={() => setPage((p) => p - 1)}
             >
               Trang trước
@@ -344,7 +400,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
             <button
               type="button"
               className="users-secondary"
-              disabled={page >= pages || loading}
+              disabled={page >= pages || loading || paused}
               onClick={() => setPage((p) => p + 1)}
             >
               Trang sau
@@ -364,7 +420,12 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
               await api('/admin/users', body);
               setNotice(`Đã tạo ${body.username}.`);
               if (generated)
-                setSecret({ seq: ++secretSeq, username: body.username, password: body.password });
+                setSecret({
+                  seq: ++secretSeq,
+                  username: body.username,
+                  password: body.password,
+                  self: false,
+                });
             })
           }
         />
@@ -416,12 +477,15 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                     `/admin/users/${user.id}/reset-password`,
                     {},
                   );
+                  const self = user.id === selfId;
                   setSecret({
                     seq: ++secretSeq,
                     username: user.username,
                     password: r.temporaryPassword,
+                    self,
                   });
                   setNotice(`Đã đặt lại mật khẩu cho ${user.username}.`);
+                  return !self;
                 })
               }
             >
@@ -441,6 +505,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
               setNotice('');
               await api(`/admin/users/${user.id}`, { confirmUsername }, undefined, 'DELETE');
               setNotice(`Đã xóa ${user.username}.`);
+              // The row (and the button that opened the dialog) goes away with the refresh.
+              focusHead.current = true;
             })
           }
         />
@@ -476,7 +542,7 @@ function SecretPanel({ secret, onClose }: { secret: Secret; onClose: () => void 
       <code ref={code} className="users-secret" translate="no">
         {secret.password}
       </code>
-      <p className="users-warning">{ONCE}</p>
+      <p className="users-warning">{secret.self ? ONCE_SELF : ONCE}</p>
       <div className="users-dialog-actions">
         <button type="button" className="users-secondary" onClick={() => void copy()}>
           Sao chép

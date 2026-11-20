@@ -87,6 +87,36 @@ describe('UsersAdmin list', () => {
     expect(binh.textContent).toContain('Chưa đăng nhập');
     expect(binh.textContent).not.toContain('Phải đổi mật khẩu');
     expect(rowOf(host, 'me').textContent).toContain('Quản trị');
+    // Actions sit in a wrapper, so the cell itself keeps table-cell layout.
+    expect(lan.querySelector('td > div.users-actions')?.querySelectorAll('button')).toHaveLength(3);
+  });
+
+  it('ignores a slower, older list response that arrives after a newer one', async () => {
+    let releaseOld: () => void = () => {};
+    routes['GET /admin/users?role=manager&page=1&limit=20'] = () =>
+      new Promise<Response>((r) => {
+        releaseOld = () =>
+          void r(new Response(JSON.stringify({ items: [rows[2]], total: 1, page: 1, limit: 20 })));
+      });
+    routes['GET /admin/users?role=editor&page=1&limit=20'] = () =>
+      page([row('e1', 'editor_an', { role: 'editor' })], 1);
+    const host = await screen();
+    select(host, 'Vai trò', 'manager');
+    await tick();
+    select(host, 'Vai trò', 'editor');
+    await tick();
+    expect(host.textContent).toContain('editor_an');
+    await act(async () => releaseOld());
+    await tick();
+    expect(host.textContent).toContain('editor_an');
+    expect(rowOf(host, 'u3')).toBeNull();
+  });
+
+  it('a 401 (locked or signed-out admin) shows the message with a retry', async () => {
+    routes['GET /admin/users?page=1&limit=20'] = () => json({ message: 'Cần đăng nhập lại.' }, 401);
+    const host = await screen();
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('Cần đăng nhập lại.');
+    expect(button(host, 'Thử lại')).toBeTruthy();
   });
 
   it('sends role, status, a trimmed debounced search and the page', async () => {
@@ -95,15 +125,22 @@ describe('UsersAdmin list', () => {
     await tick();
     select(host, 'Trạng thái', 'disabled');
     await tick();
-    setValue(field(host, 'Tìm'), '  la');
-    setValue(field(host, 'Tìm'), '  lan ');
-    await tick(100);
-    expect(lists()).toEqual([
-      'GET /admin/users?page=1&limit=20',
-      'GET /admin/users?role=manager&page=1&limit=20',
-      'GET /admin/users?role=manager&status=disabled&page=1&limit=20',
-    ]);
-    await tick(300);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      setValue(field(host, 'Tìm'), '  la');
+      act(() => void vi.advanceTimersByTime(200));
+      setValue(field(host, 'Tìm'), '  lan ');
+      act(() => void vi.advanceTimersByTime(299));
+      expect(lists()).toEqual([
+        'GET /admin/users?page=1&limit=20',
+        'GET /admin/users?role=manager&page=1&limit=20',
+        'GET /admin/users?role=manager&status=disabled&page=1&limit=20',
+      ]);
+      act(() => void vi.advanceTimersByTime(1));
+    } finally {
+      vi.useRealTimers();
+    }
+    await tick();
     expect(lists().at(-1)).toBe(
       'GET /admin/users?role=manager&status=disabled&q=lan&page=1&limit=20',
     );
@@ -343,6 +380,111 @@ describe('UsersAdmin row actions', () => {
     ]);
     expect(dialog()).toBeNull();
     expect(lists()).toHaveLength(2);
+  });
+
+  it('unlock ignores a second click while the first is in flight', async () => {
+    let release: () => void = () => {};
+    routes['PATCH /admin/users/u3'] = () =>
+      new Promise<Response>((r) => {
+        release = () => void r(new Response(JSON.stringify(rows[2])));
+      });
+    const host = await screen();
+    const b = button(rowOf(host, 'u3'), 'Mở khóa');
+    await click(b);
+    await click(b);
+    expect(writes()).toHaveLength(1);
+    await act(async () => release());
+    await tick();
+  });
+
+  it('after a delete, focus moves to the page heading instead of falling to the body', async () => {
+    routes['DELETE /admin/users/u2'] = () => json({ deleted: true });
+    const host = await screen();
+    const opener = button(rowOf(host, 'u2'), 'Xóa');
+    opener.focus();
+    await click(opener);
+    setValue(field(dialog()!, 'Gõ lại tên đăng nhập'), 'lan');
+    routes['GET /admin/users?page=1&limit=20'] = () => page([rows[0], rows[2]]);
+    await click(button(dialog()!, 'Xóa vĩnh viễn'));
+    await tick();
+    expect(document.activeElement).toBe(host.querySelector('h1'));
+  });
+
+  it('removing the last row of the last page steps back to the new last page', async () => {
+    routes['GET /admin/users?page=1&limit=20'] = () => page(rows, 21);
+    routes['GET /admin/users?page=2&limit=20'] = () =>
+      json({ items: [rows[1]], total: 21, page: 2, limit: 20 });
+    routes['DELETE /admin/users/u2'] = () => json({ deleted: true });
+    const host = await screen();
+    await click(button(host, 'Trang sau'));
+    await tick();
+    routes['GET /admin/users?page=2&limit=20'] = () =>
+      json({ items: [], total: 20, page: 2, limit: 20 });
+    routes['GET /admin/users?page=1&limit=20'] = () => page(rows, 20);
+    await click(button(rowOf(host, 'u2'), 'Xóa'));
+    setValue(field(dialog()!, 'Gõ lại tên đăng nhập'), 'lan');
+    await click(button(dialog()!, 'Xóa vĩnh viễn'));
+    await tick();
+    await tick();
+    expect(lists().slice(-2)).toEqual([
+      'GET /admin/users?page=2&limit=20',
+      'GET /admin/users?page=1&limit=20',
+    ]);
+    expect(host.textContent).toContain('Trang 1/1');
+    expect(host.textContent).not.toContain('Không có người dùng nào khớp bộ lọc.');
+  });
+
+  it('locking the last active row of a later page under "Đang hoạt động" steps back too', async () => {
+    routes['GET /admin/users?status=active&page=1&limit=20'] = () => page(rows.slice(0, 2), 21);
+    routes['GET /admin/users?status=active&page=2&limit=20'] = () =>
+      json({ items: [rows[1]], total: 21, page: 2, limit: 20 });
+    routes['PATCH /admin/users/u2'] = () => json(rows[1]);
+    const host = await screen();
+    select(host, 'Trạng thái', 'active');
+    await tick();
+    await click(button(host, 'Trang sau'));
+    await tick();
+    routes['GET /admin/users?status=active&page=2&limit=20'] = () =>
+      json({ items: [], total: 20, page: 2, limit: 20 });
+    routes['GET /admin/users?status=active&page=1&limit=20'] = () => page(rows.slice(0, 2), 20);
+    await click(button(rowOf(host, 'u2'), 'Khóa'));
+    await click(button(dialog()!, 'Khóa tài khoản'));
+    await tick();
+    await tick();
+    expect(lists().at(-1)).toBe('GET /admin/users?status=active&page=1&limit=20');
+    expect(host.textContent).toContain('Trang 1/1');
+  });
+
+  it('self reset: only the reset call, the list stays paused while the password shows, refresh on close', async () => {
+    routes['POST /admin/users/me/reset-password'] = () =>
+      json({ temporaryPassword: 'SelfTmp7xKq9Rz2aBcDe' });
+    const host = await screen('me');
+    const before = calls.length;
+    await click(button(rowOf(host, 'me'), 'Đặt lại mật khẩu'));
+    await click(button(dialog()!, 'Đặt lại'));
+    await tick();
+    expect(calls.slice(before).map((c) => c.key)).toEqual(['POST /admin/users/me/reset-password']);
+    const reveal = host.querySelector<HTMLElement>('.users-reveal')!;
+    expect(reveal.textContent).toContain('SelfTmp7xKq9Rz2aBcDe');
+    expect(reveal.textContent).toContain(
+      'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại".',
+    );
+    // Typing, filtering and paging are off while the own temporary password is on screen.
+    const search = field(host, 'Tìm');
+    expect(search.disabled).toBe(true);
+    setValue(search, 'abc');
+    await tick(350);
+    expect(button(host, 'Trang sau').disabled).toBe(true);
+    expect(host.querySelector<HTMLSelectElement>('.users-filters select')!.disabled).toBe(true);
+    expect(calls.slice(before).map((c) => c.key)).toEqual(['POST /admin/users/me/reset-password']);
+    expect(host.textContent).toContain('SelfTmp7xKq9Rz2aBcDe');
+    await click(button(reveal, 'Đóng'));
+    await tick();
+    expect(host.textContent).not.toContain('SelfTmp7xKq9Rz2aBcDe');
+    expect(calls.slice(before).map((c) => c.key)).toEqual([
+      'POST /admin/users/me/reset-password',
+      'GET /admin/users?page=1&limit=20',
+    ]);
   });
 
   it("disables the acting admin's own Khóa and Xóa, with a reason", async () => {

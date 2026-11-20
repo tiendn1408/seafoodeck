@@ -289,8 +289,8 @@
   height: 4px;
 }
 .users-badge[data-state='must']::before {
-  border-radius: 2px;
-  background: var(--action-lip);
+  border-radius: 1px;
+  background: var(--ice-ink);
 }
 .users-actions {
   display: flex;
@@ -478,7 +478,7 @@
   }
   .users-actions {
     justify-content: stretch;
-    padding-top: var(--space-2) !important;
+    padding-top: var(--space-2);
   }
   .users-actions > button {
     flex: 1 1 8rem;
@@ -507,4 +507,8 @@
   --ice-muted: #4c5e66;
   --ice-line: #d4e0e3;
   --ice-focus: #0b6a7c;
+}
+/* Salmon on that light grey is under 3:1, so the current tab is marked in ink there. */
+.pilot-admin .admin-tabs a[aria-current='page'] {
+  border-bottom-color: var(--ice-ink);
 }
