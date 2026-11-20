@@ -32,7 +32,7 @@ export interface CatalogOverview {
   hsCases: number;
   items: {
     revisionId: string;
-    /** Item row id (uuid): same as ledger/learning targetId. */
+    /** Item row id (uuid): same as the learning targetId. */
     itemId: string;
     vi: string;
     scientific: string;

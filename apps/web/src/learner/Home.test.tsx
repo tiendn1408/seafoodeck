@@ -153,6 +153,22 @@ describe('Home for students (/me/home)', () => {
     expect(casts).toEqual([]);
   });
 
+  it('a done cast keeps "Luyện ghép tên" disabled until the overview has a species', async () => {
+    let release: (r: Response) => void = () => {};
+    routes['GET /catalog/overview'] = () => new Promise<Response>((r) => (release = r));
+    const onStart = vi.fn(async () => {});
+    const host = await student(meHome({ haul: [], cast: { kind: 'done' } }), { onStart });
+    const practise = button(host, 'Luyện ghép tên') as HTMLButtonElement;
+    expect(practise.disabled).toBe(true);
+    await click(practise);
+    expect(onStart).not.toHaveBeenCalled();
+    await act(async () => release(new Response(JSON.stringify(overview), { status: 200 })));
+    await tick();
+    expect(practise.disabled).toBe(false);
+    await click(practise);
+    expect(onStart).toHaveBeenCalledWith('match', 'r1', 'en');
+  });
+
   it('an active session shows "Tiếp tục" that resumes the server session id', async () => {
     routes['GET /learning/sessions/s9'] = () =>
       json({ id: 's9', mode: 'flashcard', questions: [] });

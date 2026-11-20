@@ -4,7 +4,7 @@ import { api, type CatalogOverview } from '../pilot/api';
 /** For screens that do not scope anything by release: pass to `useOverview` / `onVersion`. */
 export const ignoreVersion = () => {};
 
-/** `/catalog/overview` for the current release; reports the release id so the ledger can scope. */
+/** `/catalog/overview` for the current release; reports its release id to `onVersion`. */
 export function useOverview(onVersion: (releaseId: string) => void) {
   const [overview, setOverview] = useState<CatalogOverview | null>(null),
     [error, setError] = useState(''),

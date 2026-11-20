@@ -258,7 +258,8 @@ export function Home({
               <button
                 type="button"
                 className="home-cast"
-                disabled={pending}
+                // Until the overview names a species there is nothing to practise with.
+                disabled={pending || !firstRevision}
                 onClick={() => void onStart('match', firstRevision, 'en')}
               >
                 Luyện ghép tên
