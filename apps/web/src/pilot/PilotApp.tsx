@@ -1,13 +1,5 @@
-import { useEffect, useState } from 'react';
-import {
-  api,
-  setAuthRequiredHandler,
-  setCsrf,
-  writeLocal,
-  type AuthView,
-  type Game,
-  type Score,
-} from './api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { api, setAuthRequiredHandler, setCsrf, type AuthView, type Game, type MeHome } from './api';
 import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
@@ -28,8 +20,28 @@ import { useMe } from '../learner/meStore';
 import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
-import { Study } from '../learner/study/Study';
-import { LEDGER_KEY, loadLedger, mergeScore, mergeGame, type Ledger } from '../learner/ledger';
+import { Study, type GameUpdate } from '../learner/study/Study';
+/**
+ * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
+ * and ephemeral; a student's active session always comes from `GET /me/home` instead.
+ */
+export const TRIAL_SESSION_KEY = 'seafood-deck:study-session';
+function rememberSession(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(TRIAL_SESSION_KEY, JSON.stringify(id));
+    else sessionStorage.removeItem(TRIAL_SESSION_KEY);
+  } catch {
+    // Storage blocked: a reload simply asks to start a new session.
+  }
+}
+function rememberedSession(): string | null {
+  try {
+    const id = JSON.parse(sessionStorage.getItem(TRIAL_SESSION_KEY) ?? 'null');
+    return typeof id === 'string' && id ? id : null;
+  } catch {
+    return null;
+  }
+}
 /** After a session starts or finishes, refetch the learner's /me views that are mounted. */
 function refreshProgress() {
   for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
@@ -46,13 +58,9 @@ function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
 export default function PilotApp() {
-  const [initial] = useState(loadLedger);
-  const [warning, setWarning] = useState(initial.warning);
   const [auth, setAuth] = useState<AuthView | null>(null),
     [error, setError] = useState(''),
     [route, setRoute] = useState(currentRoute),
-    [ledger, setLedger] = useState<Ledger>(initial.ledger),
-    [saved, setSaved] = useState(true),
     [mustChange, setMustChange] = useState(false);
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
@@ -90,10 +98,12 @@ export default function PilotApp() {
   useEffect(() => {
     if (!permitted) location.replace('#home');
   }, [permitted]);
-  function persist(next: Ledger) {
-    setLedger(next);
-    setWarning('');
-    setSaved(writeLocal(LEDGER_KEY, next));
+  // Only students have server-side progress; trial and staff keep the tab's session id.
+  const student = kind === 'student';
+  function opened(g: Game) {
+    setGame(g);
+    if (!student) rememberSession(g.id);
+    location.hash = 'study';
   }
   async function start(
     mode: string,
@@ -116,10 +126,8 @@ export default function PilotApp() {
         ...(reviewTargets ? { reviewTargets } : {}),
         ...(limit !== undefined ? { limit } : {}),
       });
-      setGame(next);
-      persist({ ...ledger, sessionId: next.id });
+      opened(next);
       refreshProgress();
-      location.hash = 'study';
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -130,51 +138,72 @@ export default function PilotApp() {
     setPending(true);
     setError('');
     try {
-      const restored = await api<Game>(`/learning/sessions/${sessionId}`);
-      setGame(restored);
-      persist(mergeGame(ledger, restored));
-      location.hash = 'study';
+      opened(await api<Game>(`/learning/sessions/${sessionId}`));
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setPending(false);
     }
   }
+  // A reload on #study reopens the session being studied: a student's from /me/home
+  // (activeSessionId), a trial or staff tab's from sessionStorage. Tried once per sign-in.
+  const restoreTried = useRef<string | null>(null);
+  // Bumped on logout so a restore still in flight never reopens the previous user's session.
+  const signIns = useRef(0);
+  const [restoreSettled, setRestoreSettled] = useState<string | null>(null);
+  const restoreFor = auth && auth.role !== 'guest' ? `${auth.role}:${auth.userId ?? ''}` : null;
+  const restoring =
+    restoreFor !== null &&
+    restoreSettled !== restoreFor &&
+    canStudy &&
+    (student || rememberedSession() !== null);
   useEffect(() => {
     if (
-      !auth ||
-      auth.role === 'guest' ||
+      !restoreFor ||
       forced ||
       !permitted ||
+      !canStudy ||
       route !== 'study' ||
       game ||
-      !ledger.sessionId
+      restoreTried.current === restoreFor
     )
       return;
+    restoreTried.current = restoreFor;
+    const signIn = signIns.current;
     let alive = true;
-    api<Game>(`/learning/sessions/${ledger.sessionId}`)
+    const remembered = student ? null : rememberedSession();
+    if (!student && !remembered) return;
+    (student ? api<MeHome>('/me/home').then((h) => h.activeSessionId) : Promise.resolve(remembered))
+      .then((id) => (id ? api<Game>(`/learning/sessions/${id}`) : null))
+      // Applied even if this effect was cleaned up meanwhile (it runs once per sign-in), but
+      // never over a session the learner opened in the meantime.
       .then((g) => {
-        if (alive) {
-          setGame(g);
-          const restored = mergeGame(ledger, g);
-          setLedger(restored);
-          setSaved(writeLocal(LEDGER_KEY, restored));
-        }
+        if (g && signIn === signIns.current) setGame((current) => current ?? g);
       })
       .catch((e) => {
+        if (!student) rememberSession(null);
         if (alive) setError(e.message);
-      });
+      })
+      .finally(() => setRestoreSettled(restoreFor));
     return () => {
       alive = false;
     };
-  }, [auth, forced, permitted, route, game, ledger]);
-  function record(result: Score, g: Game) {
-    persist(mergeScore(ledger, result, g));
-  }
-  function changeGame(g: Game) {
-    setGame(g);
-    if (g.questions.length > 0 && g.questions.every((q) => q.result)) refreshProgress();
-  }
+  }, [restoreFor, student, forced, permitted, canStudy, route, game]);
+  // Stable: Study's background saves apply it even after the study screen has unmounted.
+  const changeGame = useCallback<GameUpdate>((update) => setGame((g) => g && update(g)), []);
+  // A finished session (every answer confirmed by the server) refreshes the /me views once.
+  const refreshed = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !game ||
+      refreshed.current === game.id ||
+      !game.questions.length ||
+      !game.questions.every((q) => q.result && !q.result.provisional)
+    )
+      return;
+    refreshed.current = game.id;
+    refreshProgress();
+  }, [game]);
   const staff = kind === 'staff';
   function logout() {
     void api<AuthView>('/auth/logout', {})
@@ -183,7 +212,10 @@ export default function PilotApp() {
         setMustChange(false);
         setAuth(a);
         setCsrf(a.csrf);
+        signIns.current++;
+        restoreTried.current = null;
         setGame(null);
+        rememberSession(null);
         location.hash = 'home';
       })
       .catch((e) => setError(e.message));
@@ -222,10 +254,6 @@ export default function PilotApp() {
                     : 'content home-content'
         }
       >
-        {warning && <ErrorNote message={warning} />}
-        {!saved && (
-          <ErrorNote message="Trình duyệt không lưu được tiến độ. Phiên trên máy chủ vẫn hoạt động, nhưng cần giữ trang này mở." />
-        )}
         {error && <ErrorNote message={error} retry={() => location.reload()} />}
         {!auth ? (
           !error && <p role="status">Đang kết nối bộ học…</p>
@@ -297,15 +325,14 @@ export default function PilotApp() {
                 <Study
                   key={game.id}
                   game={game}
-                  ledger={ledger}
+                  userKind={student ? 'student' : kind === 'trial' ? 'trial' : 'staff'}
                   onChange={changeGame}
-                  onRecord={record}
                   onRetry={() => start('review', undefined, 'en', game.id)}
                   pending={pending}
                 />
               ) : (
                 <p className="study-status" role="status">
-                  {pending ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học.'}
+                  {pending || restoring ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học.'}
                 </p>
               ))}
             {route === 'review' && auth.userId !== undefined && (

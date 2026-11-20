@@ -71,6 +71,17 @@
 .study-count {
   font-variant-numeric: tabular-nums;
 }
+/* Self-ratings still on their way to the server: a quiet word, no spinner. */
+.study-saving,
+.haul-saving {
+  color: var(--deep-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.study-saving:empty,
+.haul-saving:empty {
+  display: none;
+}
 .study-pause {
   flex: none;
   display: inline-flex;
@@ -970,6 +981,17 @@
   font-size: var(--text-sm);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* A skipped matching question: one neutral text line, no porthole, no species link. */
+.haul-row-plain {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'names';
+  min-height: 44px;
+}
+.haul-row-plain .haul-names strong {
+  color: var(--ice-muted);
+  font-size: var(--text-md);
+  font-weight: 700;
 }
 .haul-row[data-state='missed'] .haul-note {
   color: var(--ice-muted);

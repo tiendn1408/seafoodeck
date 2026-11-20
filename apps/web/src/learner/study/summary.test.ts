@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ApiQuestion, Game, Score } from '../../pilot/api';
-import { empty, mergeGame } from '../ledger';
-import { summarizeHaul } from './summary';
+import type { ApiQuestion, Game, ProgressEntry, Score } from '../../pilot/api';
+import { summarizeHaul, withServerDays } from './summary';
 
 const AT = '2026-11-19T08:00:00.000Z';
+const DAY = 86_400_000;
 function score(extra: Partial<Score>): Score {
   return {
     answered: true,
@@ -39,7 +39,13 @@ function game(questions: ApiQuestion[], mode = 'image'): Game {
     questions,
   };
 }
-const withLedger = (g: Game) => summarizeHaul(g, mergeGame(empty, g));
+const due = (targetId: string, skill: string, days: number, stage = 0): ProgressEntry => ({
+  targetId,
+  skill,
+  stage,
+  dueAt: new Date(Date.parse(AT) + days * DAY).toISOString(),
+  level: 1,
+});
 
 describe('summarizeHaul', () => {
   it('3 correct + 1 wrong: "3 / 4 loài vào lưới", the wrong one slips the net', () => {
@@ -49,7 +55,7 @@ describe('summarizeHaul', () => {
       question('q3', { targetId: 'c', targetLabel: 'Hải sâm' }),
       question('q4', { targetId: 'd', targetLabel: 'Vẹm xanh' }),
     ]);
-    const s = withLedger(g);
+    const s = summarizeHaul(g, [due('a', 'image', 1), due('b', 'image', 1)]);
     expect(s.title).toBe('3 / 4 loài vào lưới');
     expect(s.caught.map((c) => c.label)).toEqual(['Tôm sú', 'Hải sâm', 'Vẹm xanh']);
     expect(s.missed).toHaveLength(1);
@@ -57,20 +63,41 @@ describe('summarizeHaul', () => {
     expect(s.missed[0].note).toBe('Sổng lưới · ôn lại ngày mai');
   });
 
-  it('reads "ôn lại sau X ngày" from the latest review state of the item', () => {
+  it('reads "ôn lại sau X ngày" from the progress dueAt relative to the answer', () => {
     const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' })]);
-    const ledger = mergeGame(empty, g);
-    expect(summarizeHaul(g, ledger).caught[0].note).toBe('ôn lại sau 1 ngày');
-    const key = Object.keys(ledger.reviews)[0];
-    const later = {
-      ...ledger,
-      reviews: {
-        [key]: { ...ledger.reviews[key], stage: 2, dueAt: '2026-11-26T08:00:00.000Z' },
-      },
-    };
-    const s = summarizeHaul(g, later);
+    expect(summarizeHaul(g, [due('a', 'image', 1)]).caught[0].note).toBe('ôn lại sau 1 ngày');
+    const s = summarizeHaul(g, [due('a', 'image', 7, 2)]);
     expect(s.caught[0].note).toBe('ôn lại sau 7 ngày');
     expect(s.caught[0].days).toBe(7);
+  });
+
+  it('takes the earliest dueAt among the skills of one target, rounded, at least 1 day', () => {
+    const g = game(
+      ['name:en', 'name:ja'].map((skill, i) =>
+        question(
+          'f' + i,
+          { targetId: 'cod', targetLabel: 'Cá tuyết', skill, selfRated: true },
+          { type: 'flashcard', front: 'Cá tuyết' },
+        ),
+      ),
+      'flashcard',
+    );
+    expect(
+      summarizeHaul(g, [due('cod', 'name:en', 6.6), due('cod', 'name:ja', 3.2)]).caught[0].days,
+    ).toBe(3);
+    expect(summarizeHaul(g, [due('cod', 'name:en', 0.1)]).caught[0].days).toBe(1);
+    // A progress row for a skill this session did not touch does not count.
+    expect(
+      summarizeHaul(g, [due('cod', 'name:scientific', 1), due('cod', 'name:en', 14)]).caught[0]
+        .days,
+    ).toBe(14);
+  });
+
+  it('without progress (trial) days are null and a caught entry says "Đã vào lưới"', () => {
+    const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' })]);
+    const s = summarizeHaul(g, []);
+    expect(s.caught[0].days).toBeNull();
+    expect(s.caught[0].note).toBe('Đã vào lưới');
   });
 
   it('groups the three flashcards of one species into one entry', () => {
@@ -84,7 +111,7 @@ describe('summarizeHaul', () => {
       ),
       'flashcard',
     );
-    const s = withLedger(g);
+    const s = summarizeHaul(g, []);
     expect(s.title).toBe('1 / 1 loài vào lưới');
     expect(s.caught[0]).toMatchObject({ targetId: 'cod', label: 'Cá tuyết', kind: 'species' });
   });
@@ -102,7 +129,7 @@ describe('summarizeHaul', () => {
       ],
       'flashcard',
     );
-    const s = withLedger(g);
+    const s = summarizeHaul(g, [due('cod', 'name:ja', 1)]);
     expect(s.title).toBe('0 / 1 loài vào lưới');
     expect(s.missed[0].note).toBe('Sổng lưới · ôn lại ngày mai');
   });
@@ -128,9 +155,42 @@ describe('summarizeHaul', () => {
       ],
       'match',
     );
-    const s = withLedger(g);
+    const s = summarizeHaul(g, [due('a', 'match:en', 3)]);
     expect(s.title).toBe('2 / 3 loài vào lưới');
     expect(s.missed.map((m) => m.label)).toEqual(['Mực ống']);
+    expect(s.caught.find((c) => c.targetId === 'a')?.days).toBe(3);
+  });
+
+  it('a skipped match is one neutral "Ghép tên · bỏ qua" line, not a species', () => {
+    const g = game(
+      [
+        question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }),
+        question(
+          'm',
+          {
+            targetId: 'matching',
+            targetLabel: 'Ghép tên thương mại',
+            skill: 'match:en',
+            skipped: true,
+            answered: false,
+            correct: false,
+          },
+          { type: 'match' },
+        ),
+      ],
+      'review',
+    );
+    const s = summarizeHaul(g, []);
+    expect(s.title).toBe('1 / 1 loài vào lưới');
+    expect(s.total).toBe(1);
+    expect(s.missed).toHaveLength(1);
+    expect(s.missed[0]).toMatchObject({
+      targetId: 'matching',
+      kind: 'matching',
+      label: 'Ghép tên · bỏ qua',
+      skipped: true,
+      days: null,
+    });
   });
 
   it('a skipped question is not called a miss with a review it does not have', () => {
@@ -143,7 +203,7 @@ describe('summarizeHaul', () => {
         correct: false,
       }),
     ]);
-    const s = withLedger(g);
+    const s = summarizeHaul(g, []);
     expect(s.title).toBe('0 / 1 loài vào lưới');
     expect(s.missed[0].note).toBe('Bỏ qua · không lên lịch ôn');
     expect(s.missed[0].skipped).toBe(true);
@@ -160,7 +220,7 @@ describe('summarizeHaul', () => {
       ],
       'hs',
     );
-    const s = withLedger(g);
+    const s = summarizeHaul(g, [due('case-1', 'hs', 1)]);
     expect(s.caught[0]).toMatchObject({ label: 'Tôm sú đông lạnh nguyên con', kind: 'hs' });
     expect(s.title).toBe('1 / 1 hồ sơ vào lưới');
   });
@@ -177,26 +237,37 @@ describe('summarizeHaul', () => {
       ],
       'review',
     );
-    expect(withLedger(g).title).toBe('1 / 2 mục vào lưới');
-  });
-
-  it('counts days to the effective due date when a practice cannot move the stored one', () => {
-    const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' })]);
-    const ledger = mergeGame(empty, g);
-    const key = Object.keys(ledger.reviews)[0];
-    // Stage 2 (7 days) whose stored date sits one day after this practice: the learner UI
-    // treats it as due a full interval after the practice, so the summary says 7, not 1.
-    const practised = {
-      ...ledger,
-      reviews: {
-        [key]: { ...ledger.reviews[key], stage: 2, dueAt: '2026-11-20T08:00:00.000Z' },
-      },
-    };
-    expect(summarizeHaul(g, practised).caught[0].note).toBe('ôn lại sau 7 ngày');
+    expect(summarizeHaul(g, []).title).toBe('1 / 2 mục vào lưới');
   });
 
   it('ignores questions without a result', () => {
     const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }), question('q2')]);
-    expect(withLedger(g).title).toBe('1 / 1 loài vào lưới');
+    expect(summarizeHaul(g, []).title).toBe('1 / 1 loài vào lưới');
+  });
+});
+
+describe('withServerDays', () => {
+  it('fills missing days of caught entries from the session summary, never overriding', () => {
+    const g = game([
+      question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }),
+      question('q2', { targetId: 'b', targetLabel: 'Mực ống' }),
+      question('q3', { targetId: 'c', targetLabel: 'Hải sâm', correct: false }),
+    ]);
+    const haul = summarizeHaul(g, [due('b', 'image', 3)]);
+    const filled = withServerDays(haul, {
+      total: 3,
+      caught: 2,
+      entries: [
+        { targetId: 'a', label: 'Tôm sú', correct: true, skipped: false, nextReviewInDays: 7 },
+        { targetId: 'b', label: 'Mực ống', correct: true, skipped: false, nextReviewInDays: 9 },
+        { targetId: 'c', label: 'Hải sâm', correct: false, skipped: false, nextReviewInDays: 1 },
+      ],
+    });
+    expect(filled.caught.map((c) => [c.targetId, c.days, c.note])).toEqual([
+      ['a', 7, 'ôn lại sau 7 ngày'],
+      ['b', 3, 'ôn lại sau 3 ngày'],
+    ]);
+    expect(filled.missed[0].note).toBe('Sổng lưới · ôn lại ngày mai');
+    expect(withServerDays(haul, null)).toBe(haul);
   });
 });

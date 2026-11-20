@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { MediaCredit, SignedImage } from '../pilot/Media';
 import type { CatalogItem } from '../pilot/api';
-import { groupTone } from './haul';
+import { groupTone } from './groups';
 import { MissingPhoto } from './MissingPhoto';
 import './cover.css';
 

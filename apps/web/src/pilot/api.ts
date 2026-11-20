@@ -68,6 +68,8 @@ export interface Score {
   correctPairs?: Record<string, string>;
   /** Present for account students: review rows this answer touched. */
   progress?: ProgressEntry[];
+  /** Client-only: a self-rating shown before the server confirmed it (see submitQueue). */
+  provisional?: boolean;
 }
 export type MasteryLevel = 0 | 1 | 2 | 3 | 4;
 export interface ProgressEntry {

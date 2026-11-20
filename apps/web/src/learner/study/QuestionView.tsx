@@ -23,13 +23,36 @@ import { Pronunciation } from '../../pilot/Media';
 import { ErrorNote } from '../ErrorNote';
 import { SpeciesCover } from '../SpeciesCover';
 import { lightItem, useCatalogItem, type SpeciesRef } from './species';
+import type { Job } from './submitQueue';
 
 /** The flashcard prompt names the language being asked; the code and lang follow from it. */
-const answerLanguage: Record<string, { code: string; lang: string }> = {
-  'Tên tiếng Anh': { code: 'EN', lang: 'en' },
-  'Tên tiếng Nhật': { code: 'JP', lang: 'ja' },
-  'Tên khoa học': { code: 'LAT', lang: 'la' },
+const answerLanguage: Record<string, { code: string; lang: string; skill: string }> = {
+  'Tên tiếng Anh': { code: 'EN', lang: 'en', skill: 'name:en' },
+  'Tên tiếng Nhật': { code: 'JP', lang: 'ja', skill: 'name:ja' },
+  'Tên khoa học': { code: 'LAT', lang: 'la', skill: 'name:scientific' },
 };
+
+/**
+ * What a self-rating means before the server answers: right for "Đã nhớ", self-rated, never
+ * skipped. The flashcard carries no target id, so the species name stands in until the
+ * server's score (with its `progress`) replaces this one.
+ */
+export function provisionalScore(game: Game, q: ApiQuestion, rating: 'known' | 'again'): Score {
+  return {
+    provisional: true,
+    answered: true,
+    skipped: false,
+    correct: rating === 'known',
+    selfRated: true,
+    questionId: q.id,
+    targetId: 'front:' + (q.front ?? q.id),
+    targetLabel: q.front,
+    skill: answerLanguage[q.prompt]?.skill ?? 'name',
+    contentVersion: game.releaseId,
+    explanation: '',
+    at: new Date().toISOString(),
+  };
+}
 
 /** The Vietnamese species name a question is about, when the question tells us. */
 export function coverName(q: ApiQuestion): string | undefined {
@@ -108,7 +131,9 @@ function Feedback({ q, result }: { q: ApiQuestion; result: Score }) {
           {result.skipped
             ? 'Đã bỏ qua'
             : result.selfRated
-              ? 'Đã lưu tự đánh giá'
+              ? result.provisional
+                ? 'Đã ghi tự đánh giá'
+                : 'Đã lưu tự đánh giá'
               : result.correct
                 ? 'Chính xác'
                 : 'Chưa chính xác'}
@@ -145,7 +170,8 @@ function Feedback({ q, result }: { q: ApiQuestion; result: Score }) {
 /**
  * One question of a session. Flashcard and image questions sit on the species cover
  * ("Ấn bản loài"); matching, HS and listening sit on a light card on the deep frame.
- * Answer submission, reveal, drafts and idempotency keys are unchanged from the pilot.
+ * Graded answers wait for the server; self-ratings go through `onQueue` when it is given.
+ * Reveal, drafts and idempotency keys are unchanged from the pilot.
  */
 export function QuestionView({
   game,
@@ -154,6 +180,7 @@ export function QuestionView({
   species,
   speciesSettled,
   onScore,
+  onQueue,
   onNext,
   onRefresh,
 }: {
@@ -163,6 +190,11 @@ export function QuestionView({
   species: SpeciesRef | null;
   speciesSettled: boolean;
   onScore: (s: Score) => void;
+  /**
+   * Self-ratings need no grading: when given, a rating shows `provisional` at once and the
+   * job (same idempotency key as an awaited submit) is sent in the background.
+   */
+  onQueue?: (job: Job, provisional: Score) => void;
   onNext: () => void;
   onRefresh: () => Promise<ApiQuestion | undefined>;
 }) {
@@ -242,6 +274,16 @@ export function QuestionView({
     } finally {
       setBusy(false);
     }
+  }
+  function rate(rating: 'known' | 'again') {
+    if (!onQueue) return void submit({ rating });
+    if (busy || q.result) return;
+    setError('');
+    onQueue(
+      { gameId: game.id, questionId: q.id, key: token, answer: { rating } },
+      provisionalScore(game, q, rating),
+    );
+    setAnsweredHere(true);
   }
   const done = !!q.result;
   const result = q.result;
@@ -403,18 +445,10 @@ export function QuestionView({
         {!reveal && <LockedCards game={game} q={q} index={index} />}
         {reveal && !done && (
           <div className="pilot-actions study-actions study-rate">
-            <button
-              className="btn secondary"
-              disabled={busy}
-              onClick={() => void submit({ rating: 'again' })}
-            >
+            <button className="btn secondary" disabled={busy} onClick={() => rate('again')}>
               Chưa nhớ
             </button>
-            <button
-              className="btn primary"
-              disabled={busy}
-              onClick={() => void submit({ rating: 'known' })}
-            >
+            <button className="btn primary" disabled={busy} onClick={() => rate('known')}>
               Đã nhớ
             </button>
           </div>

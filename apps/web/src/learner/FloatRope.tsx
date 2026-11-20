@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { GroupKey } from './haul';
+import type { GroupKey } from './groups';
 import './float-rope.css';
 
 export type RopeFloat = { index: number; group: GroupKey; correct: boolean };

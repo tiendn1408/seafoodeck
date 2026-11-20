@@ -6,7 +6,7 @@ import { ErrorNote } from './ErrorNote';
 import { FloatRope, type RopeFloat } from './FloatRope';
 import { GroupEntry } from './GroupEntry';
 import { SpeciesCard } from './SpeciesCard';
-import { groupTone, type GroupKey } from './haul';
+import { groupTone, type GroupKey } from './groups';
 import { useMe } from './meStore';
 import { TrialNudge } from './TrialNudge';
 import { useMedia } from './useMedia';

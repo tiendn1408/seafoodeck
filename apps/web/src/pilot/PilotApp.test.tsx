@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
-import PilotApp from './PilotApp';
+import PilotApp, { TRIAL_SESSION_KEY } from './PilotApp';
 import { setAuthRequiredHandler } from './api';
 import { clearMe } from '../learner/meStore';
 import { kindOf, routeAllowed, routesFor } from '../learner/role';
@@ -29,6 +29,43 @@ const profileItem = {
   taxonomicGroup: 'mollusc',
 };
 const MUST = { message: 'Cần đổi mật khẩu trước.', code: 'MUST_CHANGE_PASSWORD' };
+const meHome = (activeSessionId: string | null) => ({
+  releaseId: 'rel1',
+  internal: false,
+  learnable: 1,
+  haul: [],
+  cast: { kind: 'done' },
+  due: 0,
+  skills: [],
+  activeSessionId,
+});
+const studyGame = (id: string) => ({
+  id,
+  releaseId: 'rel1',
+  internal: false,
+  mode: 'flashcard',
+  expiresAt: '2026-11-20T10:00:00.000Z',
+  questions: [
+    { id: 'q1', type: 'flashcard', prompt: 'Tên tiếng Anh', front: 'Vẹm xanh', unavailable: false },
+  ],
+});
+const overview = {
+  releaseId: 'rel1',
+  internal: false,
+  learnable: 1,
+  groups: { fish: 0, crustacean: 0, mollusc: 1, other: 0, none: 0 },
+  hsCases: 0,
+  items: [
+    {
+      revisionId: 'r1',
+      itemId: 'i1',
+      vi: 'Vẹm xanh',
+      scientific: 'Perna viridis',
+      taxonomicGroup: 'mollusc',
+      imageId: null,
+    },
+  ],
+};
 let routes: Record<string, () => Promise<Response>>;
 let calls: string[];
 beforeEach(() => {
@@ -49,6 +86,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
   unmountAll();
   vi.unstubAllGlobals();
 });
@@ -82,11 +120,8 @@ describe('PilotApp forced password flow', () => {
 
   it('a MUST_CHANGE_PASSWORD 403 flips to forced; no restore fetch while forced', async () => {
     location.hash = '#study';
-    localStorage.setItem(
-      'seafood-deck:pilot:v1',
-      JSON.stringify({ sessionId: 's1', attempts: [], reviews: {} }),
-    );
     routes['GET /auth/me'] = () => json(view('student'));
+    routes['GET /me/home'] = () => json(meHome('s1'));
     routes['GET /learning/sessions/s1'] = () => json(MUST, 403);
     const host = mount(<PilotApp />);
     await tick();
@@ -98,13 +133,11 @@ describe('PilotApp forced password flow', () => {
     expect(calls.filter((c) => c.includes('/learning/')).length).toBe(n);
   });
 
-  it('forced user on #study with a stored session never requests /learning/', async () => {
+  it('forced user on #study with an active session never requests /learning/', async () => {
     location.hash = '#study';
-    localStorage.setItem(
-      'seafood-deck:pilot:v1',
-      JSON.stringify({ sessionId: 's1', attempts: [], reviews: {} }),
-    );
+    sessionStorage.setItem(TRIAL_SESSION_KEY, JSON.stringify('s1'));
     routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
+    routes['GET /me/home'] = () => json(meHome('s1'));
     routes['GET /learning/sessions/s1'] = () => json(MUST, 403);
     const host = mount(<PilotApp />);
     await tick();
@@ -237,25 +270,14 @@ describe('PilotApp role-aware routes', () => {
     }
   });
 
-  it('student home reads /me/home and resumes the server session id, not the ledger', async () => {
+  it('student home resumes the server session id; a legacy local key is ignored', async () => {
     localStorage.setItem(
       'seafood-deck:pilot:v1',
-      JSON.stringify({ sessionId: 'old-local', attempts: [], reviews: {} }),
+      JSON.stringify({ sessionId: 'poisoned', attempts: [], reviews: {} }),
     );
-    const game = { id: 's9', mode: 'flashcard', kind: 'en', questions: [] };
     routes['GET /auth/me'] = () => json(view('student'));
-    routes['GET /me/home'] = () =>
-      json({
-        releaseId: 'rel1',
-        internal: false,
-        learnable: 1,
-        haul: [],
-        cast: { kind: 'done' },
-        due: 0,
-        skills: [],
-        activeSessionId: 's9',
-      });
-    routes['GET /learning/sessions/s9'] = () => json(game);
+    routes['GET /me/home'] = () => json(meHome('s9'));
+    routes['GET /learning/sessions/s9'] = () => json(studyGame('s9'));
     const host = mount(<PilotApp />);
     await tick();
     await tick();
@@ -263,7 +285,76 @@ describe('PilotApp role-aware routes', () => {
     await click(button(host, 'Tiếp tục'));
     await tick();
     expect(location.hash).toBe('#study');
-    expect(calls.filter((c) => c.includes('old-local'))).toEqual([]);
+    expect(calls).toContain('GET /learning/sessions/s9');
+    expect(calls.filter((c) => c.includes('poisoned'))).toEqual([]);
+    // A student's session id is never kept in browser storage.
+    expect(sessionStorage.getItem(TRIAL_SESSION_KEY)).toBeNull();
+    expect(host.querySelector('.study, .haul')).not.toBeNull();
+    expect(host.textContent).not.toContain('Trình duyệt không lưu được tiến độ');
+  });
+
+  it('a student reload on #study reopens the session from /me/home, not local storage', async () => {
+    location.hash = '#study';
+    localStorage.setItem(
+      'seafood-deck:pilot:v1',
+      JSON.stringify({ sessionId: 'poisoned', attempts: [], reviews: {} }),
+    );
+    sessionStorage.setItem(TRIAL_SESSION_KEY, JSON.stringify('poisoned'));
+    routes['GET /auth/me'] = () => json(view('student'));
+    routes['GET /me/home'] = () => json(meHome('s9'));
+    routes['GET /learning/sessions/s9'] = () => json(studyGame('s9'));
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c === 'GET /me/home')).toHaveLength(1);
+    expect(calls).toContain('GET /learning/sessions/s9');
+    expect(calls.filter((c) => c.includes('poisoned'))).toEqual([]);
+    expect(host.querySelector('.study')).not.toBeNull();
+  });
+
+  it('a student reload on #study without an active session asks to start one', async () => {
+    location.hash = '#study';
+    routes['GET /auth/me'] = () => json(view('student'));
+    routes['GET /me/home'] = () => json(meHome(null));
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c.startsWith('GET /learning/'))).toEqual([]);
+    expect(host.textContent).toContain('Mở lượt mới từ trang Học.');
+  });
+
+  it('a trial reload on #study reopens the tab session and never calls /me', async () => {
+    location.hash = '#study';
+    sessionStorage.setItem(TRIAL_SESSION_KEY, JSON.stringify('t5'));
+    routes['GET /auth/me'] = () => json(view('learner', { userId: undefined }));
+    routes['GET /learning/sessions/t5'] = () => json(studyGame('t5'));
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(calls).toContain('GET /learning/sessions/t5');
+    expect(calls.filter((c) => c.includes(' /me'))).toEqual([]);
+    expect(host.querySelector('.study')).not.toBeNull();
+  });
+
+  it('a trial session start keeps its id in sessionStorage; logout clears it', async () => {
+    routes['GET /auth/me'] = () => json(view('learner', { userId: undefined }));
+    routes['GET /catalog/overview'] = () => json(overview);
+    routes['POST /learning/sessions'] = () => json(studyGame('t7'));
+    routes['POST /auth/logout'] = () => json(view('guest'));
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    const cast = host.querySelector<HTMLButtonElement>('.home-mode');
+    expect(cast).not.toBeNull();
+    await click(cast!);
+    await tick();
+    expect(location.hash).toBe('#study');
+    expect(JSON.parse(sessionStorage.getItem(TRIAL_SESSION_KEY)!)).toBe('t7');
+    expect(localStorage.getItem('seafood-deck:pilot:v1')).toBeNull();
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    expect(sessionStorage.getItem(TRIAL_SESSION_KEY)).toBeNull();
   });
 
   it('manager on home sees the notice, not the learner home', async () => {

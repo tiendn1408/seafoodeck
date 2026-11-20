@@ -1,4 +1,4 @@
-import { groupTone, type GroupKey } from './haul';
+import { groupTone, type GroupKey } from './groups';
 
 export const PAGE_SIZE = 12;
 const ORDER: GroupKey[] = ['fish', 'crustacean', 'mollusc', 'other', 'none'];

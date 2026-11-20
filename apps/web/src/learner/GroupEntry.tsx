@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { groupTone, type GroupKey } from './haul';
+import { groupTone, type GroupKey } from './groups';
 
 /** A chip that opens the library filtered to one taxonomic group. */
 export function GroupEntry({

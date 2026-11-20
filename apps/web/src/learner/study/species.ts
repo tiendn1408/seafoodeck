@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type CatalogItem, type CatalogOverview } from '../../pilot/api';
-import type { GroupKey } from '../haul';
+import type { GroupKey } from '../groups';
 
 /**
  * Study questions carry the Vietnamese name of their species (`front`, the image options,

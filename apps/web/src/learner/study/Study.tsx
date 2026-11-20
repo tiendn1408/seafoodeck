@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
-import { api, type Game, type Score } from '../../pilot/api';
+import { api, type ApiQuestion, type Game, type ProgressEntry, type Score } from '../../pilot/api';
 import { stopAudio } from '../../pilot/Media';
+import { ErrorNote } from '../ErrorNote';
 import { FloatRope, type RopeFloat } from '../FloatRope';
-import type { Ledger } from '../ledger';
 import { QuestionView, coverName } from './QuestionView';
 import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
+import { createSubmitQueue, type Job, type SubmitQueue } from './submitQueue';
+import { useSessionSummary } from './useSessionSummary';
 import './study.css';
 
 const modeNames: Record<string, string> = {
@@ -16,22 +18,70 @@ const modeNames: Record<string, string> = {
   hs: 'HS theo dạng hàng',
 };
 
+export type UserKind = 'student' | 'trial' | 'staff';
+/**
+ * Study never holds the game itself: every change is an update of the parent's latest game.
+ * It must be a stable function: background saves apply it even after Study has unmounted.
+ */
+export type GameUpdate = (update: (g: Game) => Game) => void;
+
+/** The game with one question's result replaced (a no-op for another session's game). */
+function withResult(g: Game, gameId: string, questionId: string, result: Score): Game {
+  if (g.id !== gameId) return g;
+  return {
+    ...g,
+    questions: g.questions.map((x) => (x.id === questionId ? { ...x, result } : x)),
+  };
+}
+
+function sendAnswer(job: Job) {
+  return api<Score>(`/learning/sessions/${job.gameId}/questions/${job.questionId}/attempts`, {
+    key: job.key,
+    answer: job.answer,
+  });
+}
+
+/** Warns before closing the tab while a queued answer has not reached the server. */
+function guardUnload(queue: SubmitQueue) {
+  const warn = (e: BeforeUnloadEvent) => {
+    e.preventDefault();
+    e.returnValue = '';
+  };
+  let on = false;
+  queue.subscribe(() => {
+    const need = queue.pendingCount() > 0;
+    if (need === on) return;
+    on = need;
+    if (need) window.addEventListener('beforeunload', warn);
+    else window.removeEventListener('beforeunload', warn);
+  });
+}
+
+/** The image of the question after `cursor`, loaded early so it is ready when the learner gets there. */
+function usePrefetch(next: ApiQuestion | undefined) {
+  const url = next && !next.unavailable ? next.image?.url : undefined;
+  useEffect(() => {
+    if (!url) return;
+    // Signed URLs live 120 s; only the next one is warmed, so it is still valid when shown.
+    new Image().src = url;
+  }, [url]);
+}
+
 /**
  * A study session on the deep-sea frame: the haul's float rope on top, then the current
- * question, then the haul summary once every question is answered.
+ * question, then the haul summary once every question is answered. Self-rated cards move on
+ * at once and are sent in the background; graded questions wait for the server.
  */
 export function Study({
   game,
-  ledger,
+  userKind,
   onChange,
-  onRecord,
   onRetry,
   pending,
 }: {
   game: Game;
-  ledger: Ledger;
-  onChange: (g: Game) => void;
-  onRecord: (s: Score, g: Game) => void;
+  userKind: UserKind;
+  onChange: GameUpdate;
   onRetry: () => void;
   pending: boolean;
 }) {
@@ -41,6 +91,44 @@ export function Study({
       : game.questions.findIndex((q) => !q.result),
   );
   const { index: speciesIndex, settled } = useSpeciesIndex(game.releaseId);
+  // Review rows the server returned with this session's answers, latest per target and skill.
+  const [progress, setProgress] = useState<Record<string, ProgressEntry>>({});
+  const record = (score: Score) => {
+    const rows = score.progress;
+    if (!rows?.length) return;
+    setProgress((p) => {
+      const next = { ...p };
+      for (const r of rows) next[`${r.targetId}|${r.skill}`] = r;
+      return next;
+    });
+  };
+  // Answers restored after a reload carry no progress; a student's summary then asks the server.
+  const [restored] = useState(() => game.questions.some((q) => q.result && !q.result.progress));
+
+  // The queue outlives this screen: a job finishing after the learner left still updates the
+  // parent's game (and the unload guard stays until the queue is empty).
+  const [queue] = useState(() => {
+    const q = createSubmitQueue(sendAnswer);
+    q.subscribe((e) => {
+      if (e.kind !== 'done') return;
+      record(e.score);
+      onChange((g) => withResult(g, e.job.gameId, e.job.questionId, e.score));
+    });
+    guardUnload(q);
+    return q;
+  });
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => queue.subscribe(redraw), [queue]);
+  const saving = queue.pendingCount() > 0;
+  const failures = queue.failures();
+  const saveError = failures.length > 0 && (
+    <ErrorNote
+      message={`Chưa lưu được ${failures.length} thẻ tự đánh giá: ${failures[0].error.message}`}
+      retry={() => failures.forEach((f) => queue.enqueue(f.job))}
+      retryLabel="Thử gửi lại"
+    />
+  );
+
   // After "Tiếp tục" the old button is gone: start the next screen at the top and give it
   // focus so keyboard and screen-reader users land on the new question or the summary.
   const advanced = useRef(false);
@@ -52,6 +140,12 @@ export function Study({
       ?.querySelector<HTMLElement>('[data-focus-target]')
       ?.focus({ preventScroll: true });
   }, [cursor]);
+  usePrefetch(game.questions[cursor + 1]);
+  const q = game.questions[cursor];
+  const server = useSessionSummary(
+    game.id,
+    userKind === 'student' && restored && !q && !saving && !failures.length,
+  );
   const lookup = (vi: string | undefined) => findSpecies(speciesIndex, game.releaseId, vi);
   const floats: RopeFloat[] = game.questions.flatMap((x, i) =>
     x.result
@@ -66,13 +160,15 @@ export function Study({
       className="study-rope"
     />
   );
-  const q = game.questions[cursor];
   if (!q)
     return (
       <div ref={stage}>
         <Summary
           game={game}
-          ledger={ledger}
+          progress={Object.values(progress)}
+          server={server}
+          saving={saving}
+          saveError={saveError}
           rope={rope}
           lookup={lookup}
           onRetry={onRetry}
@@ -91,6 +187,9 @@ export function Study({
             <span className="study-count">
               Câu {cursor + 1} / {game.questions.length}
             </span>
+            <span className="study-saving" role="status">
+              {saving ? 'Đang lưu…' : ''}
+            </span>
           </p>
           <a className="study-pause" href="#home" title="Tạm dừng">
             <Pause size={18} aria-hidden="true" />
@@ -99,6 +198,7 @@ export function Study({
         </div>
         {rope}
       </div>
+      {saveError}
       <QuestionView
         key={q.id}
         game={game}
@@ -107,11 +207,12 @@ export function Study({
         species={lookup(coverName(q))}
         speciesSettled={settled}
         onScore={(s) => {
-          onRecord(s, game);
-          onChange({
-            ...game,
-            questions: game.questions.map((x) => (x.id === q.id ? { ...x, result: s } : x)),
-          });
+          record(s);
+          onChange((g) => withResult(g, game.id, q.id, s));
+        }}
+        onQueue={(job, provisional) => {
+          onChange((g) => withResult(g, game.id, q.id, provisional));
+          queue.enqueue(job);
         }}
         onNext={() => {
           stopAudio();
@@ -120,7 +221,18 @@ export function Study({
         }}
         onRefresh={async () => {
           const fresh = await api<Game>('/learning/sessions/' + game.id);
-          onChange(fresh);
+          // Fresh signed URLs, but answers this tab already holds (some not yet saved) stay.
+          onChange((g) =>
+            g.id !== fresh.id
+              ? g
+              : {
+                  ...fresh,
+                  questions: fresh.questions.map((fq) => {
+                    const mine = g.questions.find((x) => x.id === fq.id)?.result;
+                    return mine ? { ...fq, result: mine } : fq;
+                  }),
+                },
+          );
           return fresh.questions.find((x) => x.id === q.id);
         }}
       />

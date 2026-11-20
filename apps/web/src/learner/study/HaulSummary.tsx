@@ -1,13 +1,23 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
-import type { Game } from '../../pilot/api';
+import type { Game, ProgressEntry, SessionSummaryResponse } from '../../pilot/api';
 import { SignedImage } from '../../pilot/Media';
 import { MissingPhoto } from '../MissingPhoto';
 import { coverPhoto } from '../SpeciesCover';
-import { groupTone } from '../haul';
-import type { Ledger } from '../ledger';
-import { summarizeHaul, type HaulEntry } from './summary';
+import { groupTone } from '../groups';
+import { summarizeHaul, withServerDays, type HaulEntry } from './summary';
 import { useCatalogItem, type SpeciesRef } from './species';
+
+/** A skipped matching question: one neutral line, linked to no species. */
+function SkippedMatchRow({ entry }: { entry: HaulEntry }) {
+  return (
+    <li className="haul-row haul-row-plain" data-state="skipped">
+      <span className="haul-names">
+        <strong>{entry.label}</strong>
+      </span>
+    </li>
+  );
+}
 
 function CatchRow({ entry, species }: { entry: HaulEntry; species: SpeciesRef | null }) {
   const { item } = useCatalogItem(entry.kind === 'species' ? species : null, true);
@@ -57,20 +67,30 @@ function CatchRow({ entry, species }: { entry: HaulEntry; species: SpeciesRef | 
  */
 export function Summary({
   game,
-  ledger,
+  progress,
+  server,
+  saving,
+  saveError,
   rope,
   lookup,
   onRetry,
   pending,
 }: {
   game: Game;
-  ledger: Ledger;
+  /** Review rows returned with this session's answers (empty for trial learners). */
+  progress: ProgressEntry[];
+  /** The server's summary, only fetched for a student's session re-opened after a reload. */
+  server: SessionSummaryResponse | null;
+  /** Self-ratings still on their way to the server. */
+  saving: boolean;
+  saveError: ReactNode;
   rope: ReactNode;
   lookup: (vi: string | undefined) => SpeciesRef | null;
   onRetry: () => void;
   pending: boolean;
 }) {
-  const haul = summarizeHaul(game, ledger);
+  const haul = withServerDays(summarizeHaul(game, progress), server);
+  const entries = [...haul.caught, ...haul.missed];
   const scores = game.questions.flatMap((q) => (q.result ? [q.result] : [])),
     answered = scores.filter((s) => s.answered && !s.selfRated),
     wrong = scores.filter((s) => s.answered && !s.correct),
@@ -96,18 +116,26 @@ export function Summary({
           {haul.title}
         </h1>
         <p className="haul-lede">{lede}</p>
+        <p className="haul-saving" role="status">
+          {saving ? 'Đang lưu…' : ''}
+        </p>
       </header>
       <div className="haul-sheet">
-        {haul.total > 0 && (
+        {saveError}
+        {entries.length > 0 && (
           <div className="haul-catch">
             <ul className="haul-list" aria-label="Các loài trong mẻ">
-              {[...haul.caught, ...haul.missed].map((e) => (
-                <CatchRow
-                  key={e.targetId}
-                  entry={e}
-                  species={e.kind === 'species' ? lookup(e.label) : null}
-                />
-              ))}
+              {entries.map((e) =>
+                e.kind === 'matching' ? (
+                  <SkippedMatchRow key={e.targetId} entry={e} />
+                ) : (
+                  <CatchRow
+                    key={e.targetId}
+                    entry={e}
+                    species={e.kind === 'species' ? lookup(e.label) : null}
+                  />
+                ),
+              )}
             </ul>
           </div>
         )}
@@ -141,7 +169,7 @@ export function Summary({
           )}
           <div className="haul-actions">
             {retry && (
-              <button className="btn primary" disabled={pending} onClick={onRetry}>
+              <button className="btn primary" disabled={pending || saving} onClick={onRetry}>
                 <RotateCcw size={18} aria-hidden="true" />
                 Ôn lỗi và câu bỏ qua
               </button>

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { SignedImage } from '../pilot/Media';
-import { groupTone } from './haul';
+import { groupTone } from './groups';
 import { MissingPhoto } from './MissingPhoto';
 import './species-card.css';
 

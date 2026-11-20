@@ -6,7 +6,7 @@ import { ErrorNote } from './ErrorNote';
 import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { coverPhoto } from './SpeciesCover';
-import { groupTone } from './haul';
+import { groupTone } from './groups';
 import { groupSections, libraryPath } from './shelves';
 import type { Taxon } from './Home';
 import { useMedia } from './useMedia';
