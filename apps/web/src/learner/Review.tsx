@@ -9,11 +9,10 @@ import { MissingPhoto } from './MissingPhoto';
 import { SpeciesCard } from './SpeciesCard';
 import { skillLabel } from './skillLabel';
 import { useMe } from './meStore';
-import { useOverview } from './useOverview';
+import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
 
 const STEPS = INTERVAL_DAYS;
-const ignoreVersion = () => {};
 const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
 const MAX_BATCH = 30;
 

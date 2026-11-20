@@ -3,25 +3,31 @@ import './achievements.css';
 
 const TZ = 'Asia/Ho_Chi_Minh';
 
-/** Date of an instant in Vietnam time, e.g. "20/11/2026". */
-export const vnDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('vi-VN', {
-    timeZone: TZ,
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+const valid = (iso: string) => !Number.isNaN(new Date(iso).getTime());
 
-/** Time and date of an instant in Vietnam time, e.g. "01:30 20/11/2026". */
+/** Date of an instant in Vietnam time, e.g. "20/11/2026"; "—" for a malformed instant. */
+export const vnDate = (iso: string) =>
+  !valid(iso)
+    ? '—'
+    : new Date(iso).toLocaleDateString('vi-VN', {
+        timeZone: TZ,
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+
+/** Time and date of an instant in Vietnam time, e.g. "01:30 20/11/2026"; "—" if malformed. */
 export const vnDateTime = (iso: string) =>
-  new Date(iso).toLocaleString('vi-VN', {
-    timeZone: TZ,
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  !valid(iso)
+    ? '—'
+    : new Date(iso).toLocaleString('vi-VN', {
+        timeZone: TZ,
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
 
 const MODES: Record<string, string> = {
   review: 'Ôn tập',
@@ -34,12 +40,17 @@ const MODES: Record<string, string> = {
 /** Vietnamese label of a session mode code from `/me/progress`; unknown codes stay as given. */
 export const modeLabel = (mode: string) => MODES[mode] ?? mode;
 
+/**
+ * Goal of each server badge, worded after its rule in apps/api (progress-achievements.ts and
+ * progress.service.ts): distinct species answered (HS excluded), the longest day streak,
+ * species at memory level 3 or more (the 7-day milestone), sessions with a review answer.
+ */
 const GOALS: Record<string, string> = {
-  first10: 'Học 10 loài đầu tiên',
-  streak7: 'Học 7 ngày liên tiếp',
-  solid50: 'Đưa 50 loài lên mức nhớ 2',
-  species100: 'Học đủ 100 loài',
-  review10: 'Hoàn thành 10 phiên ôn',
+  first10: 'Học 10 loài khác nhau',
+  streak7: 'Học 7 ngày liên tiếp (tính chuỗi dài nhất)',
+  solid50: 'Đưa 50 loài lên mốc 7 ngày',
+  species100: 'Học 100 loài khác nhau',
+  review10: 'Ôn tập trong 10 phiên khác nhau',
 };
 /** What a badge asks for, in words; unknown ids fall back to the server label. */
 export const badgeGoal = (b: MeBadge) => GOALS[b.id] ?? b.label;

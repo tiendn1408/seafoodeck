@@ -27,6 +27,7 @@ import { Review } from '../learner/Review';
 import { useMe } from '../learner/meStore';
 import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
+import { ignoreVersion } from '../learner/useOverview';
 import { Study } from '../learner/study/Study';
 import { LEDGER_KEY, loadLedger, mergeScore, mergeGame, type Ledger } from '../learner/ledger';
 /** After a session starts or finishes, refetch the learner's /me views that are mounted. */
@@ -41,8 +42,6 @@ function LibraryRoute({
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
 }
-/** The release id no longer scopes any screen state; the catalogue hooks still report it. */
-const ignoreVersion = () => {};
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }

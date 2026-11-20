@@ -50,6 +50,13 @@
   --ice-muted: #4c5e66; /* 6.3:1 on --ice-bg */
   --ice-line: #d4e0e3;
   --ice-focus: #0b6a7c;
+  /* Small buoys on ice (streak floats, badge medals): a light cap over a teal hull, the same in
+     both themes; on dark ice the hull is outlined in --ice-focus so it stands off the surface. */
+  --ice-cap: #f4f8f9;
+  --ice-buoy: #0b6a7c;
+  --shadow-buoy:
+    inset 0 0 0 1px rgb(11 34 48 / 0.18), inset 0 -3px 0 rgb(0 0 0 / 0.16),
+    0 3px 6px rgb(11 34 48 / 0.22);
 
   /* Type */
   --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;

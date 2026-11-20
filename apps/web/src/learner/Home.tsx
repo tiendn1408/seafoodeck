@@ -10,7 +10,7 @@ import { groupTone, type GroupKey } from './haul';
 import { useMe } from './meStore';
 import { TrialNudge } from './TrialNudge';
 import { useMedia } from './useMedia';
-import { useOverview } from './useOverview';
+import { ignoreVersion, useOverview } from './useOverview';
 import './home.css';
 
 type Target = { targetId: string; skill: string };
@@ -63,8 +63,6 @@ const skillColor: Record<string, string> = {
 };
 
 // Students get the release from /me/home; the catalogue overview only feeds the pickers here.
-const ignoreVersion = () => {};
-
 /** True while the tab is hidden, so ambient motion can stop. */
 function usePageHidden() {
   const [hidden, setHidden] = useState(

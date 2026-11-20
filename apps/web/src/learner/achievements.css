@@ -1,8 +1,9 @@
 /*
  * Achievements on ice: the day streak as seven small floats on a rope, badges as round
  * buoy-medals. Earned = teal hull with a light cap and fish scales; not yet = a muted dashed
- * outline. Contrast on --ice-surface: --ice-focus 6.2:1 (dark 8.9:1), --ice-muted 6.8:1
- * (dark 7.3:1). No motion at all, so reduced motion needs nothing removed.
+ * outline. Colours are tokens only; their contrast on --ice-surface (text 4.5:1, strokes
+ * 3:1, both themes) is checked in Achievements.test.tsx. No motion, so reduced motion needs
+ * nothing removed.
  */
 .achievements {
   margin-top: var(--space-7);
@@ -72,12 +73,9 @@
   background: var(--ice-surface);
 }
 .achievements-days i.on {
-  border-color: transparent;
-  background: linear-gradient(180deg, #f4f8f9 0 40%, var(--ice-focus) 40% 100%);
-  box-shadow:
-    inset 0 0 0 1px rgb(11 34 48 / 0.18),
-    inset 0 -3px 0 rgb(0 0 0 / 0.16),
-    0 3px 6px rgb(11 34 48 / 0.22);
+  border-color: var(--ice-focus);
+  background: linear-gradient(180deg, var(--ice-cap) 0 40%, var(--ice-buoy) 40% 100%);
+  box-shadow: var(--shadow-buoy);
 }
 .achievements-invite {
   margin: var(--space-3) 0 0;
@@ -144,16 +142,16 @@
   opacity: 0.6;
 }
 .achievements-badge[data-earned='true'] .achievements-medal-ring {
-  fill: #f4f8f9;
+  fill: var(--ice-cap);
   stroke: var(--ice-focus);
   stroke-width: 2;
   stroke-dasharray: none;
 }
 .achievements-badge[data-earned='true'] .achievements-medal-hull {
-  fill: var(--ice-focus);
+  fill: var(--ice-buoy);
 }
 .achievements-badge[data-earned='true'] .achievements-medal-scale {
-  stroke: var(--ice-surface);
+  stroke: var(--ice-cap);
   opacity: 1;
 }
 

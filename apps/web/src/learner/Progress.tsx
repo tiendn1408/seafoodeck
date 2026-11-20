@@ -6,7 +6,7 @@ import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { groupTone, type GroupKey } from './groups';
 import { useMe } from './meStore';
-import { useOverview } from './useOverview';
+import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
 
 const LEVELS: { level: MasteryLevel; label: string }[] = [
@@ -37,8 +37,6 @@ function Gauge({ value, color }: { value: number; color: string }) {
     </span>
   );
 }
-
-const ignoreVersion = () => {};
 
 /** The last few sessions: one line each, the first-try share as a short rope. */
 function History({ rows }: { rows: MeSessionRow[] }) {
