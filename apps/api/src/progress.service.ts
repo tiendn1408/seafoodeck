@@ -355,7 +355,7 @@ export class ProgressService {
         streak,
         badges: badges({
           ...speciesSeen(log),
-          solid: mastery.level2 + mastery.level3 + mastery.level4,
+          solid: solidSpecies(c.overview, c.rows),
           reviewSessions: new Set(log.filter((r) => r.isReview).map((r) => r.sessionId)).size,
           streak: streak.longest,
         }),
@@ -403,4 +403,12 @@ export function speciesSeen(log: LogRow[]): { species: number; at: string[] } {
     if (!seen || Date.parse(r.at) < Date.parse(seen)) first.set(id, r.at);
   }
   return { species: first.size, at: [...first.values()] };
+}
+
+/**
+ * Catalog items remembered for a week or more: some active row at SRS stage >= 2 (7-day interval),
+ * i.e. masteryLevel >= 3. Feeds the `solid50` badge ("50 loài ở mức nhớ ≥ 1 tuần").
+ */
+export function solidSpecies(o: OverviewData, rows: ReviewRow[]): number {
+  return o.items.filter((i) => masteryLevel(rows, i.itemId) >= 3).length;
 }

@@ -10,7 +10,13 @@ import { Learning, canonical } from './learning';
 import { hash, type ActorRequest } from './security';
 import { MeProgressController } from './me.controller';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
-import { ProgressService, REVIEW_CANDIDATES, summarize, touchedTargets } from './progress.service';
+import {
+  ProgressService,
+  REVIEW_CANDIDATES,
+  solidSpecies,
+  summarize,
+  touchedTargets,
+} from './progress.service';
 
 const NOW = Date.parse('2026-06-10T00:00:00.000Z');
 const DAY = 86_400_000;
@@ -735,8 +741,11 @@ test('/me/*: two students see only their own rows', async () => {
     p2.sessions.map((s) => s.sessionId),
     ['s2'],
   );
-  for (const c of [...calls['reviewProgress.findMany']!, ...calls['learningAttempt.findMany']!])
-    assert.ok(['u1', 'u2'].includes((c as { where: { userId: string } }).where.userId));
+  // Call i belongs to request i: mastery, review, progress, alternating u1 then u2.
+  const users = (name: string) =>
+    calls[name]!.map((c) => (c as { where: { userId: string } }).where.userId);
+  assert.deepEqual(users('reviewProgress.findMany'), ['u1', 'u2', 'u1', 'u2', 'u1', 'u2']);
+  assert.deepEqual(users('learningAttempt.findMany'), ['u1', 'u2']);
 });
 
 test('/me/review splits due and scheduled by effective due, earliest first', async () => {
@@ -932,4 +941,40 @@ test('/me/* responses never carry restricted catalog fields', async () => {
     await controller.mastery(req),
   ])
     assert.ok(!FORBIDDEN.test(JSON.stringify(res)), JSON.stringify(res));
+});
+
+test('solid species: stage >= 2 (remembered for a week or more) counts, stage 1 does not', async () => {
+  const rows = [
+    rec('item-A', { stage: 1 }),
+    rec('item-B', { stage: 2 }),
+    rec('item-C', { stage: 3 }),
+    rec('item-D', { stage: 1, skill: 'name:ja' }),
+    rec('item-D', { stage: 0 }),
+    rec('item-E', { stage: 3, contentVersion: 'old' }),
+  ];
+  const svc = new ProgressService(meDb(rows).db, catalogFake);
+  const c = await svc.context(student);
+  assert.equal(solidSpecies(c.overview, c.rows), 2, 'item-B and item-C; stale item-E dropped');
+  const many = Array.from({ length: 60 }, (_, i) => ({
+    revisionId: 'rev-' + i,
+    itemId: 'it-' + i,
+    vi: 'v' + i,
+    scientific: '',
+    taxonomicGroup: null,
+    imageId: null,
+  }));
+  const at = (stage: number) =>
+    many.map((m) => ({
+      targetId: m.itemId,
+      skill: 'name:en',
+      stage,
+      dueAt: iso(NOW),
+      lastSessionId: 's',
+      contentVersion: 'v',
+      selfRated: false,
+      lastAttemptAt: iso(NOW),
+    }));
+  const o = { items: many, learnable: 60, hsCases: 0 };
+  assert.equal(solidSpecies(o, at(1)), 0);
+  assert.equal(solidSpecies(o, at(2)), 60);
 });
