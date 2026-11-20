@@ -17,6 +17,16 @@ Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pi
 
 Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Chạy VPS/GHCR và nâng cấp](docs/DEPLOY_PILOT.md). Chưa deploy VPS trong lượt này.
 
+## Tài khoản học viên (phase 2.5a, chỉ API)
+
+Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Trình duyệt chưa dùng các route này. Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
+
+```sh
+docker compose --env-file .local/pilot.env run --rm --no-deps api node dist/rebuild-progress.js
+```
+
+Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; tạo người dùng QA, không in bí mật). Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
+
 ## Nhập dữ liệu prototype
 
 Bộ prototype (100 loài, 5 hồ sơ HS) được nhập thành bản nháp qua script chỉ gọi API quản trị; không ghi thẳng DB. Thông tin nguồn và giới hạn: [docs/sources/prototype-import](docs/sources/prototype-import/README.md).
