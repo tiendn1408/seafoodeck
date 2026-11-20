@@ -16,6 +16,8 @@ const view = (role: string, extra: object = {}) => ({
   userId: 'u-' + role,
   ...extra,
 });
+// POST /auth/login answers exactly like GET /auth/me for an account session.
+const realLogin = (role: string) => view(role, { displayName: 'An', mustChangePassword: false });
 const profileItem = {
   revisionId: 'r1',
   externalId: 'blue-mussel',
@@ -168,7 +170,7 @@ describe('PilotApp forced password flow', () => {
   it('logout then login as another user leaves no forced state behind', async () => {
     routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
     routes['POST /auth/logout'] = () => json(view('guest'));
-    routes['POST /auth/login'] = () => json(view('student'));
+    routes['POST /auth/login'] = () => json(realLogin('student'));
     const host = mount(<PilotApp />);
     await tick();
     await click(button(host, 'Đăng xuất'));
@@ -184,7 +186,7 @@ describe('PilotApp forced password flow', () => {
 
   it('a flag raised while guest does not stick to the next login', async () => {
     routes['GET /auth/me'] = () => json(view('guest'));
-    routes['POST /auth/login'] = () => json(view('student'));
+    routes['POST /auth/login'] = () => json(realLogin('student'));
     const host = mount(<PilotApp />);
     await tick();
     const { api } = await import('./api');
@@ -291,6 +293,21 @@ describe('PilotApp role-aware routes', () => {
     expect(sessionStorage.getItem(TRIAL_SESSION_KEY)).toBeNull();
     expect(host.querySelector('.study, .haul')).not.toBeNull();
     expect(host.textContent).not.toContain('Trình duyệt không lưu được tiến độ');
+  });
+
+  it('a form login as a student opens Home from /me/home at once, without a reload', async () => {
+    routes['GET /auth/me'] = () => json(view('guest', { userId: undefined }));
+    routes['POST /auth/login'] = () => json(realLogin('student'));
+    routes['GET /me/home'] = () => json(meHome(null));
+    const host = mount(<PilotApp />);
+    await tick();
+    setValue(field(host, 'Tên đăng nhập'), 'an');
+    setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
+    await submit(host);
+    await tick();
+    await tick();
+    expect(calls).toContain('GET /me/home');
+    expect(calls.filter((c) => c === 'GET /auth/me')).toHaveLength(1);
   });
 
   it('a student reload on #study reopens the session from /me/home, not local storage', async () => {

@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { Auth, LoginLimiter, passwordCheck, hash, AllowWhilePasswordChange } from './security';
 import { AuthMeResponse } from './contract';
 import { Db } from './db';
+import type { AuthSession } from './generated/prisma/client';
 class LoginDto {
   @ApiProperty() @IsString() @MaxLength(150) credential!: string;
   @ApiProperty({ required: false }) @IsString() @MaxLength(80) @IsOptional() username?: string;
@@ -20,7 +21,10 @@ export class AuthController {
   @ApiOkResponse({ type: AuthMeResponse })
   @Get('me')
   async me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const actor = await this.auth.actor(req, res);
+    return this.viewWithProfile(await this.auth.actor(req, res));
+  }
+  /** Session view plus the account profile (userId, displayName, mustChangePassword) when it has one. */
+  private async viewWithProfile(actor: AuthSession) {
     const view = this.auth.view(actor);
     if (!actor.userId) return view;
     const user = await this.db.user.findUnique({
@@ -68,7 +72,7 @@ export class AuthController {
     await this.db.authSession.delete({ where: { id: before.id } });
     if (userId)
       await this.db.user.update({ where: { id: userId }, data: { lastLoginAt: new Date() } });
-    return this.auth.view(after);
+    return this.viewWithProfile(after);
   }
   @AllowWhilePasswordChange()
   @Post('logout')

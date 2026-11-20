@@ -398,7 +398,11 @@ const fakeAuth = () =>
   ({
     actor: async () => ({ id: 'before-sid' }),
     checkWrite: () => undefined,
-    create: async (_res: unknown, role: string) => ({ id: 'after-sid', role }),
+    create: async (_res: unknown, role: string, _internal: boolean, userId?: string) => ({
+      id: 'after-sid',
+      role,
+      userId,
+    }),
     view: (row: { role: string }) => ({ role: row.role }),
   }) as unknown as Auth;
 const loginReq = { ip: '10.0.0.7', headers: {}, cookies: {} } as unknown as Request;
@@ -480,4 +484,62 @@ test('/me home, review, progress and mastery admit only account students', async
   for (const route of routes)
     assert.equal((await outcome(req('student', 'u7'), route)).status, 200);
   assert.deepEqual(called, ['home:u7', 'review:u7', 'progress:u7', 'mastery:u7']);
+});
+
+test('login returns the same profile fields as GET /auth/me; invite login stays profile-free', async () => {
+  const saved = scrypt('correct-horse-16ch');
+  const user = (mustChangePassword: boolean) => ({
+    id: 'u1',
+    role: 'student',
+    passwordHash: saved,
+    disabledAt: null,
+    displayName: 'An',
+    mustChangePassword,
+  });
+  // Like Prisma, honour `select` so the response cannot leak the password hash.
+  const selecting = (row: Record<string, unknown>) => {
+    const { db } = accountDb(row);
+    (db.user as { findUnique: unknown }).findUnique = async (a: {
+      select?: Record<string, boolean>;
+    }) => (a.select ? Object.fromEntries(Object.keys(a.select).map((k) => [k, row[k]])) : row);
+    return db;
+  };
+  for (const must of [false, true]) {
+    const ctrl = new AuthController(fakeAuth(), selecting(user(must)), new LoginLimiter());
+    const body = await ctrl.login(
+      { username: 'alice', credential: 'correct-horse-16ch' },
+      loginReq,
+      {} as Response,
+    );
+    assert.deepEqual(body, {
+      role: 'student',
+      userId: 'u1',
+      displayName: 'An',
+      mustChangePassword: must,
+    });
+    const meAuth = {
+      ...fakeAuth(),
+      actor: async () => ({ id: 'after-sid', role: 'student', userId: 'u1' }),
+    };
+    const me = await new AuthController(
+      meAuth as unknown as Auth,
+      selecting(user(must)),
+      new LoginLimiter(),
+    ).me(loginReq, {} as Response);
+    assert.deepEqual(body, { ...me, role: 'student' });
+  }
+  const prev = process.env.LEARNER_INVITE_CODE;
+  process.env.LEARNER_INVITE_CODE = 'invite-xyz';
+  try {
+    const ctrl = new AuthController(fakeAuth(), accountDb(null).db, new LoginLimiter());
+    const body = await ctrl.login(
+      { username: '', credential: 'invite-xyz' },
+      loginReq,
+      {} as Response,
+    );
+    assert.deepEqual(body, { role: 'learner' });
+  } finally {
+    if (prev === undefined) delete process.env.LEARNER_INVITE_CODE;
+    else process.env.LEARNER_INVITE_CODE = prev;
+  }
 });
