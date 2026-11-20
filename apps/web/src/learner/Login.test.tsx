@@ -102,4 +102,12 @@ describe('error contrast on the deep login screen', () => {
     expect(color && bg).toBeTruthy();
     expect(ratio(token(color!), token(bg!))).toBeGreaterThanOrEqual(4.5);
   });
+  it('link, hint and labels are readable on every deep background stop', () => {
+    const grounds = ['deep-900', 'deep-800', 'deep-700'].map(token);
+    for (const fg of ['deep-accent', 'deep-muted', 'deep-ink']) {
+      for (const bg of grounds) expect(ratio(token(fg), bg)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(css).toMatch(/\.login-switch \{[^}]*color: var\(--deep-accent\)/);
+    expect(css).toMatch(/\.pilot-login small \{[^}]*color: var\(--deep-muted\)/);
+  });
 });

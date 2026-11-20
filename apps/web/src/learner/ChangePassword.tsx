@@ -3,11 +3,17 @@ import { LogOut } from 'lucide-react';
 import { api } from '../pilot/api';
 import { ErrorNote } from './ErrorNote';
 
-type Props = { forced: boolean; role: string; onDone: () => void; onLogout: () => void };
+type Props = {
+  forced: boolean;
+  role: string;
+  onDone: () => void;
+  onCancel?: () => void;
+  onLogout: () => void;
+};
 
 export const minPasswordLength = (role: string) => (role === 'student' ? 8 : 16);
 
-export function ChangePassword({ forced, role, onDone, onLogout }: Props) {
+export function ChangePassword({ forced, role, onDone, onCancel, onLogout }: Props) {
   const min = minPasswordLength(role);
   const [current, setCurrent] = useState(''),
     [next, setNext] = useState(''),
@@ -82,7 +88,7 @@ export function ChangePassword({ forced, role, onDone, onLogout }: Props) {
               {busy ? 'Đang lưu…' : 'Đổi mật khẩu'}
             </button>
             {!forced && (
-              <button type="button" className="btn secondary" onClick={onDone}>
+              <button type="button" className="btn secondary" onClick={onCancel ?? onDone}>
                 Hủy
               </button>
             )}

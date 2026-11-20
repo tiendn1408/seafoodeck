@@ -67,9 +67,11 @@ function LoginScreen({
               credential,
               ...(mode !== 'invite' ? { username } : {}),
             })
-              .then(onLogin)
-              .catch((err) => setError(failure(err, mode)))
-              .finally(() => setBusy(false));
+              .then((a) => onLogin(a))
+              .catch((err) => {
+                setError(failure(err, mode));
+                setBusy(false);
+              });
           }}
         >
           {labels.user && (

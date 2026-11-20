@@ -60,6 +60,10 @@ export default function PilotApp() {
       .catch((e) => setError(e.message));
   }, []);
   useEffect(() => setAuthRequiredHandler(() => setMustChange(true)), []);
+  const signedIn = !!auth && auth.role !== 'guest';
+  // Only an authenticated session can be forced; a flag raised while a guest never sticks.
+  const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
+  const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
   function persist(next: Ledger) {
     setLedger(next);
     setWarning('');
@@ -107,7 +111,8 @@ export default function PilotApp() {
     }
   }
   useEffect(() => {
-    if (!auth || auth.role === 'guest' || route !== 'study' || game || !ledger.sessionId) return;
+    if (!auth || auth.role === 'guest' || forced || route !== 'study' || game || !ledger.sessionId)
+      return;
     let alive = true;
     api<Game>(`/learning/sessions/${ledger.sessionId}`)
       .then((g) => {
@@ -124,7 +129,7 @@ export default function PilotApp() {
     return () => {
       alive = false;
     };
-  }, [auth, route, game, ledger]);
+  }, [auth, forced, route, game, ledger]);
   function record(result: Score, g: Game) {
     persist(mergeScore(ledger, result, g));
   }
@@ -136,8 +141,6 @@ export default function PilotApp() {
   const active = ledger.attempts.filter((a) => a.contentVersion === version && !a.skipped),
     reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
   const staff = auth && ['admin', 'editor', 'reviewer', 'publisher'].includes(auth.role);
-  const signedIn = !!auth && auth.role !== 'guest';
-  const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
   function logout() {
     void api<AuthView>('/auth/logout', {})
       .then((a) => {
@@ -153,7 +156,15 @@ export default function PilotApp() {
   return (
     <AppShell
       route={route}
-      tone={route === 'home' || route === 'study' || route.startsWith('profile/') ? 'deep' : 'ice'}
+      tone={
+        forced ||
+        loginShown ||
+        route === 'home' ||
+        route === 'study' ||
+        route.startsWith('profile/')
+          ? 'deep'
+          : 'ice'
+      }
       staff={!!staff}
       internal={!!auth?.internal}
       signedIn={signedIn && !forced}
@@ -199,6 +210,7 @@ export default function PilotApp() {
           (() => {
             const onLogin = (a: AuthView) => {
               setCsrf(a.csrf);
+              setMustChange(false);
               setAuth(a);
             };
             return loginKind(route, auth.role) === 'staff' ? (
