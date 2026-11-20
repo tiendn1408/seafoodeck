@@ -35,7 +35,8 @@
 
 /* Programmatic focus targets (the new question / summary title): no ring around a region. */
 .shell .study-stage .study-question:focus,
-.shell .study-stage .haul-hero h1:focus {
+.shell .study-stage .haul-hero h1:focus,
+.shell .study-stage .haul-saving:focus {
   outline: none;
 }
 .study {

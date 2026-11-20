@@ -1,13 +1,13 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
-import { api, type ApiQuestion, type Game, type ProgressEntry, type Score } from '../../pilot/api';
+import { api, type ApiQuestion, type Game, type ProgressEntry } from '../../pilot/api';
 import { stopAudio } from '../../pilot/Media';
 import { ErrorNote } from '../ErrorNote';
 import { FloatRope, type RopeFloat } from '../FloatRope';
 import { QuestionView, coverName } from './QuestionView';
 import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
-import { createSubmitQueue, type Job, type SubmitQueue } from './submitQueue';
+import { sessionQueue, withResult, type GameUpdate } from './submitQueues';
 import { useSessionSummary } from './useSessionSummary';
 import './study.css';
 
@@ -19,42 +19,14 @@ const modeNames: Record<string, string> = {
 };
 
 export type UserKind = 'student' | 'trial' | 'staff';
-/**
- * Study never holds the game itself: every change is an update of the parent's latest game.
- * It must be a stable function: background saves apply it even after Study has unmounted.
- */
-export type GameUpdate = (update: (g: Game) => Game) => void;
+export type { GameUpdate };
 
-/** The game with one question's result replaced (a no-op for another session's game). */
-function withResult(g: Game, gameId: string, questionId: string, result: Score): Game {
-  if (g.id !== gameId) return g;
-  return {
-    ...g,
-    questions: g.questions.map((x) => (x.id === questionId ? { ...x, result } : x)),
-  };
-}
-
-function sendAnswer(job: Job) {
-  return api<Score>(`/learning/sessions/${job.gameId}/questions/${job.questionId}/attempts`, {
-    key: job.key,
-    answer: job.answer,
-  });
-}
-
-/** Warns before closing the tab while a queued answer has not reached the server. */
-function guardUnload(queue: SubmitQueue) {
-  const warn = (e: BeforeUnloadEvent) => {
-    e.preventDefault();
-    e.returnValue = '';
-  };
-  let on = false;
-  queue.subscribe(() => {
-    const need = queue.pendingCount() > 0;
-    if (need === on) return;
-    on = need;
-    if (need) window.addEventListener('beforeunload', warn);
-    else window.removeEventListener('beforeunload', warn);
-  });
+/** Review rows the server returned with the game's answers, the latest per target and skill. */
+function progressOf(game: Game): ProgressEntry[] {
+  const rows = new Map<string, ProgressEntry>();
+  for (const q of game.questions)
+    for (const r of q.result?.progress ?? []) rows.set(`${r.targetId}|${r.skill}`, r);
+  return [...rows.values()];
 }
 
 /** The image of the question after `cursor`, loaded early so it is ready when the learner gets there. */
@@ -91,32 +63,15 @@ export function Study({
       : game.questions.findIndex((q) => !q.result),
   );
   const { index: speciesIndex, settled } = useSpeciesIndex(game.releaseId);
-  // Review rows the server returned with this session's answers, latest per target and skill.
-  const [progress, setProgress] = useState<Record<string, ProgressEntry>>({});
-  const record = (score: Score) => {
-    const rows = score.progress;
-    if (!rows?.length) return;
-    setProgress((p) => {
-      const next = { ...p };
-      for (const r of rows) next[`${r.targetId}|${r.skill}`] = r;
-      return next;
-    });
-  };
-  // Answers restored after a reload carry no progress; a student's summary then asks the server.
-  const [restored] = useState(() => game.questions.some((q) => q.result && !q.result.progress));
-
-  // The queue outlives this screen: a job finishing after the learner left still updates the
-  // parent's game (and the unload guard stays until the queue is empty).
-  const [queue] = useState(() => {
-    const q = createSubmitQueue(sendAnswer);
-    q.subscribe((e) => {
-      if (e.kind !== 'done') return;
-      record(e.score);
-      onChange((g) => withResult(g, e.job.gameId, e.job.questionId, e.score));
-    });
-    guardUnload(q);
-    return q;
-  });
+  const progress = progressOf(game);
+  // Confirmed answers without progress were restored from the server (a reload or a resume);
+  // a student's summary then asks the server for the review days.
+  const restored = game.questions.some(
+    (q) => q.result && !q.result.provisional && !q.result.progress,
+  );
+  // One queue per session, owned outside this screen: pausing and coming back shows the same
+  // pending saves and failures, and results land in the parent's game either way.
+  const queue = sessionQueue(game.id, onChange);
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   useEffect(() => queue.subscribe(redraw), [queue]);
   const saving = queue.pendingCount() > 0;
@@ -165,7 +120,7 @@ export function Study({
       <div ref={stage}>
         <Summary
           game={game}
-          progress={Object.values(progress)}
+          progress={progress}
           server={server}
           saving={saving}
           saveError={saveError}
@@ -206,10 +161,7 @@ export function Study({
         index={cursor}
         species={lookup(coverName(q))}
         speciesSettled={settled}
-        onScore={(s) => {
-          record(s);
-          onChange((g) => withResult(g, game.id, q.id, s));
-        }}
+        onScore={(s) => onChange((g) => withResult(g, game.id, q.id, s))}
         onQueue={(job, provisional) => {
           onChange((g) => withResult(g, game.id, q.id, provisional));
           queue.enqueue(job);

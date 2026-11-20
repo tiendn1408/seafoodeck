@@ -21,6 +21,7 @@ import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
+import { disposeAll } from '../learner/study/submitQueues';
 /**
  * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
@@ -101,7 +102,18 @@ export default function PilotApp() {
   // Only students have server-side progress; trial and staff keep the tab's session id.
   const student = kind === 'student';
   function opened(g: Game) {
-    setGame(g);
+    // Reopening the session this tab already holds keeps answers whose save is still queued.
+    setGame((current) =>
+      current?.id === g.id
+        ? {
+            ...g,
+            questions: g.questions.map((q) => {
+              const mine = current.questions.find((x) => x.id === q.id)?.result;
+              return !q.result && mine ? { ...q, result: mine } : q;
+            }),
+          }
+        : g,
+    );
     if (!student) rememberSession(g.id);
     location.hash = 'study';
   }
@@ -213,6 +225,7 @@ export default function PilotApp() {
         setAuth(a);
         setCsrf(a.csrf);
         signIns.current++;
+        disposeAll();
         restoreTried.current = null;
         setGame(null);
         rememberSession(null);

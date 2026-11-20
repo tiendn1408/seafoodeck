@@ -12,7 +12,7 @@ import {
   serializeByKey,
   withSerializableRetry,
 } from './progress-record';
-import { errorStatus, errorBody } from './main';
+import { BUSY, errorStatus, errorBody } from './main';
 import type { SubmitContext } from './progress-record';
 import { scheduleReview } from './progress-review';
 import type { ReviewRow } from './progress-review';
@@ -534,7 +534,10 @@ test('different users run concurrently and the lock map drains', async () => {
 });
 
 test('the Errors filter maps every serialization conflict to 409 with a retry message', () => {
-  const busy = { message: 'Hệ thống đang bận, vui lòng thử lại.' };
+  // `code: 'BUSY'` tells clients this 409 is transient (retry with the same key); every
+  // other 409 (ConflictException) has no code and is final.
+  const busy = { message: 'Hệ thống đang bận, vui lòng thử lại.', code: 'BUSY' };
+  assert.equal(BUSY, busy.message);
   const adapter = Object.assign(new Error('write conflict'), {
     cause: { kind: 'TransactionWriteConflict', originalCode: '40001' },
   });

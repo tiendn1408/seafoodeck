@@ -51,9 +51,16 @@ const caughtNote = (days: number | null) => (days ? `ôn lại sau ${days} ngày
  * (none for trial learners), never the clock or browser storage.
  */
 export function summarizeHaul(game: Game, progress: ProgressEntry[]): HaulSummary {
+  // A provisional self-rating has no real target id yet; when another card of the same species
+  // already has one, count it under that target so the species is not listed twice.
+  const realByFront = new Map<string, string>();
+  for (const q of game.questions)
+    if (q.front && q.result && !q.result.provisional) realByFront.set(q.front, q.result.targetId);
   const rows: Row[] = game.questions.flatMap((q) => {
-    const r = q.result;
-    if (!r) return [];
+    const stored = q.result;
+    if (!stored) return [];
+    const real = stored.provisional && q.front ? realByFront.get(q.front) : undefined;
+    const r = real ? { ...stored, targetId: real } : stored;
     if (r.items?.length)
       return r.items.map((i) => ({
         targetId: i.targetId,

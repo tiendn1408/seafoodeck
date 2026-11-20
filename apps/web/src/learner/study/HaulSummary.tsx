@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { Game, ProgressEntry, SessionSummaryResponse } from '../../pilot/api';
 import { SignedImage } from '../../pilot/Media';
@@ -89,6 +89,28 @@ export function Summary({
   onRetry: () => void;
   pending: boolean;
 }) {
+  // When the saving status (the focus target until then) gives way to the title, move focus
+  // to the title so keyboard and screen-reader users are not left on a removed element.
+  const title = useRef<HTMLHeadingElement>(null);
+  const wasSaving = useRef(saving);
+  useEffect(() => {
+    const lost = !document.activeElement || document.activeElement === document.body;
+    if (wasSaving.current && !saving && lost) title.current?.focus({ preventScroll: true });
+    wasSaving.current = saving;
+  }, [saving]);
+  // Until every answer is confirmed the haul is not known: no title, list or retry yet.
+  if (saving)
+    return (
+      <section className="pilot-summary haul" aria-label="Tổng kết mẻ lưới">
+        <header className="haul-hero">
+          {rope}
+          <p className="haul-saving" role="status" tabIndex={-1} data-focus-target="">
+            Đang lưu…
+          </p>
+        </header>
+        {saveError && <div className="haul-sheet">{saveError}</div>}
+      </section>
+    );
   const haul = withServerDays(summarizeHaul(game, progress), server);
   const entries = [...haul.caught, ...haul.missed];
   const scores = game.questions.flatMap((q) => (q.result ? [q.result] : [])),
@@ -112,13 +134,10 @@ export function Summary({
     <section className="pilot-summary haul" aria-labelledby="haul-title">
       <header className="haul-hero">
         {rope}
-        <h1 id="haul-title" tabIndex={-1} data-focus-target="">
+        <h1 id="haul-title" ref={title} tabIndex={-1} data-focus-target="">
           {haul.title}
         </h1>
         <p className="haul-lede">{lede}</p>
-        <p className="haul-saving" role="status">
-          {saving ? 'Đang lưu…' : ''}
-        </p>
       </header>
       <div className="haul-sheet">
         {saveError}
@@ -169,7 +188,7 @@ export function Summary({
           )}
           <div className="haul-actions">
             {retry && (
-              <button className="btn primary" disabled={pending || saving} onClick={onRetry}>
+              <button className="btn primary" disabled={pending || !!saveError} onClick={onRetry}>
                 <RotateCcw size={18} aria-hidden="true" />
                 Ôn lỗi và câu bỏ qua
               </button>

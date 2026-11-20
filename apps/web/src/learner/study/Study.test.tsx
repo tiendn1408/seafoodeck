@@ -3,6 +3,7 @@ import { act, useEffect, useState } from 'react';
 import type { ApiQuestion, Game, ProgressEntry, Score } from '../../pilot/api';
 import { button, click, mount, unmountAll } from '../testDom';
 import { Study } from './Study';
+import { disposeAll } from './submitQueues';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const AT = '2026-11-19T08:00:00.000Z';
@@ -11,9 +12,11 @@ const DAY = 86_400_000;
 type Reply = { resolve: (r: Response) => void; key: string; body: { key: string } };
 let calls: string[];
 let attempts: Reply[];
+let stored: Score | undefined;
 beforeEach(() => {
   calls = [];
   attempts = [];
+  stored = undefined;
   localStorage.clear();
   vi.stubGlobal(
     'fetch',
@@ -51,6 +54,10 @@ beforeEach(() => {
             ],
           }),
         );
+      if (key === 'GET /learning/sessions/g1')
+        return Promise.resolve(
+          json(game([card('f1', 'Tên tiếng Anh', stored), card('f2', 'Tên tiếng Nhật')])),
+        );
       if (key.endsWith('/attempts'))
         return new Promise<Response>((resolve) =>
           attempts.push({ resolve, key, body: JSON.parse(String(init?.body)) }),
@@ -61,6 +68,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   unmountAll();
+  disposeAll();
   vi.unstubAllGlobals();
   localStorage.clear();
 });
@@ -108,8 +116,22 @@ let latest: Game;
 const seen = (g: Game) => void (latest = g);
 function Host({ initial, userKind }: { initial: Game; userKind: 'student' | 'trial' | 'staff' }) {
   const [g, setG] = useState(initial);
+  // "Tạm dừng" then back: PilotApp keeps the game while Study unmounts and mounts again.
+  const [shown, setShown] = useState(true);
   useEffect(() => seen(g), [g]);
-  return <Study game={g} userKind={userKind} onChange={setG} onRetry={() => {}} pending={false} />;
+  return (
+    <>
+      <button onClick={() => setShown((v) => !v)}>Ẩn hiện</button>
+      {shown && (
+        <Study game={g} userKind={userKind} onChange={setG} onRetry={() => {}} pending={false} />
+      )}
+    </>
+  );
+}
+async function pauseAndReturn(host: HTMLElement) {
+  await click(button(host, 'Ẩn hiện'));
+  expect(host.querySelector('.study, .haul')).toBeNull();
+  await click(button(host, 'Ẩn hiện'));
 }
 async function rate(host: HTMLElement, label: 'Đã nhớ' | 'Chưa nhớ') {
   await click(button(host, 'Chạm để lật thẻ'));
@@ -157,8 +179,11 @@ describe('Study self-rated cards', () => {
     await click(button(host, 'Tiếp tục'));
     await rate(host, 'Đã nhớ');
     await click(button(host, 'Xem tổng kết'));
-    expect(host.querySelector('#haul-title')).not.toBeNull();
+    // While the last card is provisional there is no title, list or retry: only the status.
     expect(saving(host)).toBe(true);
+    expect(host.querySelector('#haul-title')).toBeNull();
+    expect(host.querySelector('.haul-list')).toBeNull();
+    expect(host.textContent).not.toContain('Ôn lỗi');
     // Jobs are sent one at a time.
     expect(attempts).toHaveLength(1);
     await act(async () =>
@@ -169,6 +194,7 @@ describe('Study self-rated cards', () => {
     await tick();
     expect(attempts).toHaveLength(2);
     expect(saving(host)).toBe(true);
+    expect(host.querySelector('#haul-title')).toBeNull();
     await act(async () =>
       attempts[1].resolve(
         json(serverScore('f2', 'name:ja', { progress: [progress('name:ja', 3)] })),
@@ -177,8 +203,80 @@ describe('Study self-rated cards', () => {
     await tick();
     expect(saving(host)).toBe(false);
     expect(host.querySelector('#haul-title')?.textContent).toBe('1 / 1 loài vào lưới');
+    expect(host.querySelectorAll('.haul-row')).toHaveLength(1);
     expect(host.querySelector('.haul-note')?.textContent).toContain('ôn lại sau 3 ngày');
     expect(calls.filter((c) => c.includes('/summary') || c.includes('/me'))).toEqual([]);
+  });
+
+  it('pause and return keeps the days, the pending save and its queue', async () => {
+    const host = mount(
+      <Host initial={game([card('f1'), card('f2', 'Tên tiếng Nhật')])} userKind="student" />,
+    );
+    await tick();
+    await rate(host, 'Đã nhớ');
+    await act(async () =>
+      attempts[0].resolve(
+        json(serverScore('f1', 'name:en', { progress: [progress('name:en', 3)] })),
+      ),
+    );
+    await tick();
+    await click(button(host, 'Tiếp tục'));
+    await rate(host, 'Đã nhớ');
+    await pauseAndReturn(host);
+    await tick();
+    // Remounted on the summary: the save is still pending on the same queue.
+    expect(saving(host)).toBe(true);
+    expect(host.querySelector('#haul-title')).toBeNull();
+    const leave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(leave);
+    expect(leave.defaultPrevented).toBe(true);
+    await act(async () =>
+      attempts[1].resolve(
+        json(serverScore('f2', 'name:ja', { progress: [progress('name:ja', 5)] })),
+      ),
+    );
+    await tick();
+    expect(saving(host)).toBe(false);
+    expect(host.querySelector('.haul-note')?.textContent).toContain('ôn lại sau 3 ngày');
+    expect(attempts).toHaveLength(2);
+    expect(calls.filter((c) => c.includes('/summary'))).toEqual([]);
+  });
+
+  it('a failed save stays visible after pause and return, and blocks the retry session', async () => {
+    const host = mount(<Host initial={game([card('f1')])} userKind="student" />);
+    await tick();
+    await rate(host, 'Chưa nhớ');
+    await act(async () => attempts[0].resolve(json({ message: 'Không hợp lệ.' }, 400)));
+    await tick();
+    await pauseAndReturn(host);
+    await tick();
+    expect(host.querySelector('.pilot-error')?.textContent).toContain('Không hợp lệ.');
+    expect(button(host, 'Thử gửi lại')).toBeTruthy();
+    expect(button(host, 'Ôn lỗi và câu bỏ qua').disabled).toBe(true);
+    await click(button(host, 'Thử gửi lại'));
+    expect(attempts).toHaveLength(2);
+    await act(async () =>
+      attempts[1].resolve(json(serverScore('f1', 'name:en', { correct: false, progress: [] }))),
+    );
+    await tick();
+    expect(host.querySelector('.pilot-error')).toBeNull();
+    expect(button(host, 'Ôn lỗi và câu bỏ qua').disabled).toBe(false);
+  });
+
+  it('a final 409 adopts the server result instead of a dead end', async () => {
+    const host = mount(<Host initial={game([card('f1')])} userKind="student" />);
+    await tick();
+    await rate(host, 'Đã nhớ');
+    stored = serverScore('f1', 'name:en', { correct: false });
+    await act(async () =>
+      attempts[0].resolve(json({ message: 'Câu đã nộp; dùng lượt ôn riêng.' }, 409)),
+    );
+    await tick();
+    await tick();
+    expect(attempts).toHaveLength(1);
+    expect(latest.questions[0].result).toEqual(stored);
+    expect(host.querySelector('.pilot-error')).toBeNull();
+    expect(host.textContent).toContain('Đã lưu tự đánh giá');
   });
 
   it('a trial haul says "Đã vào lưới" and never asks for /summary or /me', async () => {
@@ -234,6 +332,31 @@ describe('Study self-rated cards', () => {
 });
 
 describe('Study session summary after a reload', () => {
+  it('a resumed session with a pending save asks /summary only once the queue is empty', async () => {
+    const host = mount(
+      <Host
+        initial={game([
+          card('f1', 'Tên tiếng Anh', serverScore('f1', 'name:en')),
+          card('f2', 'Tên tiếng Nhật'),
+        ])}
+        userKind="student"
+      />,
+    );
+    await tick();
+    await rate(host, 'Đã nhớ');
+    await click(button(host, 'Xem tổng kết'));
+    await tick();
+    expect(calls.filter((c) => c.endsWith('/summary'))).toEqual([]);
+    await act(async () =>
+      attempts[0].resolve(
+        json(serverScore('f2', 'name:ja', { progress: [progress('name:ja', 2)] })),
+      ),
+    );
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c.endsWith('/summary'))).toHaveLength(1);
+  });
+
   const answered = game([card('f1', 'Tên tiếng Anh', serverScore('f1', 'name:en'))]);
   it('a re-opened student session reads days from GET /summary once', async () => {
     const host = mount(<Host initial={answered} userKind="student" />);

@@ -240,6 +240,33 @@ describe('summarizeHaul', () => {
     expect(summarizeHaul(g, []).title).toBe('1 / 2 mục vào lưới');
   });
 
+  it('a provisional rating joins the real target of another card of the same species', () => {
+    const g = game(
+      [
+        question(
+          'f0',
+          { targetId: 'cod', targetLabel: 'Cá tuyết', skill: 'name:en', selfRated: true },
+          { type: 'flashcard', front: 'Cá tuyết' },
+        ),
+        question(
+          'f1',
+          {
+            targetId: 'front:Cá tuyết',
+            targetLabel: 'Cá tuyết',
+            skill: 'name:ja',
+            selfRated: true,
+            provisional: true,
+          },
+          { type: 'flashcard', front: 'Cá tuyết' },
+        ),
+      ],
+      'flashcard',
+    );
+    const s = summarizeHaul(g, []);
+    expect(s.title).toBe('1 / 1 loài vào lưới');
+    expect(s.caught[0]).toMatchObject({ targetId: 'cod', skills: ['name:en', 'name:ja'] });
+  });
+
   it('ignores questions without a result', () => {
     const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }), question('q2')]);
     expect(summarizeHaul(g, []).title).toBe('1 / 1 loài vào lưới');

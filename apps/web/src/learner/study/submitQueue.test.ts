@@ -94,6 +94,80 @@ describe('createSubmitQueue', () => {
     expect(q.failures().map((f) => f.job.questionId)).toEqual(['q2']);
   });
 
+  it('retries a BUSY 409 with the same key; any other 409 is final and the next job proceeds', async () => {
+    const replies: (Error | null)[] = [
+      new ApiError('Hệ thống đang bận, vui lòng thử lại.', 409, 'BUSY'),
+      null,
+      new ApiError('Câu đã nộp; dùng lượt ôn riêng.', 409),
+      null,
+    ];
+    const send = vi.fn(async (j: Job) => {
+      const r = replies.shift();
+      if (r) throw r;
+      return score(j.questionId);
+    });
+    const q = createSubmitQueue(send, { retryMs: [10, 10, 10] });
+    q.enqueue(job('q1', 'k-1'));
+    q.enqueue(job('q2', 'k-2'));
+    q.enqueue(job('q3', 'k-3'));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(send.mock.calls.map(([j]) => j.key)).toEqual(['k-1', 'k-1', 'k-2', 'k-3']);
+    expect(q.failures().map((f) => [f.job.questionId, (f.error as ApiError).status])).toEqual([
+      ['q2', 409],
+    ]);
+  });
+
+  it('a throwing listener neither resends a job nor skips the next one', async () => {
+    const send = vi.fn(async (j: Job) => score(j.questionId));
+    const q = createSubmitQueue(send);
+    q.subscribe((e) => {
+      if (e.kind === 'done') throw new Error('listener bug');
+    });
+    q.enqueue(job('q1'));
+    q.enqueue(job('q2'));
+    await q.flush();
+    expect(send.mock.calls.map(([j]) => j.questionId)).toEqual(['q1', 'q2']);
+    expect(q.failures()).toEqual([]);
+  });
+
+  it('dispose cancels pending retries, drops listeners and ignores late results', async () => {
+    let fail = true;
+    const send = vi.fn(async (j: Job) => {
+      if (fail) throw new ApiError('offline', 0);
+      return score(j.questionId);
+    });
+    const events: QueueEvent[] = [];
+    const q = createSubmitQueue(send, { retryMs: [50] });
+    q.subscribe((e) => events.push(e));
+    q.enqueue(job('q1'));
+    await vi.advanceTimersByTimeAsync(0);
+    q.dispose();
+    fail = false;
+    const before = events.length;
+    await vi.advanceTimersByTimeAsync(200);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(events.length).toBe(before);
+    expect(q.pendingCount()).toBe(0);
+    q.enqueue(job('q2'));
+    await vi.advanceTimersByTimeAsync(10);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('forget clears a failure and marks the question as settled', async () => {
+    const send = vi.fn(async () => {
+      throw new ApiError('Câu đã nộp; dùng lượt ôn riêng.', 409);
+    });
+    const q = createSubmitQueue(send);
+    q.enqueue(job('q1'));
+    await q.flush();
+    expect(q.failures()).toHaveLength(1);
+    q.forget('q1');
+    expect(q.failures()).toEqual([]);
+    q.enqueue(job('q1'));
+    await q.flush();
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
   it('gives up after the last delay and lets a failed job be enqueued again', async () => {
     let down = true;
     const send = vi.fn(async (j: Job) => {
