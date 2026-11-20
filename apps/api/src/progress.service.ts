@@ -231,9 +231,9 @@ export class ProgressService {
   async afterSubmit(actor: AuthSession, result: unknown): Promise<ProgressEntry[]> {
     const touched = touchedTargets((result ?? {}) as GradedResult);
     if (!touched.length || !studentId(actor)) return [];
-    const { all, rows } = await this.active(actor);
+    const { rows } = await this.active(actor);
     return touched.flatMap((t) => {
-      const row = all.find((r) => r.targetId === t.targetId && r.skill === t.skill);
+      const row = rows.find((r) => r.targetId === t.targetId && r.skill === t.skill);
       if (!row) return [];
       return [
         {
@@ -257,10 +257,15 @@ export class ProgressService {
    * Most recent unexpired game session of this login that still has an unanswered question.
    * Scoped to the session (`actorId`), since only the owning login can resume it.
    */
-  private async resumable(actor: AuthSession, now: number): Promise<string | null> {
+  private async resumable(
+    actor: AuthSession,
+    now: number,
+    releaseId: string,
+  ): Promise<string | null> {
     const s = await this.db.gameSession.findFirst({
       where: {
         actorId: actor.id,
+        releaseId,
         expiresAt: { gt: new Date(now) },
         questions: { some: { attempt: { is: null } } },
         ...(!actor.internal ? { release: { internal: false } } : {}),
@@ -282,7 +287,7 @@ export class ProgressService {
       cast: planCast(c.overview, c.rows, now),
       due: c.rows.filter((r) => Date.parse(effectiveDueAt(r)) <= now).length,
       skills: skillProgress(c.overview, c.rows),
-      activeSessionId: await this.resumable(actor, now),
+      activeSessionId: await this.resumable(actor, now, c.releaseId),
     };
   }
 

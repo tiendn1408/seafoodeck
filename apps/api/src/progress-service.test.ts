@@ -652,7 +652,12 @@ const la = (sessionId: string, targetId: string, at: string, over: Partial<La> =
   ...over,
 });
 
-function meDb(progress: Rec[], log: La[] = [], active: { id: string } | null = null) {
+function meDb(
+  progress: Rec[],
+  log: La[] = [],
+  active: { id: string } | null = null,
+  pick?: (arg: never) => { id: string } | undefined,
+) {
   const store = fakeDb(progress, {
     learningAttempt: {
       findMany: async (arg: { where: { userId: string } }) => (
@@ -665,7 +670,7 @@ function meDb(progress: Rec[], log: La[] = [], active: { id: string } | null = n
     gameSession: {
       findFirst: async (arg: unknown) => (
         (store.calls['gameSession.findFirst'] ??= []).push(arg),
-        active
+        pick ? (pick(arg as never) ?? null) : active
       ),
     },
   });
@@ -847,6 +852,7 @@ test('/me/home: haul, cast, due count, skills and the resumable session', async 
       actorId: 'a1',
       expiresAt: { gt: new Date(NOW) },
       questions: { some: { attempt: { is: null } } },
+      releaseId: 'r1',
       release: { internal: false },
     },
     orderBy: { createdAt: 'desc' },
@@ -1000,4 +1006,41 @@ test('submit tolerates afterSubmit failure: graded result, progress [], stored r
   assert.equal(r.correct, (writes[0] as Record<string, unknown>).correct);
   assert.equal((writes[0] as Record<string, unknown>).progress, undefined);
   assert.equal(errors.length, 1);
+});
+
+test('/me/home resumes only a session of the current release', async () => {
+  const sessions = [{ id: 'old', releaseId: 'r0' }];
+  const withSessions = (list: { id: string; releaseId: string }[]) =>
+    meDb([], [], null, (arg: { where: { releaseId: string } }) =>
+      list.find((s) => s.releaseId === arg.where.releaseId),
+    );
+  const stale = await new ProgressService(withSessions(sessions).db, catalogFake).home(
+    student,
+    NOW,
+  );
+  assert.equal(stale.activeSessionId, null);
+  const current = await new ProgressService(
+    withSessions([...sessions, { id: 'cur', releaseId: 'r1' }]).db,
+    catalogFake,
+  ).home(student, NOW);
+  assert.equal(current.activeSessionId, 'cur');
+});
+
+test('afterSubmit skips rows with a stale fingerprint and keeps the others', async () => {
+  const rows = [rec('item-A', { contentVersion: 'old-fingerprint' }), rec('item-B', { stage: 1 })];
+  const { db } = fakeDb(rows);
+  const result = {
+    skipped: false,
+    targetId: 'matching',
+    skill: 'name:en',
+    items: [{ targetId: 'item-A' }, { targetId: 'item-B' }],
+  };
+  const svc = new ProgressService(db, catalogFake);
+  const touched = touchedTargets(result as never);
+  assert.equal(touched.length, 2, 'fixture touches both rows');
+  const out = await svc.afterSubmit(student, result);
+  assert.deepEqual(
+    out.map((e) => e.targetId),
+    ['item-B'],
+  );
 });

@@ -144,20 +144,37 @@ export class EditingGuard implements CanActivate {
 export class LoginLimiter {
   private buckets = new Map<string, { count: number; until: number }>();
   private names = new Map<string, { count: number; until: number }>();
-  /** 20 attempts / 10 min per IP and, when a username is given, 10 / 10 min per lowercased name. */
-  check(ip: string, username?: string) {
-    const now = Date.now();
+  private prune(now: number) {
     for (const [key, b] of this.buckets) if (b.until < now) this.buckets.delete(key);
     for (const [key, b] of this.names) if (b.until < now) this.names.delete(key);
+  }
+  private blocked = () => new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
+  /**
+   * Gate before verifying a credential: throws 429 when the IP (20 failures / 10 min) or, with a
+   * username, the lowercased name (10 failures / 10 min) is already over its limit. Never counts.
+   */
+  check(ip: string, username?: string) {
+    this.prune(Date.now());
+    if ((this.buckets.get(ip)?.count ?? 0) >= 20) throw this.blocked();
+    if (username !== undefined && (this.names.get(username.toLowerCase())?.count ?? 0) >= 10)
+      throw this.blocked();
+  }
+  /** Counts one failed authentication (unknown user, disabled account, wrong credential). */
+  fail(ip: string, username?: string) {
+    const now = Date.now();
+    this.prune(now);
     const bucket = this.buckets.get(ip) ?? { count: 0, until: now + 600000 };
-    if (++bucket.count > 20)
-      throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
+    bucket.count++;
     this.buckets.set(ip, bucket);
     if (username === undefined) return;
     const name = username.toLowerCase();
     const named = this.names.get(name) ?? { count: 0, until: now + 600000 };
-    if (++named.count > 10) throw new HttpException('Quá nhiều lần thử. Thử lại sau 10 phút.', 429);
+    named.count++;
     this.names.set(name, named);
+  }
+  /** After a successful login: clears the per-username bucket (the IP bucket only ages out). */
+  reset(_ip: string, username?: string) {
+    if (username !== undefined) this.names.delete(username.toLowerCase());
   }
   private passwordChecks = new Map<string, { count: number; until: number }>();
   /** Current-password checks (POST /me/password): 10 / 10 min per user, apart from login buckets. */

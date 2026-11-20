@@ -37,21 +37,28 @@ export class AuthController {
   ) {
     const before = await this.auth.actor(req);
     this.auth.checkWrite(req, before);
-    this.limiter.check(req.ip ?? 'unknown', data.username || undefined);
+    const ip = req.ip ?? 'unknown';
+    const username = data.username || undefined;
+    this.limiter.check(ip, username);
+    const reject = (message: string): never => {
+      this.limiter.fail(ip, username);
+      throw new UnauthorizedException(message);
+    };
     let role = 'learner',
       userId: string | undefined;
     if (data.username) {
       const user = await this.db.user.findUnique({ where: { username: data.username } });
       // Disabled accounts share the wrong-password response and its scrypt cost.
       if (!passwordCheck(data.credential, user?.passwordHash) || !user || user.disabledAt)
-        throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ.');
+        return reject('Thông tin đăng nhập không hợp lệ.');
       role = user.role;
       userId = user.id;
     } else if (
       !process.env.LEARNER_INVITE_CODE ||
       hash(data.credential) !== hash(process.env.LEARNER_INVITE_CODE)
     )
-      throw new UnauthorizedException('Mã mời không hợp lệ.');
+      return reject('Mã mời không hợp lệ.');
+    this.limiter.reset(ip, username);
     const after = await this.auth.create(
       res,
       role,
