@@ -94,10 +94,10 @@
 
 **Interfaces:**
 - Consumes: `kindOf`, `api` (PATCH `/me`), `ChangePassword` (Task 3), `clearMe`.
-- Produces: `AppShell` thêm prop `kind: Kind` và `userName?: string`; thanh điều hướng theo vai trò: `student` có Học, Thư viện, Ôn tập, Tiến độ và lối vào Tài khoản; `trial` chỉ có Học và Thư viện; `manager` chỉ Thư viện; nhân viên như cũ; vẫn đúng một thanh điều hướng mỗi breakpoint. `Account` (route `account`, chỉ `student`): hiển thị tên hiển thị có thể sửa (≤ 80 ký tự, `PATCH /me`), nút đổi mật khẩu (dùng `ChangePassword` không bắt buộc), dòng báo rõ "Quản lý xem được tiến độ học của bạn", nút Đăng xuất. `TrialNudge`: khối "Đăng nhập để lưu tiến độ" cho học thử, kèm nút tới đăng nhập (đăng xuất phiên mã mời và mở màn tài khoản). `ManagerNotice`: thông báo ngắn "Trang quản lý sẽ có ở bản sau" cho `manager` ở Trang chủ.
+- Produces: `AppShell` thêm prop `kind: Kind` và `userName?: string`; thanh điều hướng theo vai trò: `student` có Học, Thư viện, Ôn tập, Tiến độ và lối vào Tài khoản; `trial` chỉ có Học và Thư viện; `manager` chỉ Thư viện; nhân viên như cũ; vẫn đúng một thanh điều hướng mỗi breakpoint. `Account` (route `account`, chỉ `student`): hiển thị tên hiển thị có thể sửa (≤ 80 ký tự, `PATCH /me`), nút đổi mật khẩu (dùng `ChangePassword` không bắt buộc), nút Đăng xuất. `TrialNudge`: khối "Đăng nhập để lưu tiến độ" cho học thử, kèm nút tới đăng nhập (đăng xuất phiên mã mời và mở màn tài khoản). `ManagerNotice`: thông báo ngắn "Trang quản lý sẽ có ở bản sau" cho `manager` ở Trang chủ.
 - Đăng xuất gọi `clearMe()` trước khi đổi `auth`.
 
-- [ ] **Step 1: Test.** `AppShell.test.tsx`: tab hiển thị đúng theo từng `kind`; chỉ một `nav` được hiển thị mỗi breakpoint. `Account.test.tsx`: sửa tên gọi `PATCH /me` với đúng thân; quá 80 ký tự bị chặn; hiện dòng quản lý xem được tiến độ; đăng xuất gọi `clearMe`. Chạy → FAIL.
+- [ ] **Step 1: Test.** `AppShell.test.tsx`: tab hiển thị đúng theo từng `kind`; chỉ một `nav` được hiển thị mỗi breakpoint. `Account.test.tsx`: sửa tên gọi `PATCH /me` với đúng thân; quá 80 ký tự bị chặn; không có dòng nhắc việc quản lý xem tiến độ; đăng xuất gọi `clearMe`. Chạy → FAIL.
 - [ ] **Step 2:** Implement; `PilotApp` đưa `kind` vào shell, thêm route `account`, route không hợp lệ cho vai trò (ví dụ `review` với `trial`) quay về `home` thay vì hiện trang lỗi.
 - [ ] **Step 3:** Chạy test → PASS. Commit `feat(web): role-aware shell and account page`.
 

@@ -59,7 +59,7 @@ Khách của bản demo cần: người học có tài khoản riêng, xem đư�
 - Đăng nhập bằng tên và mật khẩu; đăng xuất; đổi mật khẩu; trang cá nhân (tên hiển thị).
 - Trang chủ, Ôn tập, Tiến độ, Tổng kết như giai đoạn 2, nhưng số liệu lấy từ server.
 - **Thành tích** (tính khi đọc, không lưu): chuỗi ngày học liên tiếp, huy hiệu mốc, mức nhớ 4 kỹ năng, lịch sử các phiên gần đây, ngày học cuối.
-- Dòng báo rõ trên trang cá nhân: quản lý xem được tiến độ của bạn.
+- Trang cá nhân **không** có dòng nhắc việc quản lý xem tiến độ (người dùng quyết định ngày 2026-11-20: tránh cảm giác bị giám sát).
 
 **Học thử bằng mã mời (giữ lại, vai trò `learner` hiện có)**
 - Xem thư viện, thử bốn chế độ học; **không** có lịch ôn, tiến độ, mẻ hôm nay. Có lời nhắc "đăng nhập để lưu tiến độ".
