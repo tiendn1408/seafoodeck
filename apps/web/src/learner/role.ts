@@ -29,6 +29,11 @@ const ALLOWED: Record<Exclude<Kind, 'guest'>, string[]> = {
   staff: [...LEARNING, 'admin'],
 };
 
+/** Every fixed route a signed-in kind may open (species profiles follow "library"). */
+export function routesFor(kind: Kind): string[] {
+  return kind === 'guest' ? [] : [...ALLOWED[kind]];
+}
+
 /** Whether a signed-in kind may open a hash route; profiles follow the library. Guests are handled by the login screens. */
 export function routeAllowed(kind: Kind, route: string): boolean {
   if (kind === 'guest') return true;

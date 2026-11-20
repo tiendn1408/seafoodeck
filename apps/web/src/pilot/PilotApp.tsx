@@ -70,6 +70,9 @@ export default function PilotApp() {
   const kind = kindOf(auth);
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
   const permitted = !auth || forced || routeAllowed(kind, route);
+  // Stage wrappers follow the route only once it is signed in and permitted for this kind.
+  const staged = signedIn && permitted;
+  const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
     if (!permitted) location.replace('#home');
   }, [permitted]);
@@ -85,6 +88,8 @@ export default function PilotApp() {
     reviewOf?: string,
     reviewTargets?: { targetId: string; skill: string }[],
   ) {
+    // Kinds without the study route (managers) never open a learning session.
+    if (!canStudy) return;
     setPending(true);
     setError('');
     try {
@@ -191,15 +196,15 @@ export default function PilotApp() {
     >
       <div
         className={
-          route === 'home' && signedIn
+          staged && route === 'home'
             ? 'home-stage'
-            : route.startsWith('profile/') && signedIn
+            : staged && route.startsWith('profile/')
               ? 'profile-stage'
-              : route === 'study' && signedIn
+              : staged && route === 'study'
                 ? 'study-stage'
-                : route === 'account' && signedIn
+                : staged && route === 'account'
                   ? 'account-stage'
-                  : ['library', 'review', 'progress'].includes(route) && signedIn
+                  : staged && ['library', 'review', 'progress'].includes(route)
                     ? 'ice-stage'
                     : 'content home-content'
         }
@@ -270,6 +275,7 @@ export default function PilotApp() {
                 key={route}
                 id={route.split('/')[1]}
                 internal={auth.internal}
+                canStudy={canStudy}
                 onStart={start}
               />
             )}
@@ -306,7 +312,7 @@ export default function PilotApp() {
               <Account
                 userId={auth.userId}
                 onLogout={logout}
-                onSaved={(displayName) => setAuth({ ...auth, displayName })}
+                onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}
               />
             )}
             {route === 'admin' && staff && <Admin />}

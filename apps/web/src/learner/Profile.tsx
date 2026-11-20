@@ -22,10 +22,13 @@ const langAttr: Record<string, string> = { vi: 'vi', en: 'en', ja: 'ja', scienti
 export function Profile({
   id,
   internal,
+  canStudy,
   onStart,
 }: {
   id: string;
   internal: boolean;
+  /** False for viewers who only browse (managers): no study actions at all. */
+  canStudy: boolean;
   onStart: (mode: string, id: string) => Promise<void>;
 }) {
   const [item, setItem] = useState<CatalogItem | null>(null),
@@ -111,18 +114,20 @@ export function Profile({
             })}
           </ul>
         </section>
-        <div className="profile-actions">
-          <button
-            type="button"
-            className="profile-primary"
-            onClick={() => void onStart('flashcard', item.revisionId)}
-          >
-            Chỉ học flashcard · 3 thẻ
-          </button>
-          <a className="profile-secondary" href="#home">
-            Xem HS theo dạng hàng
-          </a>
-        </div>
+        {canStudy && (
+          <div className="profile-actions">
+            <button
+              type="button"
+              className="profile-primary"
+              onClick={() => void onStart('flashcard', item.revisionId)}
+            >
+              Chỉ học flashcard · 3 thẻ
+            </button>
+            <a className="profile-secondary" href="#home">
+              Xem HS theo dạng hàng
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

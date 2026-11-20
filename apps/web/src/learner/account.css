@@ -183,7 +183,8 @@
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 .role-card-action:hover {
-  background: var(--deep-surface);
+  border-color: var(--deep-ink);
+  background: rgb(143 211 220 / 0.16); /* deep-accent tint, stronger than the card fill */
 }
 
 .account :focus-visible,

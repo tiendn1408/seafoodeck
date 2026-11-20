@@ -108,11 +108,13 @@ describe('AppShell navigation by kind (desktop)', () => {
     const host = desktop('student');
     expect(host.querySelector('a[href="#account"]')?.textContent).toContain('Tài khoản');
   });
-  it('trial / manager / staff tabs', () => {
+  it('trial: Học and Thư viện', () => {
     expect(navLabels(desktop('trial'))).toEqual(['Học', 'Thư viện']);
-    unmountAll();
+  });
+  it('manager: Thư viện only', () => {
     expect(navLabels(desktop('manager'))).toEqual(['Thư viện']);
-    unmountAll();
+  });
+  it('staff: four tabs plus Quản trị', () => {
     expect(navLabels(desktop('staff'))).toEqual([
       'Học',
       'Thư viện',

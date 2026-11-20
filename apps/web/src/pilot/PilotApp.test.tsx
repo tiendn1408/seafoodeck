@@ -3,6 +3,7 @@ import { act } from 'react';
 import PilotApp from './PilotApp';
 import { setAuthRequiredHandler } from './api';
 import { clearMe } from '../learner/meStore';
+import { kindOf, routeAllowed, routesFor } from '../learner/role';
 import { button, click, field, mount, setValue, submit, unmountAll } from '../learner/testDom';
 
 const json = (body: unknown, status = 200) =>
@@ -15,6 +16,18 @@ const view = (role: string, extra: object = {}) => ({
   userId: 'u-' + role,
   ...extra,
 });
+const profileItem = {
+  revisionId: 'r1',
+  externalId: 'blue-mussel',
+  sku: 'MUS-01',
+  group: 'Nhuyễn thể',
+  names: [{ kind: 'vi', label: 'Vẹm xanh', source: 'src', pronunciation: null }],
+  forms: [],
+  identification: '',
+  note: '',
+  media: [],
+  taxonomicGroup: 'mollusc',
+};
 const MUST = { message: 'Cần đổi mật khẩu trước.', code: 'MUST_CHANGE_PASSWORD' };
 let routes: Record<string, () => Promise<Response>>;
 let calls: string[];
@@ -154,24 +167,50 @@ describe('PilotApp forced password flow', () => {
 });
 
 describe('PilotApp role-aware routes', () => {
-  it('trial and manager never request /me/* on any allowed route', async () => {
-    const allowed: Record<string, string[]> = {
-      learner: ['#home', '#library', '#study', '#profile/x'],
-      manager: ['#home', '#library', '#profile/x'],
-    };
-    for (const role of ['learner', 'manager']) {
-      routes['GET /auth/me'] = () => json(view(role));
-      for (const hash of allowed[role]) {
-        location.hash = hash;
-        mount(<PilotApp />);
+  it('trial and manager never request /me or /me/* on any route their kind allows', async () => {
+    // Every allowed route comes from the route table, so new routes are covered automatically.
+    const views = [
+      view('learner'),
+      { ...view('learner'), userId: undefined }, // real invite sessions carry no userId
+      view('manager'),
+    ];
+    for (const v of views) {
+      const kind = kindOf(v);
+      const hashes = [...routesFor(kind), 'profile/x'].filter((r) => routeAllowed(kind, r));
+      expect(hashes.length).toBeGreaterThan(1);
+      routes['GET /auth/me'] = () => json(v);
+      routes['GET /catalog/items/x'] = () => json(profileItem);
+      for (const hash of hashes) {
+        location.hash = '#' + hash;
+        const host = mount(<PilotApp />);
         await tick();
         await tick();
+        expect(location.hash, `${v.role} ${hash}`).toBe('#' + hash);
+        expect(host.querySelector('.shell')).not.toBeNull();
         unmountAll();
       }
     }
-    // Every request was recorded with the /api/v1 prefix stripped.
+    const me = calls.filter((c) => {
+      const p = c.split(' ')[1].split('?')[0];
+      return p === '/me' || p.startsWith('/me/');
+    });
     expect(calls.length).toBeGreaterThan(0);
-    expect(calls.filter((c) => c.split(' ')[1].startsWith('/me/'))).toEqual([]);
+    expect(me).toEqual([]);
+  });
+
+  it('a manager on a species profile has no study start and never opens a session', async () => {
+    location.hash = '#profile/x';
+    routes['GET /auth/me'] = () => json(view('manager'));
+    routes['GET /catalog/items/x'] = () => json(profileItem);
+    routes['POST /learning/sessions'] = () => json({ id: 'g1' });
+    const host = mount(<PilotApp />);
+    await tick();
+    expect(host.textContent).toContain('Vẹm xanh');
+    const startButton = host.querySelector<HTMLButtonElement>('.profile-primary');
+    if (startButton) await click(startButton);
+    await tick();
+    expect(calls.filter((c) => c.startsWith('POST /learning/'))).toEqual([]);
+    expect(startButton).toBeNull();
   });
 
   it('routes not allowed for the kind go back to home', async () => {
