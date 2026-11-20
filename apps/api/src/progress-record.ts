@@ -187,13 +187,31 @@ export async function rebuildProgress(
 }
 
 const RETRIES = 3;
-/** Runs fn, retrying up to 3 times on a Prisma serialization conflict (P2034). */
-export async function withSerializableRetry<T>(fn: () => Promise<T>): Promise<T> {
+type Cause = { kind?: unknown; originalCode?: unknown; cause?: unknown } | null | undefined;
+const writeConflict = (cause: Cause) =>
+  !!cause && (cause.kind === 'TransactionWriteConflict' || cause.originalCode === '40001');
+/**
+ * Serialization conflicts: Prisma P2034 (statement time), or a pg adapter DriverAdapterError
+ * raised at COMMIT, which has no `code` and carries TransactionWriteConflict / 40001 in `cause`.
+ */
+export function isSerializationConflict(e: unknown): boolean {
+  const error = e as { code?: unknown; cause?: Cause } | null | undefined;
+  if (!error || typeof error !== 'object') return false;
+  if (error.code === 'P2034') return true;
+  return writeConflict(error.cause) || writeConflict(error.cause?.cause as Cause);
+}
+const jitter = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** Runs fn, retrying up to 3 times on a serialization conflict with a 5-25 ms jittered pause. */
+export async function withSerializableRetry<T>(
+  fn: () => Promise<T>,
+  wait: (ms: number) => Promise<void> = jitter,
+): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await fn();
     } catch (e) {
-      if ((e as { code?: string }).code !== 'P2034' || attempt >= RETRIES) throw e;
+      if (!isSerializationConflict(e) || attempt >= RETRIES) throw e;
+      await wait(5 + Math.floor(Math.random() * 21));
     }
   }
 }

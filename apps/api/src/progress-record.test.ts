@@ -357,6 +357,7 @@ test('six answers match scheduleReview applied in order, and rebuild reproduces 
   assert.equal(progress.get('u2|a|name:en')!.stage, 3);
 });
 
+const noWait = async () => {};
 test('serialization conflicts (P2034) are retried at most 3 times', async () => {
   let calls = 0;
   const conflict = () => Object.assign(new Error('conflict'), { code: 'P2034' });
@@ -364,7 +365,7 @@ test('serialization conflicts (P2034) are retried at most 3 times', async () => 
     await withSerializableRetry(async () => {
       if (++calls < 3) throw conflict();
       return 'ok';
-    }),
+    }, noWait),
     'ok',
   );
   assert.equal(calls, 3);
@@ -373,7 +374,7 @@ test('serialization conflicts (P2034) are retried at most 3 times', async () => 
     withSerializableRetry(async () => {
       calls++;
       throw conflict();
-    }),
+    }, noWait),
     { code: 'P2034' },
   );
   assert.equal(calls, 4);
@@ -384,6 +385,77 @@ test('serialization conflicts (P2034) are retried at most 3 times', async () => 
       throw Object.assign(new Error('dup'), { code: 'P2002' });
     }),
     { code: 'P2002' },
+  );
+  assert.equal(calls, 1);
+});
+
+test('commit-time pg adapter conflicts (no code, cause 40001) are retried', async () => {
+  const waits: number[] = [];
+  const wait = async (ms: number) => {
+    waits.push(ms);
+  };
+  // Shape of @prisma/adapter-pg DriverAdapterError raised at COMMIT: no `code`, info in `cause`.
+  const commitConflict = () =>
+    Object.assign(new Error('Transaction failed due to a write conflict or a deadlock'), {
+      name: 'DriverAdapterError',
+      cause: { kind: 'TransactionWriteConflict', originalCode: '40001' },
+    });
+  let calls = 0;
+  assert.equal(
+    await withSerializableRetry(async () => {
+      if (++calls < 2) throw commitConflict();
+      return 'ok';
+    }, wait),
+    'ok',
+  );
+  assert.equal(calls, 2);
+  assert.equal(waits.length, 1);
+  assert.ok(waits[0] >= 5 && waits[0] <= 25, `jitter ${waits[0]}`);
+
+  // Either marker alone is enough, including one level deeper in the cause chain.
+  for (const cause of [
+    { kind: 'TransactionWriteConflict' },
+    { originalCode: '40001' },
+    { cause: { kind: 'TransactionWriteConflict', originalCode: '40001' } },
+  ]) {
+    calls = 0;
+    assert.equal(
+      await withSerializableRetry(async () => {
+        if (++calls < 2) throw { cause };
+        return 'ok';
+      }, wait),
+      'ok',
+    );
+    assert.equal(calls, 2);
+  }
+
+  calls = 0;
+  const last = commitConflict();
+  await assert.rejects(
+    withSerializableRetry(async () => {
+      calls++;
+      throw last;
+    }, wait),
+    (e) => e === last,
+  );
+  assert.equal(calls, 4);
+
+  calls = 0;
+  const unrelated = new Error('boom');
+  await assert.rejects(
+    withSerializableRetry(async () => {
+      calls++;
+      throw unrelated;
+    }, wait),
+    (e) => e === unrelated,
+  );
+  assert.equal(calls, 1);
+  calls = 0;
+  await assert.rejects(
+    withSerializableRetry(async () => {
+      calls++;
+      throw Object.assign(new Error('other'), { cause: { kind: 'UniqueConstraintViolation' } });
+    }, wait),
   );
   assert.equal(calls, 1);
 });
