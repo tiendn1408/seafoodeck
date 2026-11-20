@@ -144,6 +144,41 @@
   white-space: nowrap;
 }
 
+/* Desktop account entry (students): icon + display name beside logout. */
+.shell-account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  max-width: 14rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--deep-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+.shell-account svg {
+  flex-shrink: 0;
+}
+.shell-account-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shell-account:hover,
+.shell-account[aria-current='page'],
+.shell-icon-button[aria-current='page'] {
+  color: var(--deep-ink);
+  background: var(--deep-surface);
+}
+.shell-account[aria-current='page'] svg,
+.shell-icon-button[aria-current='page'] svg {
+  color: var(--action);
+}
+
 /* Desktop tabs */
 .shell-tabs {
   display: flex;
@@ -294,7 +329,9 @@
   bottom: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Trial and manager carry fewer tabs; every tab keeps an equal share. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
     env(safe-area-inset-left, 0px);
   background: var(--deep-950);

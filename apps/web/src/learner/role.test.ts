@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthView } from '../pilot/api';
-import { kindOf } from './role';
+import { kindOf, routeAllowed } from './role';
 
 const auth = (role: string): AuthView => ({ role, internal: false, csrf: 'c', expiresAt: '' });
 
@@ -15,5 +15,29 @@ describe('kindOf', () => {
       expect(kindOf(auth(r))).toBe('staff');
     expect(kindOf(auth('wizard'))).toBe('guest');
     expect(kindOf(auth(''))).toBe('guest');
+  });
+});
+
+describe('routeAllowed', () => {
+  it('students get learning routes and their account, never admin', () => {
+    for (const r of ['home', 'library', 'review', 'progress', 'study', 'profile/x', 'account'])
+      expect(routeAllowed('student', r)).toBe(true);
+    expect(routeAllowed('student', 'admin')).toBe(false);
+  });
+  it('trial learners only get Học and Thư viện (with study and profiles)', () => {
+    for (const r of ['home', 'library', 'study', 'profile/x'])
+      expect(routeAllowed('trial', r)).toBe(true);
+    for (const r of ['review', 'progress', 'account', 'admin'])
+      expect(routeAllowed('trial', r)).toBe(false);
+  });
+  it('managers get the notice on home and the library only', () => {
+    for (const r of ['home', 'library', 'profile/x']) expect(routeAllowed('manager', r)).toBe(true);
+    for (const r of ['study', 'review', 'progress', 'account', 'admin'])
+      expect(routeAllowed('manager', r)).toBe(false);
+  });
+  it('staff keep today’s routes and admin, but have no learner account page', () => {
+    for (const r of ['home', 'library', 'review', 'progress', 'study', 'profile/x', 'admin'])
+      expect(routeAllowed('staff', r)).toBe(true);
+    expect(routeAllowed('staff', 'account')).toBe(false);
   });
 });

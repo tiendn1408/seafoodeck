@@ -16,6 +16,9 @@ import { ChangePassword } from '../learner/ChangePassword';
 import { Login, StaffLogin } from '../learner/Login';
 import { clearMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
+import { Account } from '../learner/Account';
+import { ManagerNotice } from '../learner/ManagerNotice';
+import { kindOf, routeAllowed } from '../learner/role';
 import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
@@ -64,6 +67,12 @@ export default function PilotApp() {
   // Only an authenticated session can be forced; a flag raised while a guest never sticks.
   const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
   const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
+  const kind = kindOf(auth);
+  // A route this kind may not open goes back to home (replace, so Back does not bounce).
+  const permitted = !auth || forced || routeAllowed(kind, route);
+  useEffect(() => {
+    if (!permitted) location.replace('#home');
+  }, [permitted]);
   function persist(next: Ledger) {
     setLedger(next);
     setWarning('');
@@ -111,7 +120,15 @@ export default function PilotApp() {
     }
   }
   useEffect(() => {
-    if (!auth || auth.role === 'guest' || forced || route !== 'study' || game || !ledger.sessionId)
+    if (
+      !auth ||
+      auth.role === 'guest' ||
+      forced ||
+      !permitted ||
+      route !== 'study' ||
+      game ||
+      !ledger.sessionId
+    )
       return;
     let alive = true;
     api<Game>(`/learning/sessions/${ledger.sessionId}`)
@@ -129,7 +146,7 @@ export default function PilotApp() {
     return () => {
       alive = false;
     };
-  }, [auth, forced, route, game, ledger]);
+  }, [auth, forced, permitted, route, game, ledger]);
   function record(result: Score, g: Game) {
     persist(mergeScore(ledger, result, g));
   }
@@ -140,7 +157,7 @@ export default function PilotApp() {
   }, []);
   const active = ledger.attempts.filter((a) => a.contentVersion === version && !a.skipped),
     reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
-  const staff = auth && ['admin', 'editor', 'reviewer', 'publisher'].includes(auth.role);
+  const staff = kind === 'staff';
   function logout() {
     void api<AuthView>('/auth/logout', {})
       .then((a) => {
@@ -161,11 +178,13 @@ export default function PilotApp() {
         loginShown ||
         route === 'home' ||
         route === 'study' ||
+        route === 'account' ||
         route.startsWith('profile/')
           ? 'deep'
           : 'ice'
       }
-      staff={!!staff}
+      kind={kind}
+      userName={auth?.displayName ?? undefined}
       internal={!!auth?.internal}
       signedIn={signedIn && !forced}
       onLogout={logout}
@@ -178,9 +197,11 @@ export default function PilotApp() {
               ? 'profile-stage'
               : route === 'study' && signedIn
                 ? 'study-stage'
-                : ['library', 'review', 'progress'].includes(route) && signedIn
-                  ? 'ice-stage'
-                  : 'content home-content'
+                : route === 'account' && signedIn
+                  ? 'account-stage'
+                  : ['library', 'review', 'progress'].includes(route) && signedIn
+                    ? 'ice-stage'
+                    : 'content home-content'
         }
       >
         {warning && <ErrorNote message={warning} />}
@@ -219,9 +240,10 @@ export default function PilotApp() {
               <Login onLogin={onLogin} />
             );
           })()
-        ) : (
+        ) : !permitted ? null : (
           <>
-            {route === 'home' && (
+            {route === 'home' && kind === 'manager' && <ManagerNotice />}
+            {route === 'home' && kind !== 'manager' && (
               <Home
                 ledger={ledger}
                 now={now}
@@ -279,6 +301,13 @@ export default function PilotApp() {
             )}
             {route === 'progress' && (
               <Progress attempts={active} reviews={reviews} onVersion={setVersion} />
+            )}
+            {route === 'account' && (
+              <Account
+                userId={auth.userId}
+                onLogout={logout}
+                onSaved={(displayName) => setAuth({ ...auth, displayName })}
+              />
             )}
             {route === 'admin' && staff && <Admin />}
           </>

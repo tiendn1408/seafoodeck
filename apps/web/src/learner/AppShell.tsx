@@ -1,7 +1,18 @@
 import { useState, type ReactNode } from 'react';
-import { BookOpen, Library, LogOut, Moon, RotateCcw, ShieldCheck, Sun, Target } from 'lucide-react';
+import {
+  BookOpen,
+  Library,
+  LogOut,
+  Moon,
+  RotateCcw,
+  ShieldCheck,
+  Sun,
+  Target,
+  UserRound,
+} from 'lucide-react';
 import { useMedia } from './useMedia';
 import { getTheme, setTheme, type Theme } from './theme';
+import type { Kind } from './role';
 
 const tabs = [
   { id: 'home', label: 'Học', Icon: BookOpen },
@@ -10,10 +21,20 @@ const tabs = [
   { id: 'progress', label: 'Tiến độ', Icon: Target },
 ] as const;
 const adminTab = { id: 'admin', label: 'Quản trị', Icon: ShieldCheck } as const;
+type Tab = (typeof tabs)[number] | typeof adminTab;
+/** Tabs per kind; staff also get "Quản trị" (a top tab on desktop, a header icon on phones). */
+const tabsFor: Record<Kind, readonly Tab[]> = {
+  student: tabs,
+  staff: tabs,
+  trial: tabs.slice(0, 2),
+  manager: tabs.slice(1, 2),
+  guest: [],
+};
 /** Honest label for an internal release; phones show a shorter one, never a second line. */
 const internalLabel = 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt';
 
-/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện". */
+/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện".
+ * "account" is owned by no tab: the header's account entry is marked current instead. */
 export function tabFor(route: string): string {
   if (route === 'study') return 'home';
   if (route.startsWith('profile/')) return 'library';
@@ -54,24 +75,42 @@ function ThemeToggle() {
 export function AppShell({
   route,
   tone,
-  staff,
+  kind,
+  userName,
   internal,
   onLogout,
-  signedIn = true,
+  signedIn = kind !== 'guest',
   children,
 }: {
   route: string;
   tone: 'deep' | 'ice';
-  staff: boolean;
+  kind: Kind;
+  /** Display name for the student's account entry; falls back to "Tài khoản". */
+  userName?: string;
   internal: boolean;
   onLogout: () => void;
-  /** False on the sign-in screen: no tabs, no logout. */
+  /** False on the sign-in and forced password screens: no tabs, no logout. */
   signedIn?: boolean;
   children: ReactNode;
 }) {
   const desktop = useMedia('(min-width: 900px)');
   const current = tabFor(route);
-  const links = signedIn ? [...tabs, ...(staff ? [adminTab] : [])] : [];
+  const staff = kind === 'staff';
+  const bar = signedIn ? tabsFor[kind] : [];
+  const links = staff && signedIn ? [...bar, adminTab] : bar;
+  const accountLabel = userName?.trim() || 'Tài khoản';
+  const account = signedIn && kind === 'student' && (
+    <a
+      className={desktop ? 'shell-account' : 'shell-icon-button'}
+      href="#account"
+      aria-current={route === 'account' ? 'page' : undefined}
+      aria-label={desktop ? `Tài khoản: ${accountLabel}` : 'Tài khoản'}
+      title={desktop ? undefined : 'Tài khoản'}
+    >
+      <UserRound size={20} aria-hidden="true" />
+      {desktop && <span className="shell-account-name">{accountLabel}</span>}
+    </a>
+  );
   // Phone: the wordmark stays on Home and Profiles (the chip moves to a second line there);
   // elsewhere an internal release shows the mark and the chip on one compact row.
   const wordmark = route === 'home' || route.startsWith('profile/');
@@ -108,7 +147,7 @@ export function AppShell({
       className="shell"
       data-tone={tone}
       data-layout={desktop ? 'desktop' : 'phone'}
-      data-tabbar={!desktop && signedIn ? '' : undefined}
+      data-tabbar={!desktop && bar.length > 0 ? '' : undefined}
     >
       <a
         className="shell-skip"
@@ -144,15 +183,16 @@ export function AppShell({
           )}
           {/* Deep screens never change with the theme, so the toggle only lives on ice. */}
           {tone === 'ice' && <ThemeToggle />}
+          {account}
           {logout}
         </div>
       </header>
       <main id="main" tabIndex={-1} className="shell-main">
         {children}
       </main>
-      {!desktop && signedIn && (
+      {!desktop && bar.length > 0 && (
         <nav className="shell-tabbar" aria-label="Điều hướng chính">
-          {tabs.map(({ id, label, Icon }) => (
+          {bar.map(({ id, label, Icon }) => (
             <a
               key={id}
               href={'#' + id}

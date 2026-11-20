@@ -152,3 +152,71 @@ describe('PilotApp forced password flow', () => {
     expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
   });
 });
+
+describe('PilotApp role-aware routes', () => {
+  it('trial and manager never request /me/* on any allowed route', async () => {
+    const allowed: Record<string, string[]> = {
+      learner: ['#home', '#library', '#study', '#profile/x'],
+      manager: ['#home', '#library', '#profile/x'],
+    };
+    for (const role of ['learner', 'manager']) {
+      routes['GET /auth/me'] = () => json(view(role));
+      for (const hash of allowed[role]) {
+        location.hash = hash;
+        mount(<PilotApp />);
+        await tick();
+        await tick();
+        unmountAll();
+      }
+    }
+    // Every request was recorded with the /api/v1 prefix stripped.
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.filter((c) => c.split(' ')[1].startsWith('/me/'))).toEqual([]);
+  });
+
+  it('routes not allowed for the kind go back to home', async () => {
+    const cases: [string, string][] = [
+      ['learner', '#review'],
+      ['learner', '#progress'],
+      ['learner', '#account'],
+      ['manager', '#review'],
+      ['manager', '#study'],
+      ['student', '#admin'],
+      ['admin', '#account'],
+    ];
+    for (const [role, hash] of cases) {
+      routes['GET /auth/me'] = () => json(view(role));
+      location.hash = hash;
+      const host = mount(<PilotApp />);
+      await tick();
+      await tick();
+      expect(location.hash, `${role} ${hash}`).toBe('#home');
+      // The home stage renders; the forbidden page never did.
+      expect(host.querySelector('.home-stage')).not.toBeNull();
+      expect(host.querySelector('#account-title, .ice-stage')).toBeNull();
+      unmountAll();
+    }
+  });
+
+  it('manager on home sees the notice, not the learner home', async () => {
+    routes['GET /auth/me'] = () => json(view('manager'));
+    const host = mount(<PilotApp />);
+    await tick();
+    expect(host.textContent).toContain('Trang quản lý sẽ có ở bản sau');
+    expect(calls.some((c) => c.includes('/catalog/items?learnable'))).toBe(false);
+  });
+
+  it('student reaches the account page; shell gets the display name', async () => {
+    location.hash = '#account';
+    routes['GET /auth/me'] = () => json(view('student', { displayName: 'Lan' }));
+    routes['GET /me'] = () =>
+      json({ username: 'lan', displayName: 'Lan', role: 'student', mustChangePassword: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(location.hash).toBe('#account');
+    expect(host.querySelector('.account h1')?.textContent).toBe('Tài khoản');
+    expect(tone(host)).toBe('deep');
+    expect(host.querySelector('.shell-actions a[href="#account"]')).not.toBeNull();
+  });
+});
