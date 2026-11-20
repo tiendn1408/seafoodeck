@@ -12,7 +12,7 @@
 
 **Tech Stack:** React 19, Vite, Vitest + Testing Library (jsdom), Playwright (`npm run test:e2e`), NestJS (chỉ Task 1).
 
-**Spec:** `docs/superpowers/specs/2026-11-19-phase25-learner-accounts-design.md` (mục 5, 8.4, 8.7, 8.8, 8.9). Việc để lại từ 2.5a: `docs/handoffs/2026-11-20-phase25a-followups.md` (mục "Cho 2.5b"). Giao diện theo `apps/web/DESIGN.md` và `apps/web/PRODUCT.md`.
+**Spec:** `docs/superpowers/specs/2026-11-19-phase25-learner-accounts-design.md` (mục 5, 8.4, 8.7, 8.8, 8.9). Việc để lại từ 2.5a: `docs/handoffs/2026-11-20-phase25a-followups.md` (mục "Cho 2.5b"): mục 1, 3, 6 ở Task 1; mục 2 ở Task 3; mục 4 giải quyết bằng thiết kế (tổng kết dựng từ kết quả đã nhận, endpoint tổng kết chỉ dùng khi tải lại trong cùng phiên đăng nhập, ghi rõ trong `DELIVERY_25B.md`); mục 5 ở Task 8. Giao diện theo `apps/web/DESIGN.md` và `apps/web/PRODUCT.md`.
 
 ## Global Constraints
 
@@ -35,18 +35,21 @@
 
 ---
 
-### Task 1: Giới hạn đăng nhập chỉ đếm lần sai (API)
+### Task 1: Ba việc nhỏ còn lại ở API trước khi trình duyệt dùng tài khoản
 
 **Files:**
-- Modify: `apps/api/src/security.ts` (`LoginLimiter`), `apps/api/src/auth.controller.ts`
-- Test: `apps/api/src/me-access.test.ts`
+- Modify: `apps/api/src/security.ts` (`LoginLimiter`), `apps/api/src/auth.controller.ts`, `apps/api/src/progress.service.ts` (`afterSubmit`, `resumable`, `home`)
+- Test: `apps/api/src/me-access.test.ts`, `apps/api/src/progress-service.test.ts`
 
 **Interfaces:**
-- Produces: `LoginLimiter.check(ip: string, username?: string): void` giữ nguyên chữ ký; thêm `LoginLimiter.reset(ip: string, username?: string): void`, gọi sau đăng nhập thành công để xóa bộ đếm theo tên (bộ đếm IP chỉ giảm theo thời gian). Quy tắc: đăng nhập sai tăng cả hai bộ đếm; đăng nhập đúng không tăng bộ đếm nào và xóa bộ đếm theo tên.
+- Produces:
+  - `LoginLimiter.check(ip: string, username?: string): void` giữ nguyên chữ ký; thêm `LoginLimiter.reset(ip: string, username?: string): void`, gọi sau đăng nhập thành công để xóa bộ đếm theo tên (bộ đếm IP chỉ giảm theo thời gian). Quy tắc: đăng nhập sai tăng cả hai bộ đếm; đăng nhập đúng không tăng bộ đếm nào và xóa bộ đếm theo tên.
+  - `ProgressService.afterSubmit(actor, result): Promise<ProgressEntry[]>` chỉ trả các dòng thuộc **dòng đang hiệu lực** (đã lọc `activeRows`): dòng có dấu vân tay cũ không được trả, thay vì lấy từ danh sách chưa lọc; `level` vẫn tính trên dòng đang hiệu lực.
+  - `activeSessionId` của `/me/home` chỉ trả phiên thuộc **bản phát hành hiện hành** của phiên đăng nhập (so `GameSession.releaseId` với `releaseId` của `context`); phiên của bản cũ hơn không được đề xuất để mở lại.
 
-- [ ] **Step 1: Test.** Trong `me-access.test.ts`: 25 lần đăng nhập đúng từ cùng một IP không bị 429; 10 lần sai cho một tên thì lần thứ 11 bị chặn kể cả khi mật khẩu đúng; đăng nhập đúng xóa bộ đếm theo tên; tên khác không bị ảnh hưởng; đường mã mời (không có tên) vẫn chỉ tính theo IP và vẫn giới hạn 20 lần sai mỗi 10 phút. Chạy → FAIL.
-- [ ] **Step 2:** Implement: kiểm tra bộ đếm trước khi xác thực (chặn khi đã vượt) nhưng chỉ cộng dồn khi xác thực thất bại; thành công gọi `reset`. Chạy → PASS; test API cũ vẫn pass.
-- [ ] **Step 3:** Commit `fix(api): login limiter counts failed attempts only`.
+- [ ] **Step 1: Test.** `me-access.test.ts`: 25 lần đăng nhập đúng từ cùng một IP không bị 429; 10 lần sai cho một tên thì lần thứ 11 bị chặn kể cả khi mật khẩu đúng; đăng nhập đúng xóa bộ đếm theo tên; tên khác không bị ảnh hưởng; đường mã mời (không có tên) vẫn chỉ tính theo IP và vẫn giới hạn 20 lần sai mỗi 10 phút. `progress-service.test.ts`: `afterSubmit` với dòng tiến độ có `contentVersion` cũ (loài vừa đổi tên) trả mảng rỗng cho dòng đó, loài khác vẫn trả; `home` không trả `activeSessionId` cho phiên thuộc release khác với release hiện hành và vẫn trả cho phiên cùng release. Chạy → FAIL.
+- [ ] **Step 2:** Implement cả ba. Chạy test API → PASS; test API cũ vẫn pass.
+- [ ] **Step 3:** Commit `fix(api): login limiter counts failures only, afterSubmit ignores stale rows, resume offers current release only`.
 
 ### Task 2: Nền web: kiểu dữ liệu API, kho nhớ tạm `useMe`, nhận diện vai trò
 
