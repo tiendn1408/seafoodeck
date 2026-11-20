@@ -177,7 +177,8 @@ export class MeResponse {
   @ApiProperty() role!: string;
   @ApiProperty() mustChangePassword!: boolean;
 }
-export class PasswordChangedResponse {
+/** The rotated session after a password change (same fields as /auth/me) plus `changed`. */
+export class PasswordChangedResponse extends AuthMeResponse {
   @ApiProperty() changed!: boolean;
 }
 export class CreatedUserResponse {

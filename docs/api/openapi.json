@@ -1339,11 +1339,40 @@
       "PasswordChangedResponse": {
         "type": "object",
         "properties": {
+          "role": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "csrf": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Account sessions only."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Account sessions only."
+          },
+          "mustChangePassword": {
+            "type": "boolean",
+            "description": "Account sessions only."
+          },
           "changed": {
             "type": "boolean"
           }
         },
         "required": [
+          "role",
+          "internal",
+          "csrf",
+          "expiresAt",
           "changed"
         ]
       },
