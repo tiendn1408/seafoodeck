@@ -65,7 +65,8 @@ function LoginScreen({
             setError('');
             void api<AuthView>('/auth/login', {
               credential,
-              ...(mode !== 'invite' ? { username } : {}),
+              // Whitespace is never part of a username; phones add it with autocomplete.
+              ...(mode !== 'invite' ? { username: username.trim() } : {}),
             })
               .then((a) => onLogin(a))
               .catch((err) => {
@@ -80,6 +81,9 @@ function LoginScreen({
               <input
                 ref={first}
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required

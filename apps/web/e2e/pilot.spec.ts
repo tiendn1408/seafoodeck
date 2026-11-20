@@ -598,22 +598,27 @@ test('logging out and in as another student never shows the first student’s da
   ).toBeVisible();
   await start(page, 'Flashcard tên loài');
   await rateAll(page);
+  const figure = (label: string) =>
+    page
+      .locator('.progress-figures div')
+      .filter({ has: page.getByText(label, { exact: true }) })
+      .locator('dd');
   await page.getByRole('link', { name: 'Tiến độ', exact: true }).click();
   await expect(page.locator('.progress-sessions-list li').first()).toBeVisible();
   await expect(page.getByText('Chưa có phiên nào.', { exact: false })).toHaveCount(0);
+  // The first student's own figures are non-zero, so the zeros below can only come from isolation.
+  await expect(figure('Thẻ tự đánh giá')).not.toHaveText('0');
+  await expect(figure('Loài đã vào lịch')).not.toHaveText(/^0 \//);
   await page.getByRole('button', { name: 'Đăng xuất' }).click();
   await expect(page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
   await login(page, users.second);
   await expect(page.locator('.home-skills')).toBeVisible();
-  for (const count of await page.locator('.home-skill-count').allInnerTexts())
-    expect(count).toMatch(/^0 \//);
   await page.getByRole('link', { name: 'Tiến độ', exact: true }).click();
   await expect(page.getByText('Chưa có phiên nào.', { exact: false })).toBeVisible();
   await expect(page.locator('.progress-sessions-list')).toHaveCount(0);
-  const figure = page
-    .locator('.progress-figures div')
-    .filter({ has: page.getByText('Thẻ tự đánh giá', { exact: true }) });
-  await expect(figure.locator('dd')).toHaveText('0');
+  await expect(figure('Thẻ tự đánh giá')).toHaveText('0');
+  await expect(figure('Câu đã trả lời')).toHaveText('0');
+  await expect(figure('Loài đã vào lịch')).toHaveText(/^0 \//);
   await page.goto('/#review');
   await expect(page.getByRole('heading', { name: 'Chưa có mục ôn tập' })).toBeVisible();
 });

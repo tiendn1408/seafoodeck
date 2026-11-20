@@ -80,7 +80,10 @@ describe('Review from /me/review', () => {
     expect(later.textContent).toContain('Loài 3');
     expect(later.textContent).toContain('Mốc 7 ngày');
     expect(due.textContent).toContain('Tên tiếng Nhật');
-    expect(host.querySelector('.ice-figures')!.textContent).toBe('Đến hạn3Đã lên lịch1');
+    // Figures and headings count species (rows), like "Chưa vào lịch"; skills stay in the rows.
+    expect(host.querySelector('.ice-figures')!.textContent).toBe('Loài đến hạn2Loài đã lên lịch1');
+    expect(due.querySelector('.ice-count')!.textContent).toBe('2');
+    expect(later.querySelector('.ice-count')!.textContent).toBe('1');
     expect(due.querySelector('[aria-label="Mức nhớ 2/4"]')).not.toBeNull();
   });
 
@@ -107,6 +110,29 @@ describe('Review from /me/review', () => {
     const { host, onStart } = await show({ due: [entry(1), entry(2)], scheduled: [] });
     await click(button(host, 'Ôn 2 mục'));
     expect(onStart).toHaveBeenCalledWith('review', undefined, 'en', undefined, undefined, 2);
+  });
+
+  it('counts a species with several scheduled skills once', async () => {
+    const { host } = await show({
+      due: [],
+      scheduled: ['name:en', 'name:ja', 'name:scientific'].map((skill) =>
+        entry(1, { skill, dueAt: '2026-12-01T00:00:00.000Z' }),
+      ),
+    });
+    expect(host.querySelector('.ice-figures')!.textContent).toBe('Loài đến hạn0Loài đã lên lịch1');
+    expect(host.querySelector('#review-later .ice-count')!.textContent).toBe('1');
+  });
+
+  it('with nothing due the disabled action says so instead of "Ôn 0 mục"', async () => {
+    const { host } = await show({
+      due: [],
+      scheduled: [entry(1, { dueAt: '2026-12-01T00:00:00.000Z' })],
+    });
+    const action = host.querySelector<HTMLButtonElement>('.review-action .ice-primary')!;
+    expect(action.disabled).toBe(true);
+    expect(action.textContent).toBe('Chưa có mục đến hạn');
+    expect(host.textContent).not.toContain('Ôn 0 mục');
+    expect(host.querySelector('.review-action .ice-note')!.textContent).toContain('Mục kế tiếp');
   });
 
   it('shows the empty state when nothing is scheduled', async () => {

@@ -759,6 +759,9 @@
 .progress-mastery li {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
+.progress-skills-note {
+  margin: 0 0 var(--space-4);
+}
 .progress-name {
   font-weight: 700;
 }

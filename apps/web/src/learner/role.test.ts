@@ -35,9 +35,10 @@ describe('routeAllowed', () => {
     for (const r of ['study', 'review', 'progress', 'account', 'admin'])
       expect(routeAllowed('manager', r)).toBe(false);
   });
-  it('staff keep today’s routes and admin, but have no learner account page', () => {
-    for (const r of ['home', 'library', 'review', 'progress', 'study', 'profile/x', 'admin'])
+  it('staff get Học, Thư viện (with study and profiles) and admin; no /me-backed pages', () => {
+    for (const r of ['home', 'library', 'study', 'profile/x', 'admin'])
       expect(routeAllowed('staff', r)).toBe(true);
-    expect(routeAllowed('staff', 'account')).toBe(false);
+    // Review and progress read /me/*, which admits account students only (403 for staff).
+    for (const r of ['review', 'progress', 'account']) expect(routeAllowed('staff', r)).toBe(false);
   });
 });

@@ -6,6 +6,7 @@ import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { groupTone, type GroupKey } from './groups';
 import { useMe } from './meStore';
+import { SKILL_COUNT_NOTE } from './skillLabel';
 import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
 
@@ -183,6 +184,7 @@ export function Progress({ userId }: { userId: string }) {
           <h2 id="progress-skills" className="ice-h2">
             Bốn kỹ năng
           </h2>
+          <p className="ice-note progress-skills-note">{SKILL_COUNT_NOTE}</p>
           <ul className="progress-skills">
             {data.skills.map((s) => (
               <li key={s.key}>

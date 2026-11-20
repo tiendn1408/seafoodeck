@@ -191,6 +191,9 @@ export function Review({
   const { due, scheduled: later } = data;
   const all = [...due, ...later];
   const next = [...later].sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
+  // Figures and headings count species (one row each, like "Chưa vào lịch"), not skill entries.
+  const dueSpecies = byTarget(due).length,
+    laterSpecies = byTarget(later).length;
   return (
     <section className="ice-page review" aria-labelledby="review-title">
       <header className="ice-hero">
@@ -203,12 +206,12 @@ export function Review({
           <div className="review-action">
             <dl className="ice-figures">
               <div>
-                <dt>Đến hạn</dt>
-                <dd>{due.length}</dd>
+                <dt>Loài đến hạn</dt>
+                <dd>{dueSpecies}</dd>
               </div>
               <div>
-                <dt>Đã lên lịch</dt>
-                <dd>{later.length}</dd>
+                <dt>Loài đã lên lịch</dt>
+                <dd>{laterSpecies}</dd>
               </div>
             </dl>
             <button
@@ -227,7 +230,7 @@ export function Review({
               }
             >
               <RotateCcw size={18} aria-hidden="true" />
-              Ôn {due.length} mục đến hạn
+              {due.length ? `Ôn ${due.length} mục đến hạn` : 'Chưa có mục đến hạn'}
             </button>
             <p className="ice-note">
               {due.length > MAX_BATCH
@@ -235,7 +238,7 @@ export function Review({
                 : due.length
                   ? 'Mục đến hạn sớm nhất được ôn trước.'
                   : next
-                    ? `Chưa có mục đến hạn. Mục kế tiếp: ${day(next.dueAt)}.`
+                    ? `Mục kế tiếp: ${day(next.dueAt)}.`
                     : ''}
             </p>
           </div>
@@ -248,7 +251,7 @@ export function Review({
             {due.length > 0 && (
               <section className="review-group" aria-labelledby="review-due">
                 <h2 id="review-due" className="ice-h2">
-                  Đến hạn <span className="ice-count">{due.length}</span>
+                  Đến hạn <span className="ice-count">{dueSpecies}</span>
                 </h2>
                 <Rows rows={due} overview={overview} mastery={mastery} />
               </section>
@@ -256,7 +259,7 @@ export function Review({
             {later.length > 0 && (
               <section className="review-group" aria-labelledby="review-later">
                 <h2 id="review-later" className="ice-h2">
-                  Đã lên lịch <span className="ice-count">{later.length}</span>
+                  Đã lên lịch <span className="ice-count">{laterSpecies}</span>
                 </h2>
                 <Rows rows={later} overview={overview} mastery={mastery} />
               </section>

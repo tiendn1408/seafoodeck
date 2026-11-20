@@ -145,6 +145,10 @@
   gap: var(--space-5);
   padding-top: var(--space-4);
 }
+.home-hero--plain {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'title';
+}
 .home-title {
   grid-area: title;
 }
@@ -375,6 +379,9 @@
 }
 
 /* Skills: four short ropes. The hauled-in length is coloured, a buoy marks how far. */
+.home-skills-note {
+  margin: calc(-1 * var(--space-3)) 0 var(--space-5);
+}
 .home-skills ul {
   display: grid;
   gap: var(--space-5);
@@ -668,6 +675,12 @@
       'resume rope';
     gap: var(--space-6) clamp(32px, 4vw, 64px);
     padding-top: clamp(16px, 3vh, 40px);
+  }
+  /* Trial and staff: just the title and nudge, no empty catch/rope/resume rows. */
+  .home-hero--plain {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: 'title';
   }
   .home-title {
     padding-top: clamp(16px, 5vh, 56px);

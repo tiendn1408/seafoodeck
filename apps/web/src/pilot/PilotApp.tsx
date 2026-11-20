@@ -21,7 +21,7 @@ import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
-import { disposeAll } from '../learner/study/submitQueues';
+import { disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
 /**
  * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
@@ -93,8 +93,9 @@ export default function PilotApp() {
   const kind = kindOf(auth);
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
   const permitted = !auth || forced || routeAllowed(kind, route);
-  // Stage wrappers follow the route only once it is signed in and permitted for this kind.
-  const staged = signedIn && permitted;
+  // Stage wrappers follow the route only once it is signed in, permitted for this kind and not
+  // forced: the forced password screen uses the plain content wrapper, like the login screens.
+  const staged = signedIn && permitted && !forced;
   const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
     if (!permitted) location.replace('#home');
@@ -217,7 +218,26 @@ export default function PilotApp() {
     refreshProgress();
   }, [game]);
   const staff = kind === 'staff';
-  function logout() {
+  // True while logout waits for self-ratings still being saved in the background.
+  const [saving, setSaving] = useState(false);
+  const leaving = useRef(false);
+  async function logout() {
+    if (leaving.current) return;
+    leaving.current = true;
+    try {
+      if (pendingTotal() > 0) {
+        setSaving(true);
+        const saved = await flushAll(5000);
+        setSaving(false);
+        if (
+          !saved &&
+          !window.confirm('Còn câu chưa lưu được. Đăng xuất sẽ mất các câu này. Vẫn đăng xuất?')
+        )
+          return;
+      }
+    } finally {
+      leaving.current = false;
+    }
     void api<AuthView>('/auth/logout', {})
       .then((a) => {
         clearMe();
@@ -250,7 +270,8 @@ export default function PilotApp() {
       userName={auth?.displayName ?? undefined}
       internal={!!auth?.internal}
       signedIn={signedIn && !forced}
-      onLogout={logout}
+      onLogout={() => void logout()}
+      logoutBusy={saving}
     >
       <div
         className={
@@ -274,7 +295,7 @@ export default function PilotApp() {
           <ChangePassword
             forced
             role={auth.role}
-            onLogout={logout}
+            onLogout={() => void logout()}
             onDone={() => {
               clearMe();
               void api<AuthView>('/auth/me')
@@ -309,7 +330,7 @@ export default function PilotApp() {
                 pending={pending}
                 onStart={start}
                 onResume={resume}
-                onSignIn={logout}
+                onSignIn={() => void logout()}
                 onOpenLibrary={(taxon) => {
                   setLibraryView(openGroup(taxon));
                   location.hash = 'library';
@@ -355,7 +376,7 @@ export default function PilotApp() {
             {route === 'account' && (
               <Account
                 userId={auth.userId}
-                onLogout={logout}
+                onLogout={() => void logout()}
                 onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}
               />
             )}

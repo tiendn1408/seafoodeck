@@ -135,6 +135,17 @@
   color: var(--deep-ink);
   background: var(--deep-surface);
 }
+.shell-logout:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+/* Logout waiting for background saves: a short line on the always-deep header. */
+.shell-saving {
+  color: var(--deep-ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
 .shell-logout-text {
   clip-path: inset(50%);
   position: absolute;

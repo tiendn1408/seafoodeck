@@ -25,7 +25,8 @@ type Tab = (typeof tabs)[number] | typeof adminTab;
 /** Tabs per kind; staff also get "Quản trị" (a top tab on desktop, a header icon on phones). */
 const tabsFor: Record<Kind, readonly Tab[]> = {
   student: tabs,
-  staff: tabs,
+  // Ôn tập / Tiến độ read /me/*, which admits account students only.
+  staff: tabs.slice(0, 2),
   trial: tabs.slice(0, 2),
   manager: tabs.slice(1, 2),
   guest: [],
@@ -79,6 +80,7 @@ export function AppShell({
   userName,
   internal,
   onLogout,
+  logoutBusy = false,
   signedIn = kind !== 'guest',
   children,
 }: {
@@ -89,6 +91,8 @@ export function AppShell({
   userName?: string;
   internal: boolean;
   onLogout: () => void;
+  /** Logout is waiting for answers still being saved: the button is disabled and says so. */
+  logoutBusy?: boolean;
   /** False on the sign-in and forced password screens: no tabs, no logout. */
   signedIn?: boolean;
   children: ReactNode;
@@ -137,10 +141,23 @@ export function AppShell({
     </div>
   );
   const logout = signedIn && (
-    <button type="button" className="shell-logout" aria-label="Đăng xuất" onClick={onLogout}>
-      <LogOut size={19} aria-hidden="true" />
-      <span className="shell-logout-text">Đăng xuất</span>
-    </button>
+    <>
+      {logoutBusy && (
+        <span className="shell-saving" role="status">
+          Đang lưu tiến độ…
+        </span>
+      )}
+      <button
+        type="button"
+        className="shell-logout"
+        aria-label="Đăng xuất"
+        disabled={logoutBusy}
+        onClick={onLogout}
+      >
+        <LogOut size={19} aria-hidden="true" />
+        <span className="shell-logout-text">Đăng xuất</span>
+      </button>
+    </>
   );
   return (
     <div

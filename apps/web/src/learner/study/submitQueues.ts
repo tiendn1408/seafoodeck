@@ -110,3 +110,25 @@ export function disposeAll(): void {
   for (const e of queues.values()) e.stop();
   queues.clear();
 }
+
+/** Answers not saved yet across every session: still queued, or failed for good. */
+export function pendingTotal(): number {
+  let n = 0;
+  for (const { queue } of queues.values()) n += queue.pendingCount() + queue.failures().length;
+  return n;
+}
+
+/**
+ * Waits for every session queue to finish sending (before logout). True when every answer
+ * reached the server; false when the wait timed out or a save failed for good.
+ */
+export async function flushAll(timeoutMs = 5000): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((r) => (timer = setTimeout(r, timeoutMs)));
+  try {
+    await Promise.race([Promise.all([...queues.values()].map((e) => e.queue.flush())), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+  return pendingTotal() === 0;
+}

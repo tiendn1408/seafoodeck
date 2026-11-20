@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import PilotApp, { TRIAL_SESSION_KEY } from './PilotApp';
 import { setAuthRequiredHandler } from './api';
 import { clearMe } from '../learner/meStore';
 import { kindOf, routeAllowed, routesFor } from '../learner/role';
+import { disposeAll, pendingTotal, sessionQueue } from '../learner/study/submitQueues';
 import { button, click, field, mount, setValue, submit, unmountAll } from '../learner/testDom';
 
 const json = (body: unknown, status = 200) =>
@@ -87,6 +90,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  disposeAll();
   localStorage.clear();
   sessionStorage.clear();
   unmountAll();
@@ -118,6 +122,47 @@ describe('PilotApp forced password flow', () => {
     expect(tone(host)).toBe('deep');
     expect(navCount(host)).toBe(0);
     expect(host.textContent).not.toContain('Hủy');
+  });
+
+  it('the forced screen sits in the plain content wrapper on every route, never a stage', async () => {
+    routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
+    for (const hash of ['#progress', '#library', '#home', '#review']) {
+      location.hash = hash;
+      const host = mount(<PilotApp />);
+      await tick();
+      const screen = host.querySelector('.change-password');
+      expect(screen, hash).not.toBeNull();
+      expect(screen!.parentElement!.className, hash).toBe('content home-content');
+      expect(
+        host.querySelector('.ice-stage, .home-stage, .profile-stage, .study-stage'),
+      ).toBeNull();
+      expect(tone(host), hash).toBe('deep');
+      unmountAll();
+    }
+  });
+
+  it('the plain content wrapper keeps a side gutter of at least 16px at 390px', () => {
+    // Walk every `.content` rule in source order; the last padding that applies at 390px wins.
+    const css = readFileSync(resolve(__dirname, '../styles.css'), 'utf8');
+    let gutter = 0;
+    const re = /(@media \(max-width: (\d+)px\) \{)|\n\s*\.content \{([^}]*)\}/g;
+    let max: number | null = null;
+    for (const m of css.matchAll(re)) {
+      if (m[1]) {
+        max = Number(m[2]);
+        continue;
+      }
+      const indented = m[0].startsWith('\n  ');
+      if (indented && max !== null && max < 390) continue;
+      const pad = m[3]
+        .match(/padding:\s*([^;]+);/)?.[1]
+        .trim()
+        .split(/\s+/);
+      if (pad) gutter = parseFloat(pad.length === 1 ? pad[0] : pad[1]);
+      const left = m[3].match(/padding-left:\s*(\d+)px/);
+      if (left) gutter = Number(left[1]);
+    }
+    expect(gutter).toBeGreaterThanOrEqual(16);
   });
 
   it('a MUST_CHANGE_PASSWORD 403 flips to forced; no restore fetch while forced', async () => {
@@ -202,12 +247,13 @@ describe('PilotApp forced password flow', () => {
 });
 
 describe('PilotApp role-aware routes', () => {
-  it('trial and manager never request /me or /me/* on any route their kind allows', async () => {
+  it('trial, manager and staff never request /me or /me/* on any route their kind allows', async () => {
     // Every allowed route comes from the route table, so new routes are covered automatically.
     const views = [
       view('learner'),
       { ...view('learner'), userId: undefined }, // real invite sessions carry no userId
       view('manager'),
+      view('admin'), // staff sessions carry a userId, but /me/* admits students only
     ];
     for (const v of views) {
       const kind = kindOf(v);
@@ -257,6 +303,8 @@ describe('PilotApp role-aware routes', () => {
       ['manager', '#study'],
       ['student', '#admin'],
       ['admin', '#account'],
+      ['admin', '#review'],
+      ['admin', '#progress'],
     ];
     for (const [role, hash] of cases) {
       routes['GET /auth/me'] = () => json(view(role));
@@ -394,5 +442,99 @@ describe('PilotApp role-aware routes', () => {
     expect(host.querySelector('.account h1')?.textContent).toBe('Tài khoản');
     expect(tone(host)).toBe('deep');
     expect(host.querySelector('.shell-actions a[href="#account"]')).not.toBeNull();
+  });
+});
+
+describe('PilotApp logout keeps unsaved self-ratings in mind', () => {
+  const attempt = 'POST /learning/sessions/g1/questions/q1/attempts';
+  const rating = { gameId: 'g1', questionId: 'q1', key: 'k1', answer: { rating: 'known' } };
+  const score = {
+    answered: true,
+    skipped: false,
+    correct: true,
+    selfRated: true,
+    questionId: 'q1',
+  };
+  async function signedIn() {
+    location.hash = '#library';
+    routes['GET /auth/me'] = () => json(view('learner', { userId: undefined }));
+    routes['GET /catalog/overview'] = () => json(overview);
+    routes['POST /auth/logout'] = () => json(view('guest', { userId: undefined }));
+    const host = mount(<PilotApp />);
+    await tick();
+    return host;
+  }
+  const loggedOut = () => calls.filter((c) => c === 'POST /auth/logout').length;
+
+  it('waits for pending saves, saying so, then logs out', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    routes[attempt] = () => gate.then(() => new Response(JSON.stringify(score)));
+    const host = await signedIn();
+    sessionQueue('g1', () => {}).enqueue(rating);
+    await click(button(host, 'Đăng xuất'));
+    expect(host.querySelector('[role="status"]')?.textContent).toContain('Đang lưu tiến độ…');
+    expect(loggedOut()).toBe(0);
+    release();
+    await tick();
+    await tick();
+    expect(calls).toContain(attempt);
+    expect(loggedOut()).toBe(1);
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+    expect(host.textContent).not.toContain('Đang lưu tiến độ…');
+  });
+
+  it('a save that failed for good asks first; cancel keeps the session', async () => {
+    routes[attempt] = () => json({ message: 'hỏng' }, 400);
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await signedIn();
+    const q = sessionQueue('g1', () => {}, { retryMs: [] });
+    q.enqueue(rating);
+    await q.flush();
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    expect(confirm).toHaveBeenCalledWith(
+      'Còn câu chưa lưu được. Đăng xuất sẽ mất các câu này. Vẫn đăng xuất?',
+    );
+    expect(loggedOut()).toBe(0);
+    expect(pendingTotal()).toBe(1);
+    expect(host.textContent).not.toContain('Học thử bằng mã mời');
+  });
+
+  it('confirming logs out and drops the unsaved answers', async () => {
+    routes[attempt] = () => json({ message: 'hỏng' }, 400);
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    );
+    const host = await signedIn();
+    const q = sessionQueue('g1', () => {}, { retryMs: [] });
+    q.enqueue(rating);
+    await q.flush();
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    expect(loggedOut()).toBe(1);
+    expect(pendingTotal()).toBe(0);
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+  });
+
+  it('a normal logout disposes every queue: nothing is sent or guarded afterwards', async () => {
+    routes[attempt] = () => json(score);
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal('confirm', confirm);
+    const host = await signedIn();
+    const q = sessionQueue('g1', () => {});
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    expect(loggedOut()).toBe(1);
+    expect(confirm).not.toHaveBeenCalled();
+    q.enqueue(rating);
+    await tick();
+    expect(calls).not.toContain(attempt);
+    const e = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(false);
+    expect(sessionQueue('g1', () => {})).not.toBe(q);
   });
 });

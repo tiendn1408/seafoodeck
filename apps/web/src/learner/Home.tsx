@@ -7,6 +7,7 @@ import { FloatRope, type RopeFloat } from './FloatRope';
 import { GroupEntry } from './GroupEntry';
 import { SpeciesCard } from './SpeciesCard';
 import { groupTone, type GroupKey } from './groups';
+import { SKILL_COUNT_NOTE } from './skillLabel';
 import { useMe } from './meStore';
 import { TrialNudge } from './TrialNudge';
 import { useMedia } from './useMedia';
@@ -198,7 +199,12 @@ export function Home({
         <div />
       </div>
 
-      <section className="home-hero" aria-labelledby="home-title">
+      {/* Trial and staff render only the title (and nudge): a single-row hero without the
+          student's empty catch, rope and action rows. */}
+      <section
+        className={trial ? 'home-hero home-hero--plain' : 'home-hero'}
+        aria-labelledby="home-title"
+      >
         {trial ? (
           <div className="home-title">
             <h1 id="home-title">
@@ -344,6 +350,7 @@ export function Home({
         {home && home.learnable > 0 && (
           <section className="home-band home-skills" aria-labelledby="skills-title">
             <h2 id="skills-title">Bốn kỹ năng của bạn</h2>
+            <p className="home-muted home-skills-note">{SKILL_COUNT_NOTE}</p>
             <ul>
               {home.skills.map((s) => (
                 <li

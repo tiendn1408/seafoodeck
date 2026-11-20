@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { renderToString } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Home } from './Home';
 import { clearMe } from './meStore';
 import { button, click, mount, unmountAll } from './testDom';
@@ -125,6 +127,12 @@ describe('Home for students (/me/home)', () => {
     expect(host.querySelectorAll('.home-catch > *').length).toBe(2);
     expect(host.textContent).toContain('Bốn kỹ năng của bạn');
     expect(host.textContent).toContain('1 / 4 loài');
+    // A species counts once it passed its first review (stage >= 1): say so by the gauges.
+    expect(host.querySelector('.home-skills-note')?.textContent).toBe(
+      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã qua mốc 3 ngày.',
+    );
+    // The student hero keeps its full layout (catch, rope, action).
+    expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(false);
   });
 
   it('a review cast opens a review session without reviewTargets (server chooses)', async () => {
@@ -241,6 +249,8 @@ describe('Home for trial (invite-code) learners', () => {
     expect(host.textContent).not.toContain('Bốn kỹ năng của bạn');
     expect(host.textContent).not.toContain('Tiếp tục');
     expect(host.querySelector('.home-catch')).toBeNull();
+    // Only the title and nudge: a single-row hero, without the student's empty rows.
+    expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(true);
   });
 
   it('staff get the same reduced Home without the trial nudge and no /me/* call', async () => {
@@ -259,6 +269,17 @@ describe('Home for trial (invite-code) learners', () => {
     expect(meCalls()).toEqual([]);
     expect(host.textContent).toContain('Flashcard tên loài');
     expect(host.textContent).not.toContain('Đăng nhập để lưu tiến độ');
+    expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(true);
+  });
+
+  it('the plain hero uses a single title row at every width', () => {
+    const css = readFileSync(resolve(__dirname, 'home.css'), 'utf8');
+    const rules = [...css.matchAll(/\.home-hero--plain \{([^}]*)\}/g)].map((m) => m[1]);
+    expect(rules.length).toBeGreaterThanOrEqual(2); // base and the >= 900px override
+    for (const r of rules) {
+      expect(r).toMatch(/grid-template-areas:\s*'title';/);
+      expect(r).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\);/);
+    }
   });
 
   it('the nudge calls onSignIn', async () => {

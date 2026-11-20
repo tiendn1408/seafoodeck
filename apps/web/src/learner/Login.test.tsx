@@ -48,6 +48,28 @@ describe('Login screens', () => {
     expect(sent()).toEqual({ username: 'hoa', credential: 'dummy-pass-123' });
     expect(onLogin).toHaveBeenCalledWith(auth);
   });
+  it('trims the username and keeps the field free of auto-capitalise and autocorrect', async () => {
+    fetchMock.mockReturnValue(reply(auth));
+    const host = mount(<Login onLogin={() => {}} />);
+    const user = field(host, 'Tên đăng nhập');
+    expect(user.getAttribute('autocapitalize')).toBe('none');
+    expect(user.getAttribute('autocorrect')).toBe('off');
+    expect(user.getAttribute('spellcheck')).toBe('false');
+    setValue(user, '  hoa \t');
+    setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
+    await submit(host);
+    expect(sent()).toEqual({ username: 'hoa', credential: 'dummy-pass-123' });
+  });
+  it('staff login trims the username too', async () => {
+    fetchMock.mockReturnValue(reply({ ...auth, role: 'admin' }));
+    const html = renderToString(<StaffLogin onLogin={() => {}} />);
+    expect(html).toMatch(/autoCapitalize="none"|autocapitalize="none"/);
+    const host = mount(<StaffLogin onLogin={() => {}} />);
+    setValue(field(host, 'Tài khoản'), ' admin ');
+    setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
+    await submit(host);
+    expect(sent()).toEqual({ username: 'admin', credential: 'dummy-pass-123' });
+  });
   it('switches to the invite form and back, moving focus to the first field', async () => {
     fetchMock.mockReturnValue(reply({ ...auth, role: 'learner' }));
     const host = mount(<Login onLogin={() => {}} />);

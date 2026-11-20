@@ -26,7 +26,8 @@ const ALLOWED: Record<Exclude<Kind, 'guest'>, string[]> = {
   trial: ['home', 'library', 'study'],
   // Managers see a notice on home (never the learner Home) and can browse the library.
   manager: ['home', 'library'],
-  staff: [...LEARNING, 'admin'],
+  // Staff browse and try the deck like a trial (no /me/*: it admits account students only).
+  staff: ['home', 'library', 'study', 'admin'],
 };
 
 /** Every fixed route a signed-in kind may open (species profiles follow "library"). */

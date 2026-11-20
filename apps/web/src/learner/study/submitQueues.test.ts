@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Game, Score } from '../../pilot/api';
-import { disposeAll, sessionQueue, SUBMIT_TIMEOUT_MS } from './submitQueues';
+import {
+  disposeAll,
+  flushAll,
+  pendingTotal,
+  sessionQueue,
+  SUBMIT_TIMEOUT_MS,
+} from './submitQueues';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const score = (questionId: string, extra: Partial<Score> = {}): Score => ({
@@ -144,5 +150,46 @@ describe('sessionQueue', () => {
     expect(leave()).toBe(false);
     expect(q.pendingCount()).toBe(0);
     expect(sessionQueue('g1', apply)).not.toBe(q);
+  });
+
+  describe('pendingTotal and flushAll', () => {
+    it('is zero and flushes at once with no queue', async () => {
+      expect(pendingTotal()).toBe(0);
+      await expect(flushAll(50)).resolves.toBe(true);
+    });
+
+    it('counts unsaved answers across sessions and resolves true once all are saved', async () => {
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      replies[attempts('q1')] = () => gate.then(() => json(score('q1')));
+      replies['POST /learning/sessions/g2/questions/q9/attempts'] = () =>
+        gate.then(() => json(score('q9')));
+      sessionQueue('g1', apply).enqueue(job('q1'));
+      sessionQueue('g2', apply).enqueue({ ...job('q9'), gameId: 'g2' });
+      expect(pendingTotal()).toBe(2);
+      const done = flushAll(1000);
+      release();
+      await expect(done).resolves.toBe(true);
+      expect(pendingTotal()).toBe(0);
+    });
+
+    it('resolves false on timeout while a save is still pending', async () => {
+      vi.useFakeTimers();
+      replies[attempts('q1')] = () => new Promise(() => {});
+      sessionQueue('g1', apply).enqueue(job('q1'));
+      const done = flushAll(5000);
+      await vi.advanceTimersByTimeAsync(5000);
+      await expect(done).resolves.toBe(false);
+      expect(pendingTotal()).toBe(1);
+    });
+
+    it('a permanently failed save counts as unsaved and makes flushAll false', async () => {
+      replies[attempts('q1')] = () => Promise.resolve(json({ message: 'hỏng' }, 400));
+      const q = sessionQueue('g1', apply, { retryMs: [] });
+      q.enqueue(job('q1'));
+      await expect(flushAll(1000)).resolves.toBe(false);
+      expect(q.pendingCount()).toBe(0);
+      expect(pendingTotal()).toBe(1);
+    });
   });
 });
