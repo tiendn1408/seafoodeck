@@ -12,7 +12,12 @@ import { Catalog, Kind } from './catalog';
 import { Media } from './media';
 import { hash } from './security';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
-import { buildLogRows, recordAttempt, withSerializableRetry } from './progress-record';
+import {
+  buildLogRows,
+  recordAttempt,
+  serializeByKey,
+  withSerializableRetry,
+} from './progress-record';
 import type { SubmitContext } from './progress-record';
 import {
   FINGERPRINT_KINDS,
@@ -697,49 +702,50 @@ export class Learning {
             label: q.left?.find((o) => o.id === left)?.label,
           }))
         : undefined);
+    const write = () =>
+      withSerializableRetry(() =>
+        this.db.$transaction(
+          async (tx) => {
+            const created = await tx.attempt.create({
+              data: {
+                questionId,
+                actorId: actor.id,
+                idempotencyKey: key,
+                payloadHash,
+                answer: answer as Prisma.InputJsonValue,
+                result: JSON.parse(JSON.stringify(result)),
+              },
+            });
+            if (userId) {
+              const ctx: SubmitContext = {
+                userId,
+                sessionId: s.id,
+                questionId,
+                mode: s.mode,
+                releaseId: s.releaseId,
+                reviewOfId: s.reviewOfId,
+                at: result.at,
+              };
+              const versions = await contentVersions(
+                tx,
+                s.releaseId,
+                q.type === 'hs',
+                logItems?.map((i) => i.targetId) ?? [q.targetId],
+              );
+              await recordAttempt(
+                tx,
+                ctx,
+                buildLogRows(ctx, { ...result, items: logItems }, (id) => versions.get(id)),
+              );
+            }
+            return created;
+          },
+          { isolationLevel: 'Serializable' },
+        ),
+      );
     try {
-      return (
-        await withSerializableRetry(() =>
-          this.db.$transaction(
-            async (tx) => {
-              const created = await tx.attempt.create({
-                data: {
-                  questionId,
-                  actorId: actor.id,
-                  idempotencyKey: key,
-                  payloadHash,
-                  answer: answer as Prisma.InputJsonValue,
-                  result: JSON.parse(JSON.stringify(result)),
-                },
-              });
-              if (userId) {
-                const ctx: SubmitContext = {
-                  userId,
-                  sessionId: s.id,
-                  questionId,
-                  mode: s.mode,
-                  releaseId: s.releaseId,
-                  reviewOfId: s.reviewOfId,
-                  at: result.at,
-                };
-                const versions = await contentVersions(
-                  tx,
-                  s.releaseId,
-                  q.type === 'hs',
-                  logItems?.map((i) => i.targetId) ?? [q.targetId],
-                );
-                await recordAttempt(
-                  tx,
-                  ctx,
-                  buildLogRows(ctx, { ...result, items: logItems }, (id) => versions.get(id)),
-                );
-              }
-              return created;
-            },
-            { isolationLevel: 'Serializable' },
-          ),
-        )
-      ).result;
+      // Students' writes are queued per user (see serializeByKey); other roles are not.
+      return (userId ? await serializeByKey(userId, write) : await write()).result;
     } catch (e) {
       if ((e as { code: string }).code !== 'P2002') throw e;
       const old = await this.db.attempt.findFirst({

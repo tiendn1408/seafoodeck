@@ -186,7 +186,7 @@ export async function rebuildProgress(
   return rebuildIn(db, userId);
 }
 
-const RETRIES = 3;
+const RETRIES = 6;
 type Cause = { kind?: unknown; originalCode?: unknown; cause?: unknown } | null | undefined;
 const writeConflict = (cause: Cause) =>
   !!cause && (cause.kind === 'TransactionWriteConflict' || cause.originalCode === '40001');
@@ -200,18 +200,50 @@ export function isSerializationConflict(e: unknown): boolean {
   if (error.code === 'P2034') return true;
   return writeConflict(error.cause) || writeConflict(error.cause?.cause as Cause);
 }
-const jitter = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-/** Runs fn, retrying up to 3 times on a serialization conflict with a 5-25 ms jittered pause. */
+/** Pause before retry n (0-based): random in a doubling window, 5-25 ms up to 100-200 ms. */
+export function retryDelay(n: number, random: () => number = Math.random): number {
+  const low = Math.min(5 * 2 ** n, 100);
+  const high = Math.min(25 * 2 ** n, 200);
+  return low + Math.floor(random() * (high - low + 1));
+}
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** Runs fn, retrying up to 6 times on a serialization conflict with a growing jittered pause. */
 export async function withSerializableRetry<T>(
   fn: () => Promise<T>,
-  wait: (ms: number) => Promise<void> = jitter,
+  wait: (ms: number) => Promise<void> = sleep,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await fn();
     } catch (e) {
       if (!isSerializationConflict(e) || attempt >= RETRIES) throw e;
-      await wait(5 + Math.floor(Math.random() * 21));
+      await wait(retryDelay(attempt));
     }
   }
+}
+
+/*
+ * In-process keyed mutex: one student's grading transactions run one after another, so a double
+ * tap does not make their Serializable transactions conflict with each other. It only covers this
+ * API process; the pilot runs a single API container, so cross-instance locking is out of scope
+ * (the Serializable retry above stays as the safety net).
+ */
+const userQueues = new Map<string, Promise<void>>();
+export async function serializeByKey<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const previous = userQueues.get(key) ?? Promise.resolve();
+  const run = previous.then(fn);
+  const tail = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  userQueues.set(key, tail);
+  try {
+    return await run;
+  } finally {
+    if (userQueues.get(key) === tail) userQueues.delete(key);
+  }
+}
+/** Number of keys with queued or running work (for tests). */
+export function pendingUserLocks(): number {
+  return userQueues.size;
 }

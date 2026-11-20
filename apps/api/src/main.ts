@@ -17,6 +17,7 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { Db } from './db';
+import { isSerializationConflict } from './progress-record';
 import {
   DatabaseModule,
   AuthModule,
@@ -33,25 +34,24 @@ class HealthController {
     return { status: 'ok', version: '0.6.0', release: process.env.RELEASE_TAG ?? 'source' };
   }
 }
+const BUSY = 'Hệ thống đang bận, vui lòng thử lại.';
+/** HTTP status for a non-HttpException error (Prisma codes and serialization conflicts). */
+export function errorStatus(error: unknown): number {
+  const code = (error as { code?: string } | null)?.code;
+  if (isSerializationConflict(error)) return 409;
+  return code === 'P2025' ? 404 : code === 'P2002' ? 409 : code === 'P1001' ? 503 : 500;
+}
+export function errorBody(error: unknown): { message: string } {
+  return {
+    message: isSerializationConflict(error) ? BUSY : 'Lỗi máy chủ. Thử lại hoặc liên hệ quản trị.',
+  };
+}
 @Catch()
 class Errors implements ExceptionFilter {
   catch(error: unknown, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse();
-    const code = (error as { code?: string })?.code;
-    const status =
-      error instanceof HttpException
-        ? error.getStatus()
-        : code === 'P2025'
-          ? 404
-          : code === 'P2002' || code === 'P2034'
-            ? 409
-            : code === 'P1001'
-              ? 503
-              : 500;
-    const body =
-      error instanceof HttpException
-        ? error.getResponse()
-        : { message: 'Lỗi máy chủ. Thử lại hoặc liên hệ quản trị.' };
+    const status = error instanceof HttpException ? error.getStatus() : errorStatus(error);
+    const body = error instanceof HttpException ? error.getResponse() : errorBody(error);
     res.status(status).json({
       ...(typeof body === 'object' ? body : { message: body }),
       requestId: res.getHeader('X-Request-ID'),

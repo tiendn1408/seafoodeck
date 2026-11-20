@@ -7,8 +7,12 @@ import {
   buildLogRows,
   rebuildProgress,
   recordAttempt,
+  pendingUserLocks,
+  retryDelay,
+  serializeByKey,
   withSerializableRetry,
 } from './progress-record';
+import { errorStatus, errorBody } from './main';
 import type { SubmitContext } from './progress-record';
 import { scheduleReview } from './progress-review';
 import type { ReviewRow } from './progress-review';
@@ -358,7 +362,7 @@ test('six answers match scheduleReview applied in order, and rebuild reproduces 
 });
 
 const noWait = async () => {};
-test('serialization conflicts (P2034) are retried at most 3 times', async () => {
+test('serialization conflicts (P2034) are retried at most 6 times', async () => {
   let calls = 0;
   const conflict = () => Object.assign(new Error('conflict'), { code: 'P2034' });
   assert.equal(
@@ -377,7 +381,7 @@ test('serialization conflicts (P2034) are retried at most 3 times', async () => 
     }, noWait),
     { code: 'P2034' },
   );
-  assert.equal(calls, 4);
+  assert.equal(calls, 7);
   calls = 0;
   await assert.rejects(
     withSerializableRetry(async () => {
@@ -438,7 +442,7 @@ test('commit-time pg adapter conflicts (no code, cause 40001) are retried', asyn
     }, wait),
     (e) => e === last,
   );
-  assert.equal(calls, 4);
+  assert.equal(calls, 7);
 
   calls = 0;
   const unrelated = new Error('boom');
@@ -458,6 +462,94 @@ test('commit-time pg adapter conflicts (no code, cause 40001) are retried', asyn
     }, wait),
   );
   assert.equal(calls, 1);
+});
+
+test('retry delays grow from 5-25 ms to 100-200 ms', () => {
+  const windows = [0, 1, 2, 3, 4, 5].map((n) => [
+    retryDelay(n, () => 0),
+    retryDelay(n, () => 0.9999),
+  ]);
+  assert.deepEqual(windows, [
+    [5, 25],
+    [10, 50],
+    [20, 100],
+    [40, 200],
+    [80, 200],
+    [100, 200],
+  ]);
+});
+
+const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+test('one user runs strictly sequentially, even when an earlier call throws', async () => {
+  const events: string[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const first = serializeByKey('u1', async () => {
+    events.push('start1');
+    await gate;
+    events.push('end1');
+    throw new Error('first failed');
+  });
+  const second = serializeByKey('u1', async () => {
+    events.push('start2');
+    events.push('end2');
+    return 2;
+  });
+  const third = serializeByKey('u1', async () => {
+    events.push('start3');
+    return 3;
+  });
+  await tick();
+  assert.deepEqual(events, ['start1']);
+  assert.equal(pendingUserLocks(), 1);
+  release();
+  await assert.rejects(first, /first failed/);
+  assert.equal(await second, 2);
+  assert.equal(await third, 3);
+  assert.deepEqual(events, ['start1', 'end1', 'start2', 'end2', 'start3']);
+  await tick();
+  assert.equal(pendingUserLocks(), 0);
+});
+
+test('different users run concurrently and the lock map drains', async () => {
+  const events: string[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const a = serializeByKey('ua', async () => {
+    events.push('startA');
+    await gate;
+    events.push('endA');
+  });
+  const b = serializeByKey('ub', async () => {
+    events.push('startB');
+    events.push('endB');
+  });
+  await b;
+  assert.deepEqual(events, ['startA', 'startB', 'endB']);
+  assert.equal(pendingUserLocks(), 1);
+  release();
+  await a;
+  await tick();
+  assert.equal(pendingUserLocks(), 0);
+});
+
+test('the Errors filter maps every serialization conflict to 409 with a retry message', () => {
+  const busy = { message: 'Hệ thống đang bận, vui lòng thử lại.' };
+  const adapter = Object.assign(new Error('write conflict'), {
+    cause: { kind: 'TransactionWriteConflict', originalCode: '40001' },
+  });
+  const p2034 = Object.assign(new Error('conflict'), { code: 'P2034' });
+  for (const e of [adapter, p2034]) {
+    assert.equal(errorStatus(e), 409);
+    assert.deepEqual(errorBody(e), busy);
+  }
+  assert.equal(errorStatus(Object.assign(new Error('dup'), { code: 'P2002' })), 409);
+  assert.equal(errorStatus(Object.assign(new Error('gone'), { code: 'P2025' })), 404);
+  assert.equal(errorStatus(Object.assign(new Error('down'), { code: 'P1001' })), 503);
+  assert.equal(errorStatus(new Error('boom')), 500);
+  assert.deepEqual(errorBody(new Error('boom')), {
+    message: 'Lỗi máy chủ. Thử lại hoặc liên hệ quản trị.',
+  });
 });
 
 // --- Step 4: session cleanup never removes the durable log ---------------------------------
