@@ -8,7 +8,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scrypt, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { Request, Response } from 'express';
 import type { AuthSession } from './generated/prisma/client';
 import { Db } from './db';
@@ -18,6 +18,15 @@ export const opaque = () => randomBytes(32).toString('base64url');
 export function passwordHash(password: string) {
   const salt = opaque();
   return `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
+}
+/** Same format as passwordHash, computed on the libuv pool so long batches do not block requests. */
+export function passwordHashAsync(password: string): Promise<string> {
+  const salt = opaque();
+  return new Promise((resolve, reject) =>
+    scrypt(password, salt, 64, (error, key) =>
+      error ? reject(error) : resolve(`${salt}:${key.toString('hex')}`),
+    ),
+  );
 }
 export function passwordMatches(password: string, saved: string) {
   const [salt, digest] = saved.split(':');

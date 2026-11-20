@@ -12,11 +12,25 @@ import {
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { AccessGuard, ActorRequest, AdminOnlyGuard, requireRole } from './security';
 import {
   AdminUserPageResponse,
   AdminUserRowResponse,
+  BulkCreateUsersResponse,
   DeletedUserResponse,
   TemporaryPasswordResponse,
 } from './contract';
@@ -81,6 +95,48 @@ export class DeleteUserDto {
   @MaxLength(80)
   confirmUsername!: string;
 }
+/** One CSV line. Lengths are capped here; the username pattern is judged per row by the service. */
+export class BulkUserRowDto {
+  @ApiProperty({ maxLength: 50, description: 'Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row.' })
+  @Transform(trim)
+  @IsString()
+  @MaxLength(50)
+  username!: string;
+  @ApiProperty({ required: false, nullable: true, type: String, maxLength: 80 })
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  displayName?: string | null;
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    type: String,
+    maxLength: 150,
+    description: 'At least 8 characters. Blank: the server generates one and forces a change.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  password?: string | null;
+}
+export class BulkCreateUsersDto {
+  @ApiProperty({ type: [BulkUserRowDto], minItems: 1, maxItems: 500 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => BulkUserRowDto)
+  rows!: BulkUserRowDto[];
+  @ApiProperty({
+    required: false,
+    default: false,
+    description: 'Only check format and duplicates: nothing is created and no password returned.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  dryRun?: boolean;
+}
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -92,6 +148,12 @@ export class AdminUsersController {
   list(@Req() req: ActorRequest, @Query() query: ListUsersQuery) {
     requireRole(req, ['admin']);
     return this.users.list(query);
+  }
+  @ApiCreatedResponse({ type: BulkCreateUsersResponse })
+  @Post('users/bulk')
+  bulkCreate(@Req() req: ActorRequest, @Body() dto: BulkCreateUsersDto) {
+    requireRole(req, ['admin']);
+    return this.users.bulkCreate(req.actor.userId!, dto.rows, dto.dryRun ?? false);
   }
   @ApiOkResponse({ type: AdminUserRowResponse })
   @Patch('users/:id')

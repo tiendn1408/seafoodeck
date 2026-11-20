@@ -1297,6 +1297,37 @@
         ]
       }
     },
+    "/api/v1/admin/users/bulk": {
+      "post": {
+        "operationId": "AdminUsersController_bulkCreate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCreateUsersDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkCreateUsersResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/users/{id}": {
       "patch": {
         "operationId": "AdminUsersController_update",
@@ -2827,6 +2858,115 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "BulkUserRowDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Pattern ^[a-zA-Z0-9_-]{3,50}$, checked per row."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 80
+          },
+          "password": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 150,
+            "description": "At least 8 characters. Blank: the server generates one and forces a change."
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "BulkCreateUsersDto": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkUserRowDto"
+            }
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false,
+            "description": "Only check format and duplicates: nothing is created and no password returned."
+          }
+        },
+        "required": [
+          "rows"
+        ]
+      },
+      "BulkUserResultRowResponse": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "number",
+            "description": "1-based position in the submitted rows."
+          },
+          "username": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "duplicate",
+              "invalid"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "description": "Only for a generated password on a real run; shown once, never stored in clear."
+          }
+        },
+        "required": [
+          "line",
+          "username",
+          "status"
+        ]
+      },
+      "BulkCreateUsersResponse": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "created": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Rows with status duplicate."
+          },
+          "failed": {
+            "type": "number",
+            "description": "Rows with status invalid."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkUserResultRowResponse"
+            }
+          }
+        },
+        "required": [
+          "dryRun",
+          "created",
+          "skipped",
+          "failed",
+          "rows"
         ]
       },
       "UpdateUserDto": {

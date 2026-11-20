@@ -304,3 +304,22 @@ export class TemporaryPasswordResponse {
 export class DeletedUserResponse {
   @ApiProperty() deleted!: boolean;
 }
+export class BulkUserResultRowResponse {
+  @ApiProperty({ description: '1-based position in the submitted rows.' }) line!: number;
+  @ApiProperty() username!: string;
+  @ApiProperty({ enum: ['created', 'duplicate', 'invalid'] })
+  status!: 'created' | 'duplicate' | 'invalid';
+  @ApiProperty({ required: false }) message?: string;
+  @ApiProperty({
+    required: false,
+    description: 'Only for a generated password on a real run; shown once, never stored in clear.',
+  })
+  temporaryPassword?: string;
+}
+export class BulkCreateUsersResponse {
+  @ApiProperty() dryRun!: boolean;
+  @ApiProperty() created!: number;
+  @ApiProperty({ description: 'Rows with status duplicate.' }) skipped!: number;
+  @ApiProperty({ description: 'Rows with status invalid.' }) failed!: number;
+  @ApiProperty({ type: [BulkUserResultRowResponse] }) rows!: BulkUserResultRowResponse[];
+}

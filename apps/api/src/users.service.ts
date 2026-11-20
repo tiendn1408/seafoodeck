@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from './generated/prisma/client';
 import { Db } from './db';
-import { passwordHash, revokeUserSessions } from './security';
-import { generateTempPassword, normalizeUsername } from './users';
+import { passwordHash, passwordHashAsync, passwordMinFor, revokeUserSessions } from './security';
+import { findUserByUsername, generateTempPassword, normalizeUsername } from './users';
 import { withSerializableRetry } from './progress-record';
 
 export type AdminUserRow = {
@@ -22,6 +22,28 @@ export type UserListQuery = {
   page?: number;
   limit?: number;
 };
+export type BulkRowInput = {
+  username: string;
+  displayName?: string | null;
+  password?: string | null;
+};
+export type BulkRowResult = {
+  line: number;
+  username: string;
+  status: 'created' | 'duplicate' | 'invalid';
+  message?: string;
+  temporaryPassword?: string;
+};
+export type BulkResult = {
+  dryRun: boolean;
+  created: number;
+  skipped: number;
+  failed: number;
+  rows: BulkRowResult[];
+};
+/** Same rule as POST /admin/users. */
+const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,50}$/;
+const STUDENT = 'student';
 type Tx = Prisma.TransactionClient;
 /** Every column an admin row shows; passwordHash is never read for a row. */
 const ROW_SELECT = {
@@ -56,6 +78,7 @@ const toRow = (u: RowSource): AdminUserRow => ({
 });
 const missing = () => new NotFoundException('Không tìm thấy người dùng.');
 const SERIALIZABLE = { isolationLevel: 'Serializable' } as const;
+const TAKEN = 'Tên đăng nhập đã tồn tại.';
 
 /**
  * Admin user management. Lock and delete run in a Serializable transaction (retried on
@@ -64,6 +87,7 @@ const SERIALIZABLE = { isolationLevel: 'Serializable' } as const;
  */
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   constructor(private db: Db) {}
 
   async list(query: UserListQuery) {
@@ -178,6 +202,114 @@ export class UsersService {
         return { deleted: true as const };
       }, SERIALIZABLE),
     );
+  }
+
+  /**
+   * Bulk student creation. Rows are checked in input order (`line` is 1-based): username format,
+   * then a case-insensitive duplicate of an earlier line (the first occurrence wins), then the
+   * password rule, then an existing account. Each row that passes is created in its own
+   * transaction, so one failing row never undoes the others. `dryRun` reports the same verdicts
+   * and writes nothing. A blank password gets a generated one (forced change on first login)
+   * that appears only in this response; a typed password is never echoed back. Hashes are
+   * computed one after another with async scrypt (about 18 ms each, so a 500-row batch takes
+   * roughly 9 s) off the event loop, so other requests keep being served meanwhile.
+   */
+  async bulkCreate(actorId: string, rows: BulkRowInput[], dryRun = false): Promise<BulkResult> {
+    const firstLine = new Map<string, number>();
+    const results: BulkRowResult[] = [];
+    for (const [index, row] of rows.entries()) {
+      const line = index + 1;
+      const username = row.username.trim();
+      const verdict = (status: BulkRowResult['status'], message?: string) =>
+        results.push({ line, username, status, ...(message ? { message } : {}) });
+      if (!USERNAME_PATTERN.test(username)) {
+        verdict('invalid', 'Tên đăng nhập phải có 3–50 ký tự: chữ, số, dấu _ hoặc -.');
+        continue;
+      }
+      const key = normalizeUsername(username);
+      const earlier = firstLine.get(key);
+      if (earlier !== undefined) {
+        verdict('duplicate', `Trùng tên đăng nhập với dòng ${earlier}.`);
+        continue;
+      }
+      firstLine.set(key, line);
+      const typed = row.password && row.password.trim() ? row.password : undefined;
+      if (typed !== undefined && typed.length < passwordMinFor(STUDENT)) {
+        verdict('invalid', `Mật khẩu phải có ít nhất ${passwordMinFor(STUDENT)} ký tự.`);
+        continue;
+      }
+      if (dryRun) {
+        if (await findUserByUsername(this.db, username)) verdict('duplicate', TAKEN);
+        else verdict('created');
+        continue;
+      }
+      const temporaryPassword = typed === undefined ? generateTempPassword(STUDENT) : undefined;
+      const outcome = await this.createStudent(actorId, {
+        username,
+        displayName: row.displayName?.trim() || null,
+        passwordHash: await passwordHashAsync(typed ?? temporaryPassword!),
+        mustChangePassword: temporaryPassword !== undefined,
+      });
+      if (outcome === 'created')
+        results.push({
+          line,
+          username,
+          status: 'created',
+          ...(temporaryPassword ? { temporaryPassword } : {}),
+        });
+      else if (outcome === 'duplicate') verdict('duplicate', TAKEN);
+      else verdict('invalid', 'Không tạo được tài khoản này, vui lòng thử lại.');
+    }
+    const count = (status: BulkRowResult['status']) =>
+      results.filter((r) => r.status === status).length;
+    const summary = {
+      created: count('created'),
+      skipped: count('duplicate'),
+      failed: count('invalid'),
+    };
+    if (!dryRun)
+      await this.db.audit.create({
+        data: { actorId, action: 'user.bulk-create', targetId: 'users', detail: summary },
+      });
+    return { dryRun, ...summary, rows: results };
+  }
+
+  /** One row of a bulk create, in its own transaction; a lost unique-index race is a duplicate. */
+  private async createStudent(
+    actorId: string,
+    data: {
+      username: string;
+      displayName: string | null;
+      passwordHash: string;
+      mustChangePassword: boolean;
+    },
+  ): Promise<'created' | 'duplicate' | 'failed'> {
+    try {
+      return await this.db.$transaction(async (tx) => {
+        if (await findUserByUsername(tx, data.username)) return 'duplicate' as const;
+        const row = await tx.user.create({
+          data: { ...data, role: STUDENT },
+          select: { id: true },
+        });
+        await tx.audit.create({
+          data: {
+            actorId,
+            action: 'user.create',
+            targetId: row.id,
+            detail: { role: STUDENT, bulk: true },
+          },
+        });
+        return 'created' as const;
+      });
+    } catch (error) {
+      const code = (error as { code?: unknown } | null)?.code;
+      if (code === 'P2002') return 'duplicate';
+      // Only the error code: messages from the driver may echo the row's values.
+      this.logger.error(
+        `bulk create: a row failed (${typeof code === 'string' ? code : 'no code'})`,
+      );
+      return 'failed';
+    }
   }
 
   /** Refuses a change that would leave no active admin (counted inside the caller's transaction). */
