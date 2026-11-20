@@ -223,3 +223,49 @@
 .pilot-unsourced {
   color: #b45309;
 }
+
+/* Error panel on the deep-sea screens: ice text on deep teal (deep-ink on deep-800, well above 4.5:1). */
+.shell[data-tone='deep'] .pilot-error {
+  background: var(--deep-800);
+  border-color: var(--deep-accent);
+  color: var(--deep-ink);
+}
+.shell[data-tone='deep'] .pilot-error .btn {
+  color: var(--deep-ink);
+}
+
+/* Small text-style switch under the login forms; 44px touch target. */
+.login-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: var(--deep-accent);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.login-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.login-actions .btn {
+  min-height: 44px;
+}
+.pilot-login small {
+  color: var(--deep-muted);
+  font-size: 13px;
+}
+.pilot-login .btn {
+  min-height: 44px;
+}
+.change-password {
+  grid-template-columns: minmax(0, 480px);
+  justify-content: center;
+}

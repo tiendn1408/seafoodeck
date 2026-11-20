@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
-import { api, setCsrf, writeLocal, type AuthView, type Game, type Score } from './api';
+import {
+  api,
+  setAuthRequiredHandler,
+  setCsrf,
+  writeLocal,
+  type AuthView,
+  type Game,
+  type Score,
+} from './api';
 import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
+import { ChangePassword } from '../learner/ChangePassword';
 import { Login, StaffLogin } from '../learner/Login';
+import { clearMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
@@ -24,7 +34,8 @@ export default function PilotApp() {
     [error, setError] = useState(''),
     [route, setRoute] = useState(currentRoute),
     [ledger, setLedger] = useState<Ledger>(initial.ledger),
-    [saved, setSaved] = useState(true);
+    [saved, setSaved] = useState(true),
+    [mustChange, setMustChange] = useState(false);
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
     [version, setVersion] = useState(''),
@@ -48,6 +59,7 @@ export default function PilotApp() {
       })
       .catch((e) => setError(e.message));
   }, []);
+  useEffect(() => setAuthRequiredHandler(() => setMustChange(true)), []);
   function persist(next: Ledger) {
     setLedger(next);
     setWarning('');
@@ -125,9 +137,12 @@ export default function PilotApp() {
     reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
   const staff = auth && ['admin', 'editor', 'reviewer', 'publisher'].includes(auth.role);
   const signedIn = !!auth && auth.role !== 'guest';
+  const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
   function logout() {
     void api<AuthView>('/auth/logout', {})
       .then((a) => {
+        clearMe();
+        setMustChange(false);
         setAuth(a);
         setCsrf(a.csrf);
         setGame(null);
@@ -141,7 +156,7 @@ export default function PilotApp() {
       tone={route === 'home' || route === 'study' || route.startsWith('profile/') ? 'deep' : 'ice'}
       staff={!!staff}
       internal={!!auth?.internal}
-      signedIn={signedIn}
+      signedIn={signedIn && !forced}
       onLogout={logout}
     >
       <div
@@ -164,6 +179,22 @@ export default function PilotApp() {
         {error && <ErrorNote message={error} retry={() => location.reload()} />}
         {!auth ? (
           !error && <p role="status">Đang kết nối bộ học…</p>
+        ) : forced ? (
+          <ChangePassword
+            forced
+            role={auth.role}
+            onLogout={logout}
+            onDone={() => {
+              clearMe();
+              void api<AuthView>('/auth/me')
+                .then((a) => {
+                  setCsrf(a.csrf);
+                  setAuth(a);
+                  setMustChange(false);
+                })
+                .catch((e) => setError(e.message));
+            }}
+          />
         ) : loginKind(route, auth.role) ? (
           (() => {
             const onLogin = (a: AuthView) => {

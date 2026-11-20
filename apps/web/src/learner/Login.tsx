@@ -1,21 +1,52 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { api, type AuthView } from '../pilot/api';
+import { api, ApiError, type AuthView } from '../pilot/api';
 import { ErrorNote } from './ErrorNote';
 
 type Props = { onLogin: (a: AuthView) => void };
+type Mode = 'account' | 'invite' | 'staff';
+
+const LABELS: Record<Mode, { user?: string; secret: string; autoComplete: string }> = {
+  account: { user: 'Tên đăng nhập', secret: 'Mật khẩu', autoComplete: 'current-password' },
+  staff: { user: 'Tài khoản', secret: 'Mật khẩu', autoComplete: 'current-password' },
+  invite: { secret: 'Mã mời', autoComplete: 'off' },
+};
+
+function failure(e: unknown, mode: Mode): string {
+  // 401 stays generic so it never hints at lockouts or which part was wrong.
+  if (e instanceof ApiError && e.status === 401) {
+    return mode === 'invite'
+      ? 'Mã mời chưa đúng hoặc đã hết hạn. Kiểm tra lại với người phụ trách.'
+      : 'Tên đăng nhập hoặc mật khẩu chưa đúng. Hãy thử lại.';
+  }
+  return (e as Error).message;
+}
 
 function LoginScreen({
   title,
   intro,
   submit,
   onLogin,
-  staff,
-}: Props & { title: string; intro: ReactNode; submit: string; staff: boolean }) {
+  mode,
+  footer,
+  focusFirst,
+}: Props & {
+  title: string;
+  intro: ReactNode;
+  submit: string;
+  mode: Mode;
+  footer?: ReactNode;
+  focusFirst?: boolean;
+}) {
   const [credential, setCredential] = useState(''),
     [username, setUsername] = useState(''),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
+  const labels = LABELS[mode];
+  const first = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focusFirst) first.current?.focus();
+  }, [focusFirst]);
   return (
     <section className="pilot-login">
       <img
@@ -32,16 +63,20 @@ function LoginScreen({
             e.preventDefault();
             setBusy(true);
             setError('');
-            void api<AuthView>('/auth/login', { credential, ...(staff ? { username } : {}) })
+            void api<AuthView>('/auth/login', {
+              credential,
+              ...(mode !== 'invite' ? { username } : {}),
+            })
               .then(onLogin)
-              .catch((e) => setError(e.message))
+              .catch((err) => setError(failure(err, mode)))
               .finally(() => setBusy(false));
           }}
         >
-          {staff && (
+          {labels.user && (
             <label>
-              Tài khoản
+              {labels.user}
               <input
+                ref={first}
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -50,10 +85,11 @@ function LoginScreen({
             </label>
           )}
           <label>
-            {staff ? 'Mật khẩu' : 'Mã mời'}
+            {labels.secret}
             <input
+              ref={labels.user ? undefined : first}
               type="password"
-              autoComplete={staff ? 'current-password' : 'off'}
+              autoComplete={labels.autoComplete}
               value={credential}
               onChange={(e) => setCredential(e.target.value)}
               required
@@ -66,19 +102,48 @@ function LoginScreen({
             <ArrowRight size={17} />
           </button>
         </form>
+        {footer}
       </div>
     </section>
   );
 }
 
 export function Login(props: Props) {
-  return (
+  const [mode, setMode] = useState<'account' | 'invite'>('account');
+  const [switched, setSwitched] = useState(false);
+  const swap = (next: 'account' | 'invite') => {
+    setSwitched(true);
+    setMode(next);
+  };
+  return mode === 'account' ? (
     <LoginScreen
+      key="account"
       {...props}
-      staff={false}
+      mode="account"
+      focusFirst={switched}
       title="Vào bộ học của bạn."
-      intro="Học tên gọi thủy hải sản thương mại. Nhập mã mời từ người phụ trách, bạn không cần tạo tài khoản."
+      intro="Đăng nhập để lưu tiến độ học, hoặc học thử bằng mã mời."
+      submit="Đăng nhập"
+      footer={
+        <button type="button" className="login-switch" onClick={() => swap('invite')}>
+          Học thử bằng mã mời
+        </button>
+      }
+    />
+  ) : (
+    <LoginScreen
+      key="invite"
+      {...props}
+      mode="invite"
+      focusFirst={switched}
+      title="Học thử bằng mã mời."
+      intro="Nhập mã mời từ người phụ trách. Tiến độ học thử không được lưu theo tài khoản."
       submit="Vào bộ học"
+      footer={
+        <button type="button" className="login-switch" onClick={() => swap('account')}>
+          Có tài khoản? Đăng nhập
+        </button>
+      }
     />
   );
 }
@@ -87,7 +152,7 @@ export function StaffLogin(props: Props) {
   return (
     <LoginScreen
       {...props}
-      staff
+      mode="staff"
       title="Đăng nhập quản trị"
       intro="Đăng nhập bằng tài khoản được cấp."
       submit="Đăng nhập"
