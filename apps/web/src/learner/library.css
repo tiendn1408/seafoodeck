@@ -736,10 +736,6 @@
   gap: var(--space-5) var(--space-7);
   margin: 0;
 }
-.progress-history {
-  grid-column: 1 / -1;
-  margin: 0;
-}
 .progress-board {
   display: grid;
   gap: var(--space-8);

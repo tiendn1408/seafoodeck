@@ -1,10 +1,11 @@
-import type { CSSProperties } from 'react';
-import type { Attempt, ReviewState } from '../domain/models';
+import type { CSSProperties, ReactNode } from 'react';
+import type { MeMastery, MeProgress, MeSessionRow } from '../pilot/api';
+import { Achievements, modeLabel, vnDateTime } from './Achievements';
 import { ErrorNote } from './ErrorNote';
 import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
-import { groupTone, masteryCounts, masteryLevel, skillProgress, type GroupKey } from './haul';
-import { recentSessions, type SessionRow } from './sessions';
+import { groupTone, type GroupKey } from './groups';
+import { useMe } from './meStore';
 import { useOverview } from './useOverview';
 import './library.css';
 
@@ -37,17 +38,10 @@ function Gauge({ value, color }: { value: number; color: string }) {
   );
 }
 
-const when = (t: number) =>
-  new Date(t).toLocaleString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+const ignoreVersion = () => {};
 
-/** The last few sessions of the release: one line each, the first-try share as a short rope. */
-function History({ rows }: { rows: SessionRow[] }) {
+/** The last few sessions: one line each, the first-try share as a short rope. */
+function History({ rows }: { rows: MeSessionRow[] }) {
   return (
     <section className="progress-sessions" aria-labelledby="progress-sessions">
       <h2 id="progress-sessions" className="ice-h2">
@@ -57,9 +51,9 @@ function History({ rows }: { rows: SessionRow[] }) {
         <ol className="ice-panel progress-sessions-list">
           {rows.map((r) => (
             <li key={r.sessionId}>
-              <span className="progress-name">{r.mode}</span>
-              <time className="progress-count" dateTime={new Date(r.at).toISOString()}>
-                {when(r.at)}
+              <span className="progress-name">{modeLabel(r.mode)}</span>
+              <time className="progress-count" dateTime={r.at}>
+                {vnDateTime(r.at)}
               </time>
               <span className="progress-session-figures">
                 {r.answered > 0 && (
@@ -67,8 +61,8 @@ function History({ rows }: { rows: SessionRow[] }) {
                     Đúng lần đầu{' '}
                     <strong>
                       {r.firstTry} / {r.answered}
-                    </strong>{' '}
-                    · {r.percent}%
+                    </strong>
+                    {r.percent !== null && ` · ${r.percent}%`}
                   </span>
                 )}
                 {r.selfRated > 0 && <span>{r.selfRated} thẻ tự đánh giá</span>}
@@ -78,9 +72,7 @@ function History({ rows }: { rows: SessionRow[] }) {
           ))}
         </ol>
       ) : (
-        <p className="ice-note">
-          Chưa có phiên nào trong bộ nội dung này. Thả lưới ở trang Học để kéo mẻ đầu tiên.
-        </p>
+        <p className="ice-note">Chưa có phiên nào. Thả lưới ở trang Học để kéo mẻ đầu tiên.</p>
       )}
     </section>
   );
@@ -112,128 +104,134 @@ function Floats({ entries }: { entries: Entry[] }) {
 }
 
 /**
- * Progress on the ice surface: the four skills (species with stage ≥ 1), how many species sit
- * at each memory milestone, and the answer figures of the current release.
+ * Progress on the ice surface, all from the server: the four skills, how many species sit at
+ * each memory milestone (`/me/progress`), each species' own level (`/me/mastery`, names from
+ * the catalogue overview), achievements and the latest sessions.
  */
-export function Progress({
-  attempts,
-  reviews,
-  onVersion,
-}: {
-  /** Attempts of the current release, skipped ones removed. */
-  attempts: Attempt[];
-  /** Reviews already scoped to the current release. */
-  reviews: ReviewState[];
-  onVersion: (releaseId: string) => void;
-}) {
-  const { overview, error, retry } = useOverview(onVersion);
-  const graded = attempts.filter((a) => !a.selfRated);
-  const counts = overview ? masteryCounts(overview, reviews) : null;
-  const species = overview?.items.length ?? 0;
+export function Progress({ userId }: { userId: string }) {
+  const { overview } = useOverview(ignoreVersion);
+  const progress = useMe<MeProgress>('/me/progress', userId);
+  const levels = useMe<MeMastery>('/me/mastery', userId).data;
+  const data = progress.data;
+  const hero = (figures: ReactNode) => (
+    <header className="ice-hero">
+      <div className="ice-hero-copy">
+        <h1 id="progress-title">Tiến độ học của bạn</h1>
+        <p className="ice-lede">
+          Mức nhớ tính trên bộ nội dung đang xuất bản, theo lịch ôn của từng kỹ năng.
+        </p>
+      </div>
+      {figures}
+    </header>
+  );
+  if (!data)
+    return (
+      <section className="ice-page progress" aria-labelledby="progress-title">
+        {hero(null)}
+        {progress.error ? (
+          <ErrorNote message={progress.error} retry={progress.refresh} />
+        ) : (
+          <p className="ice-status" role="status">
+            Đang tải tiến độ…
+          </p>
+        )}
+      </section>
+    );
+  const { mastery: m, figures } = data;
+  const counts: Record<MasteryLevel, number> = {
+    0: m.unlearned,
+    1: m.level1,
+    2: m.level2,
+    3: m.level3,
+    4: m.level4,
+  };
+  const species = m.unlearned + m.level1 + m.level2 + m.level3 + m.level4;
   const entries: Entry[] = (overview?.items ?? []).map((i) => ({
     itemId: i.itemId,
     vi: i.vi,
     group: groupTone(i.taxonomicGroup).key,
-    level: masteryLevel(reviews, i.itemId),
+    level: levels?.[i.itemId]?.level ?? 0,
   }));
   const present = GROUPS.filter((g) => entries.some((e) => e.group === g));
   // The species list: most remembered first, then the catalogue order.
   const ranked = [...entries].sort((a, b) => b.level - a.level).slice(0, 12);
-  const studied = species - (counts?.[0] ?? 0);
   return (
     <section className="ice-page progress" aria-labelledby="progress-title">
-      <header className="ice-hero">
-        <div className="ice-hero-copy">
-          <h1 id="progress-title">Tiến độ học của bạn</h1>
-          <p className="ice-lede">
-            Tính trên bộ nội dung đang xuất bản, theo lịch ôn của từng kỹ năng.
-          </p>
-        </div>
+      {hero(
         <dl className="ice-figures progress-figures">
           <div>
             <dt>Loài đã vào lịch</dt>
-            <dd>{overview ? `${studied} / ${species}` : '—'}</dd>
-          </div>
-          <div>
-            <dt>Câu đã trả lời</dt>
-            <dd>{graded.length}</dd>
-          </div>
-          <div>
-            <dt>Đúng lần đầu</dt>
             <dd>
-              {graded.length
-                ? Math.round((graded.filter((a) => a.correct).length / graded.length) * 100) + '%'
-                : '—'}
+              {species - m.unlearned} / {species}
             </dd>
           </div>
           <div>
-            <dt>Thẻ tự đánh giá</dt>
-            <dd>{attempts.filter((a) => a.selfRated).length}</dd>
+            <dt>Câu đã trả lời</dt>
+            <dd>{figures.answered}</dd>
           </div>
-        </dl>
-        <p className="ice-note progress-history">
-          Lịch sử bộ cũ được giữ riêng trên thiết bị. Không chuyển điểm sang revision khác.
-        </p>
-      </header>
-      {error && <ErrorNote message={error} retry={retry} />}
-      {!overview && !error && (
-        <p className="ice-status" role="status">
-          Đang tải danh mục…
-        </p>
+          <div>
+            <dt>Đúng lần đầu</dt>
+            <dd>{figures.firstTryPercent === null ? '—' : figures.firstTryPercent + '%'}</dd>
+          </div>
+          <div>
+            <dt>Thẻ tự đánh giá</dt>
+            <dd>{figures.selfRated}</dd>
+          </div>
+        </dl>,
       )}
-      {overview && counts && (
-        <div className="ice-panel progress-board">
-          <section className="progress-skills-col" aria-labelledby="progress-skills">
-            <h2 id="progress-skills" className="ice-h2">
-              Bốn kỹ năng
-            </h2>
-            <ul className="progress-skills">
-              {skillProgress(overview, reviews).map((s) => (
-                <li key={s.key}>
-                  <span className="progress-name">{s.label}</span>
-                  <span className="progress-count">
-                    {s.done} / {s.total} {s.key === 'hs' ? 'hồ sơ' : 'loài'}
-                  </span>
-                  <Gauge value={s.total ? s.done / s.total : 0} color={skillColor[s.key]} />
+      {progress.error && <ErrorNote message={progress.error} retry={progress.refresh} />}
+      <div className="ice-panel progress-board">
+        <section className="progress-skills-col" aria-labelledby="progress-skills">
+          <h2 id="progress-skills" className="ice-h2">
+            Bốn kỹ năng
+          </h2>
+          <ul className="progress-skills">
+            {data.skills.map((s) => (
+              <li key={s.key}>
+                <span className="progress-name">{s.label}</span>
+                <span className="progress-count">
+                  {s.done} / {s.total} {s.key === 'hs' ? 'hồ sơ' : 'loài'}
+                </span>
+                <Gauge value={s.total ? s.done / s.total : 0} color={skillColor[s.key]} />
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="progress-mastery-col" aria-labelledby="progress-mastery">
+          <h2 id="progress-mastery" className="ice-h2">
+            Mức nhớ theo loài
+          </h2>
+          <ol className="progress-mastery">
+            {LEVELS.map(({ level, label }) => (
+              <li key={level}>
+                <MasteryScales level={level} />
+                <span className="progress-name">{label}</span>
+                <span className="progress-count">{counts[level]} loài</span>
+                <Floats entries={levels ? entries.filter((e) => e.level === level) : []} />
+              </li>
+            ))}
+          </ol>
+          {present.length > 0 && (
+            <ul className="progress-legend" aria-label="Màu nhóm">
+              {present.map((g) => (
+                <li key={g} style={{ '--tone': groupTone(g).css } as CSSProperties}>
+                  <span className="library-swatch" aria-hidden="true" />
+                  {groupTone(g).label}
                 </li>
               ))}
             </ul>
-          </section>
-          <section className="progress-mastery-col" aria-labelledby="progress-mastery">
-            <h2 id="progress-mastery" className="ice-h2">
-              Mức nhớ theo loài
-            </h2>
-            <ol className="progress-mastery">
-              {LEVELS.map(({ level, label }) => (
-                <li key={level}>
-                  <MasteryScales level={level} />
-                  <span className="progress-name">{label}</span>
-                  <span className="progress-count">{counts[level]} loài</span>
-                  <Floats entries={entries.filter((e) => e.level === level)} />
-                </li>
-              ))}
-            </ol>
-            {present.length > 0 && (
-              <ul className="progress-legend" aria-label="Màu nhóm">
-                {present.map((g) => (
-                  <li key={g} style={{ '--tone': groupTone(g).css } as CSSProperties}>
-                    <span className="library-swatch" aria-hidden="true" />
-                    {groupTone(g).label}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="ice-note">
-              {counts[0]} / {species} loài chưa học.
-            </p>
-          </section>
-        </div>
-      )}
-      {overview && <History rows={recentSessions(attempts, overview.releaseId)} />}
+          )}
+          <p className="ice-note">
+            {m.unlearned} / {species} loài chưa học.
+          </p>
+        </section>
+      </div>
+      <Achievements streak={data.achievements.streak} badges={data.achievements.badges} />
+      <History rows={data.sessions.slice(0, 5)} />
       {overview && ranked.length > 0 && (
         <section className="progress-species" aria-labelledby="progress-species">
           <h2 id="progress-species" className="ice-h2">
-            Từng loài <span className="ice-count">{species}</span>
+            Từng loài <span className="ice-count">{overview.items.length}</span>
           </h2>
           <ul className="library-list">
             {ranked.map((e) => {
@@ -249,9 +247,9 @@ export function Progress({
               );
             })}
           </ul>
-          {species > ranked.length && (
+          {overview.items.length > ranked.length && (
             <p className="ice-note">
-              <a href="#library">Xem cả {species} loài trong thư viện</a>
+              <a href="#library">Xem cả {overview.items.length} loài trong thư viện</a>
             </p>
           )}
         </section>

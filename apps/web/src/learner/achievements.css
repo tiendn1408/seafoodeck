@@ -1,0 +1,174 @@
+/*
+ * Achievements on ice: the day streak as seven small floats on a rope, badges as round
+ * buoy-medals. Earned = teal hull with a light cap and fish scales; not yet = a muted dashed
+ * outline. Contrast on --ice-surface: --ice-focus 6.2:1 (dark 8.9:1), --ice-muted 6.8:1
+ * (dark 7.3:1). No motion at all, so reduced motion needs nothing removed.
+ */
+.achievements {
+  margin-top: var(--space-7);
+}
+.achievements-board {
+  display: grid;
+  gap: var(--space-7);
+}
+.achievements-h3 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  color: var(--ice-ink);
+  font-size: var(--text-md);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/* Streak: the current run large, the longest beside it, seven floats toward a full week. */
+.achievements-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+.achievements-current strong {
+  color: var(--ice-ink);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.achievements-current span {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.achievements-days {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  max-width: 320px;
+  padding-inline: 2px;
+}
+.achievements-days::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  left: 12px;
+  height: 4px;
+  border-radius: 4px;
+  translate: 0 -50%;
+  background: repeating-linear-gradient(90deg, var(--ice-rope) 0 6px, var(--ice-rope-lay) 6px 9px);
+}
+.achievements-days i {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--ice-muted);
+  border-radius: 50%;
+  background: var(--ice-surface);
+}
+.achievements-days i.on {
+  border-color: transparent;
+  background: linear-gradient(180deg, #f4f8f9 0 40%, var(--ice-focus) 40% 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(11 34 48 / 0.18),
+    inset 0 -3px 0 rgb(0 0 0 / 0.16),
+    0 3px 6px rgb(11 34 48 / 0.22);
+}
+.achievements-invite {
+  margin: var(--space-3) 0 0;
+  color: var(--ice-ink);
+  font-weight: 600;
+}
+
+/* Badges: one row each on phone, a two-column grid when there is room. */
+.achievements-badges {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.achievements-badge {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+}
+.achievements-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.achievements-badge-text strong {
+  color: var(--ice-ink);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.achievements-badge-text span {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.achievements-badge[data-earned='false'] strong {
+  color: var(--ice-muted);
+  font-weight: 700;
+}
+
+.achievements-medal {
+  display: block;
+  width: 48px;
+  height: 48px;
+}
+.achievements-medal-ring {
+  fill: transparent;
+  stroke: var(--ice-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.achievements-medal-hull {
+  fill: transparent;
+}
+.achievements-medal-scale {
+  fill: none;
+  stroke: var(--ice-muted);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  opacity: 0.6;
+}
+.achievements-badge[data-earned='true'] .achievements-medal-ring {
+  fill: #f4f8f9;
+  stroke: var(--ice-focus);
+  stroke-width: 2;
+  stroke-dasharray: none;
+}
+.achievements-badge[data-earned='true'] .achievements-medal-hull {
+  fill: var(--ice-focus);
+}
+.achievements-badge[data-earned='true'] .achievements-medal-scale {
+  stroke: var(--ice-surface);
+  opacity: 1;
+}
+
+@media (min-width: 900px) {
+  .achievements-board {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: clamp(var(--space-8), 6vw, 96px);
+    padding: var(--space-7) var(--space-8);
+  }
+  .achievements-badges-col {
+    padding-left: clamp(var(--space-7), 4vw, var(--space-9));
+    border-left: 1px solid var(--ice-line);
+  }
+  .achievements-badges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) var(--space-6);
+  }
+}

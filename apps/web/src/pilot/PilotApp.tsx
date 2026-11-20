@@ -41,6 +41,8 @@ function LibraryRoute({
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
 }
+/** The release id no longer scopes any screen state; the catalogue hooks still report it. */
+const ignoreVersion = () => {};
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -55,7 +57,6 @@ export default function PilotApp() {
     [mustChange, setMustChange] = useState(false);
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
-    [version, setVersion] = useState(''),
     [libraryView, setLibraryView] = useState<LibraryView>(LIBRARY_START);
   useEffect(() => {
     const f = () => {
@@ -175,8 +176,6 @@ export default function PilotApp() {
     setGame(g);
     if (g.questions.length > 0 && g.questions.every((q) => q.result)) refreshProgress();
   }
-  const active = ledger.attempts.filter((a) => a.contentVersion === version && !a.skipped),
-    reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
   const staff = kind === 'staff';
   function logout() {
     void api<AuthView>('/auth/logout', {})
@@ -282,7 +281,7 @@ export default function PilotApp() {
                 userId={kind === 'student' ? auth.userId : undefined}
                 view={libraryView}
                 onView={setLibraryView}
-                onVersion={setVersion}
+                onVersion={ignoreVersion}
               />
             )}
             {route.startsWith('profile/') && (
@@ -313,9 +312,7 @@ export default function PilotApp() {
             {route === 'review' && auth.userId !== undefined && (
               <Review userId={auth.userId} pending={pending} onStart={start} />
             )}
-            {route === 'progress' && (
-              <Progress attempts={active} reviews={reviews} onVersion={setVersion} />
-            )}
+            {route === 'progress' && auth.userId !== undefined && <Progress userId={auth.userId} />}
             {route === 'account' && (
               <Account
                 userId={auth.userId}
