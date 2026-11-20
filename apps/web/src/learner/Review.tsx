@@ -1,38 +1,40 @@
 import { RotateCcw } from 'lucide-react';
-import type { ReviewState } from '../domain/models';
 import { INTERVAL_DAYS } from '../domain/review';
-import type { CatalogOverview } from '../pilot/api';
+import type { CatalogOverview, MeMastery, MeReview, MeReviewEntry } from '../pilot/api';
 import { SignedImage } from '../pilot/Media';
+import { ErrorNote } from './ErrorNote';
 import type { StartSession } from './Home';
-import { MasteryScales } from './MasteryScales';
+import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { MissingPhoto } from './MissingPhoto';
 import { SpeciesCard } from './SpeciesCard';
-import { masteryLevel, splitDue } from './haul';
-import { skillLabel, type Ledger } from './ledger';
+import { skillLabel } from './skillLabel';
+import { useMe } from './meStore';
 import { useOverview } from './useOverview';
 import './library.css';
 
 const STEPS = INTERVAL_DAYS;
-const day = (t: number) => new Date(t).toLocaleDateString('vi-VN');
-/** A review with the time the learner UI treats it as due (see effectiveDueAt). */
-type Row = { review: ReviewState; at: number };
+const ignoreVersion = () => {};
+const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
+const MAX_BATCH = 30;
 
-/** Reviews of one target, in due order. */
-function byTarget(rows: Row[]) {
-  const map = new Map<string, Row[]>();
-  for (const r of [...rows].sort((a, b) => a.at - b.at))
-    map.set(r.review.targetId, [...(map.get(r.review.targetId) ?? []), r]);
+/** Entries of one species (or one HS case), in due order. Rows without a catalog item stay apart. */
+function byTarget(rows: MeReviewEntry[]) {
+  const map = new Map<string, MeReviewEntry[]>();
+  for (const r of [...rows].sort((a, b) => a.dueAt.localeCompare(b.dueAt))) {
+    const key = r.itemId ?? 'hs:' + r.targetId;
+    map.set(key, [...(map.get(key) ?? []), r]);
+  }
   return [...map.entries()];
 }
 
-function Skills({ rows }: { rows: Row[] }) {
+function Skills({ rows }: { rows: MeReviewEntry[] }) {
   return (
     <ul className="review-skills">
-      {rows.map(({ review: r, at }) => (
-        <li key={r.key} className="review-skill">
+      {rows.map((r) => (
+        <li key={r.targetId + '|' + r.skill} className="review-skill">
           <span className="review-skill-name">{skillLabel(r.skill)}</span>
           <span className="review-skill-when">
-            Mốc {STEPS[r.stage] ?? STEPS[STEPS.length - 1]} ngày · {day(at)}
+            Mốc {STEPS[r.stage] ?? STEPS[STEPS.length - 1]} ngày · {day(r.dueAt)}
           </span>
         </li>
       ))}
@@ -43,31 +45,31 @@ function Skills({ rows }: { rows: Row[] }) {
 function Rows({
   rows,
   overview,
-  labels,
-  all,
+  mastery,
 }: {
-  rows: Row[];
+  rows: MeReviewEntry[];
   overview: CatalogOverview | null;
-  labels: Ledger['labels'];
-  all: ReviewState[];
+  mastery: MeMastery | null;
 }) {
   const species = new Map(overview?.items.map((i) => [i.itemId, i]));
   return (
     <ul className="library-list review-list">
-      {byTarget(rows).map(([targetId, rs]) => {
-        const item = species.get(targetId);
+      {byTarget(rows).map(([key, rs]) => {
+        const itemId = rs[0].itemId;
+        const item = itemId ? species.get(itemId) : undefined;
+        const level: MasteryLevel = (itemId && mastery?.[itemId]?.level) || 0;
         return (
-          <li key={targetId} className="review-entry">
+          <li key={key} className="review-entry">
             {item ? (
               <SpeciesCard
                 variant="row"
                 item={item}
                 sub={<Skills rows={rs} />}
-                aside={<MasteryScales level={masteryLevel(all, targetId)} />}
+                aside={<MasteryScales level={level} />}
               />
             ) : (
               <div className="review-plain">
-                <strong>{labels?.[targetId] ?? 'Mục học'}</strong>
+                <strong>{itemId ? rs[0].label : 'HS theo dạng hàng · ' + rs[0].label}</strong>
                 <Skills rows={rs} />
               </div>
             )}
@@ -80,13 +82,13 @@ function Rows({
 
 /** Species of the release not yet in any schedule: where the next haul comes from. */
 function Fresh({
-  reviews,
+  entries,
   overview,
 }: {
-  reviews: ReviewState[];
+  entries: MeReviewEntry[];
   overview: CatalogOverview | null;
 }) {
-  const scheduled = new Set(reviews.map((r) => r.targetId));
+  const scheduled = new Set(entries.map((r) => r.itemId));
   const fresh = overview?.items.filter((i) => !scheduled.has(i.itemId)) ?? [];
   if (!fresh.length) return null;
   return (
@@ -111,19 +113,21 @@ function Fresh({
 
 /** The species in the schedule as portholes in the deep header: due ones first, ringed. */
 function Portholes({
-  rows,
+  due,
+  later,
   overview,
-  now,
 }: {
-  rows: Row[];
+  due: MeReviewEntry[];
+  later: MeReviewEntry[];
   overview: CatalogOverview | null;
-  now: number;
 }) {
+  const rows = [...due, ...later];
+  const dueIds = new Set(due.map((r) => r.itemId));
   const species = new Map(overview?.items.map((i) => [i.itemId, i]));
   const entries = byTarget(rows)
-    .flatMap(([id, rs]) => {
+    .flatMap(([id]) => {
       const item = species.get(id);
-      return item ? [{ item, due: rs.some((r) => r.at <= now) }] : [];
+      return item ? [{ item, due: dueIds.has(id) }] : [];
     })
     .sort((a, b) => Number(b.due) - Number(a.due));
   if (!entries.length) return null;
@@ -152,37 +156,51 @@ function Portholes({
 /**
  * Review corner on the ice surface: what is due now and what is scheduled next, each skill
  * on its own 1 → 3 → 7 → 14 day ladder. One button starts a review of up to 30 due items.
+ * Lists come from `/me/review` (effective due dates), memory levels from `/me/mastery`.
  */
 export function Review({
-  ledger,
-  reviews,
-  now,
+  userId,
   pending,
   onStart,
-  onVersion,
 }: {
-  ledger: Ledger;
-  /** Reviews already scoped to the current release. */
-  reviews: ReviewState[];
-  now: number;
+  userId: string;
   pending: boolean;
   onStart: StartSession;
-  onVersion: (releaseId: string) => void;
 }) {
-  const { overview } = useOverview(onVersion);
-  // "Due" follows the learner UI's effective due date: a review practised after it fell due
-  // waits one interval again instead of staying due forever.
-  const { due, later } = splitDue(reviews, ledger.attempts, now);
-  const next = later[0];
+  const { overview } = useOverview(ignoreVersion);
+  const review = useMe<MeReview>('/me/review', userId);
+  const mastery = useMe<MeMastery>('/me/mastery', userId).data;
+  const data = review.data;
+  if (!data)
+    return (
+      <section className="ice-page review" aria-labelledby="review-title">
+        <header className="ice-hero">
+          <div className="ice-hero-copy">
+            <h1 id="review-title">Góc ôn tập của bạn.</h1>
+            <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
+          </div>
+        </header>
+        {review.error ? (
+          <ErrorNote message={review.error} retry={review.refresh} />
+        ) : (
+          <p className="ice-status" role="status">
+            Đang tải lịch ôn…
+          </p>
+        )}
+      </section>
+    );
+  const { due, scheduled: later } = data;
+  const all = [...due, ...later];
+  const next = [...later].sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
   return (
     <section className="ice-page review" aria-labelledby="review-title">
       <header className="ice-hero">
         <div className="ice-hero-copy">
           <h1 id="review-title">Góc ôn tập của bạn.</h1>
           <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
-          <Portholes rows={[...due, ...later]} overview={overview} now={now} />
+          <Portholes due={due} later={later} overview={overview} />
         </div>
-        {reviews.length > 0 && (
+        {all.length > 0 && (
           <div className="review-action">
             <dl className="ice-figures">
               <div>
@@ -204,9 +222,8 @@ export function Review({
                   undefined,
                   'en',
                   undefined,
-                  due
-                    .slice(0, 30)
-                    .map(({ review: r }) => ({ targetId: r.targetId, skill: r.skill })),
+                  undefined,
+                  Math.min(due.length, MAX_BATCH),
                 )
               }
             >
@@ -214,18 +231,19 @@ export function Review({
               Ôn {due.length} mục đến hạn
             </button>
             <p className="ice-note">
-              {due.length > 30
+              {due.length > MAX_BATCH
                 ? 'Mỗi lượt ôn tối đa 30 mục; phần còn lại chờ lượt sau.'
                 : due.length
                   ? 'Mục đến hạn sớm nhất được ôn trước.'
                   : next
-                    ? `Chưa có mục đến hạn. Mục kế tiếp: ${day(next.at)}.`
+                    ? `Chưa có mục đến hạn. Mục kế tiếp: ${day(next.dueAt)}.`
                     : ''}
             </p>
           </div>
         )}
       </header>
-      {reviews.length ? (
+      {review.error && <ErrorNote message={review.error} retry={review.refresh} />}
+      {all.length ? (
         <div className="review-body">
           <div className="review-lists">
             {due.length > 0 && (
@@ -233,7 +251,7 @@ export function Review({
                 <h2 id="review-due" className="ice-h2">
                   Đến hạn <span className="ice-count">{due.length}</span>
                 </h2>
-                <Rows rows={due} overview={overview} labels={ledger.labels} all={reviews} />
+                <Rows rows={due} overview={overview} mastery={mastery} />
               </section>
             )}
             {later.length > 0 && (
@@ -241,11 +259,11 @@ export function Review({
                 <h2 id="review-later" className="ice-h2">
                   Đã lên lịch <span className="ice-count">{later.length}</span>
                 </h2>
-                <Rows rows={later} overview={overview} labels={ledger.labels} all={reviews} />
+                <Rows rows={later} overview={overview} mastery={mastery} />
               </section>
             )}
           </div>
-          <Fresh reviews={reviews} overview={overview} />
+          <Fresh entries={all} overview={overview} />
         </div>
       ) : (
         <div className="ice-empty ice-empty--scales">

@@ -20,6 +20,7 @@ export type StartSession = (
   kind?: string,
   reviewOf?: string,
   reviewTargets?: Target[],
+  limit?: number,
 ) => Promise<void>;
 export type Taxon = Exclude<GroupKey, 'none'>;
 

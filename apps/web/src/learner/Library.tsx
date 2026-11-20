@@ -1,13 +1,12 @@
 import { withPage, withQuery, withTaxon, type LibraryView } from './libraryView';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { api, vi, type CatalogItem, type CatalogPage } from '../pilot/api';
-import type { ReviewState } from '../domain/models';
+import { api, vi, type CatalogItem, type CatalogPage, type MeMastery } from '../pilot/api';
 import { ErrorNote } from './ErrorNote';
 import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { coverPhoto } from './SpeciesCover';
-import { groupTone, masteryLevel } from './haul';
+import { groupTone } from './haul';
 import { groupSections, libraryPath } from './shelves';
 import type { Taxon } from './Home';
 import { useMedia } from './useMedia';
@@ -38,7 +37,7 @@ function Entry({
 }: {
   item: CatalogItem;
   variant: 'row' | 'tile';
-  level: MasteryLevel;
+  level: MasteryLevel | null;
 }) {
   return (
     <li className="library-card">
@@ -53,7 +52,7 @@ function Entry({
           imageId: coverPhoto(item)?.id ?? null,
         }}
         sub={<Names item={item} />}
-        aside={<MasteryScales level={level} />}
+        aside={level === null ? undefined : <MasteryScales level={level} />}
       />
     </li>
   );
@@ -70,13 +69,19 @@ export function LibraryResults({
 }: {
   items: CatalogItem[];
   wide: boolean;
-  levelOf: (revisionId: string) => MasteryLevel;
+  /** Null for kinds without a learning record: no scales, no legend. */
+  levelOf: ((revisionId: string) => MasteryLevel) | null;
 }) {
   if (wide)
     return (
       <ul className="library-grid">
         {items.map((i) => (
-          <Entry key={i.revisionId} item={i} variant="tile" level={levelOf(i.revisionId)} />
+          <Entry
+            key={i.revisionId}
+            item={i}
+            variant="tile"
+            level={levelOf ? levelOf(i.revisionId) : null}
+          />
         ))}
       </ul>
     );
@@ -93,13 +98,20 @@ export function LibraryResults({
             <span className="library-swatch" aria-hidden="true" />
             {s.label}
             <span className="library-section-count">{s.items.length}</span>
-            <span className="library-section-legend" aria-hidden="true">
-              Mức nhớ
-            </span>
+            {levelOf && (
+              <span className="library-section-legend" aria-hidden="true">
+                Mức nhớ
+              </span>
+            )}
           </h2>
           <ul className="library-list">
             {s.items.map((i) => (
-              <Entry key={i.revisionId} item={i} variant="row" level={levelOf(i.revisionId)} />
+              <Entry
+                key={i.revisionId}
+                item={i}
+                variant="row"
+                level={levelOf ? levelOf(i.revisionId) : null}
+              />
             ))}
           </ul>
         </section>
@@ -159,14 +171,14 @@ export function GroupChips({
 export function Library({
   view,
   onView,
-  reviews,
+  mastery,
   onVersion,
 }: {
   /** Search, group and page, kept by the app so a profile visit and back restores them. */
   view: LibraryView;
   onView: (view: LibraryView) => void;
-  /** Reviews already scoped to the current release. */
-  reviews: ReviewState[];
+  /** Server mastery per catalog item; null (trial, manager, staff) shows no memory levels. */
+  mastery: MeMastery | null;
   onVersion: (releaseId: string) => void;
 }) {
   const { overview } = useOverview(onVersion);
@@ -202,10 +214,12 @@ export function Library({
   }, [page, query, taxon, retry, onVersion, requestKey]);
 
   const itemIds = new Map(overview?.items.map((i) => [i.revisionId, i.itemId]));
-  const levelOf = (revisionId: string): MasteryLevel => {
-    const id = itemIds.get(revisionId);
-    return id ? masteryLevel(reviews, id) : 0;
-  };
+  const levelOf = mastery
+    ? (revisionId: string): MasteryLevel => {
+        const id = itemIds.get(revisionId);
+        return (id && mastery[id]?.level) || 0;
+      }
+    : null;
   const loading = loadedKey !== requestKey;
   // The neutral "Chưa phân nhóm" tag is said once here, not on every tile.
   const ungrouped =

@@ -24,12 +24,22 @@ import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryVi
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
 import { Review } from '../learner/Review';
+import { useMe } from '../learner/meStore';
+import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { Study } from '../learner/study/Study';
 import { LEDGER_KEY, loadLedger, mergeScore, mergeGame, type Ledger } from '../learner/ledger';
 /** After a session starts or finishes, refetch the learner's /me views that are mounted. */
 function refreshProgress() {
   for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
+}
+/** Library with server mastery for students; other kinds pass an idle id, so no /me request is made. */
+function LibraryRoute({
+  userId,
+  ...props
+}: { userId: string | undefined } & Omit<Parameters<typeof Library>[0], 'mastery'>) {
+  const mastery = useMe<MeMastery>('/me/mastery', userId).data;
+  return <Library {...props} mastery={userId === undefined ? null : mastery} />;
 }
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
@@ -91,6 +101,7 @@ export default function PilotApp() {
     kind = 'en',
     reviewOf?: string,
     reviewTargets?: { targetId: string; skill: string }[],
+    limit?: number,
   ) {
     // Kinds without the study route (managers) never open a learning session.
     if (!canStudy) return;
@@ -103,6 +114,7 @@ export default function PilotApp() {
         ...(revisionId ? { revisionId } : {}),
         ...(reviewOf ? { reviewOf } : {}),
         ...(reviewTargets ? { reviewTargets } : {}),
+        ...(limit !== undefined ? { limit } : {}),
       });
       setGame(next);
       persist({ ...ledger, sessionId: next.id });
@@ -163,11 +175,6 @@ export default function PilotApp() {
     setGame(g);
     if (g.questions.length > 0 && g.questions.every((q) => q.result)) refreshProgress();
   }
-  const [now, setNow] = useState(Date.now);
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(timer);
-  }, []);
   const active = ledger.attempts.filter((a) => a.contentVersion === version && !a.skipped),
     reviews = Object.values(ledger.reviews).filter((r) => r.contentVersion === version);
   const staff = kind === 'staff';
@@ -271,10 +278,10 @@ export default function PilotApp() {
               />
             )}
             {route === 'library' && (
-              <Library
+              <LibraryRoute
+                userId={kind === 'student' ? auth.userId : undefined}
                 view={libraryView}
                 onView={setLibraryView}
-                reviews={reviews}
                 onVersion={setVersion}
               />
             )}
@@ -303,15 +310,8 @@ export default function PilotApp() {
                   {pending ? 'Đang khôi phục phiên…' : 'Mở lượt mới từ trang Học.'}
                 </p>
               ))}
-            {route === 'review' && (
-              <Review
-                ledger={ledger}
-                reviews={reviews}
-                now={now}
-                pending={pending}
-                onStart={start}
-                onVersion={setVersion}
-              />
+            {route === 'review' && auth.userId !== undefined && (
+              <Review userId={auth.userId} pending={pending} onStart={start} />
             )}
             {route === 'progress' && (
               <Progress attempts={active} reviews={reviews} onVersion={setVersion} />
