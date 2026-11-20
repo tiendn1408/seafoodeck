@@ -19,7 +19,8 @@ import {
   type ActorRequest,
 } from './security';
 import type { Request, Response } from 'express';
-import { MeController } from './me.controller';
+import { MeController, MeProgressController } from './me.controller';
+import type { ProgressService } from './progress.service';
 import { AuthController } from './auth.controller';
 import { UserDto } from './admin-extra.controller';
 import { CatalogController } from './controllers';
@@ -341,4 +342,37 @@ test('login: disabled account gets the wrong-password 401; lastLoginAt only on s
   };
   assert.equal(update.where.id, 'u1');
   assert.ok(update.data.lastLoginAt instanceof Date);
+});
+
+test('/me home, review, progress and mastery admit only account students', async () => {
+  const called: string[] = [];
+  const svc = Object.fromEntries(
+    ['home', 'review', 'progress', 'mastery'].map((m) => [
+      m,
+      async (actor: { userId: string }) => (called.push(`${m}:${actor.userId}`), { ok: m }),
+    ]),
+  ) as unknown as ProgressService;
+  const ctrl = new MeProgressController(svc);
+  const routes = ['home', 'review', 'progress', 'mastery'] as const;
+  const outcome = async (r: ActorRequest, route: (typeof routes)[number]) =>
+    ctrl[route](r).then(
+      () => ({ status: 200, message: '' }),
+      (e: HttpException) => ({
+        status: e.getStatus(),
+        message: (e.getResponse() as { message: string }).message,
+      }),
+    );
+  for (const route of routes) {
+    assert.deepEqual(await outcome(req('learner'), route), {
+      status: 403,
+      message: 'Đăng nhập tài khoản để xem tiến độ.',
+    });
+    assert.equal((await outcome(req('guest'), route)).status, 403);
+    assert.equal((await outcome(req('manager', 'm1'), route)).status, 403);
+    assert.equal((await outcome(req('student', null), route)).status, 403);
+  }
+  assert.deepEqual(called, []);
+  for (const route of routes)
+    assert.equal((await outcome(req('student', 'u7'), route)).status, 200);
+  assert.deepEqual(called, ['home:u7', 'review:u7', 'progress:u7', 'mastery:u7']);
 });

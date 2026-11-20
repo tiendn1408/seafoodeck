@@ -10,7 +10,7 @@ import {
   MustChangePasswordGuard,
 } from './security';
 import { AuthController } from './auth.controller';
-import { MeController } from './me.controller';
+import { MeController, MeProgressController } from './me.controller';
 import { Catalog } from './catalog';
 import { Media } from './media';
 import { Learning } from './learning';
@@ -56,7 +56,7 @@ export class CatalogModule {}
 export class MediaModule {}
 @Module({
   imports: [DatabaseModule, AuthModule, CatalogModule, MediaModule],
-  controllers: [LearningController],
+  controllers: [LearningController, MeProgressController],
   providers: [Learning, ProgressService],
   exports: [ProgressService],
 })

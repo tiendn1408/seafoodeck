@@ -7,7 +7,8 @@ import type { Db } from './db';
 import type { Catalog } from './catalog';
 import type { Media } from './media';
 import { Learning, canonical } from './learning';
-import { hash } from './security';
+import { hash, type ActorRequest } from './security';
+import { MeProgressController } from './me.controller';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
 import { ProgressService, REVIEW_CANDIDATES, summarize, touchedTargets } from './progress.service';
 
@@ -30,7 +31,7 @@ const revisions = ['A', 'B', 'C', 'D', 'E'].map((v) => ({
   itemId: 'item-' + v,
   names: names(v),
 }));
-const scenarios = [{ id: 'hs-1', data: hsData }];
+const scenarios = [{ id: 'hs-1', revisionId: 'rev-B', data: hsData }];
 
 interface Rec {
   userId: string;
@@ -602,4 +603,333 @@ test('submit replay adds progress for students and stays byte-identical for othe
       assert.equal((stored as Record<string, unknown>).progress, undefined);
     } else assert.equal(JSON.stringify(r), JSON.stringify(stored));
   }
+});
+
+// ---- /me/* (Task 9) ----
+
+const FORBIDDEN = /rarity|marketPrice|hsHints|provenance|tradeRestriction/;
+
+interface La {
+  userId: string;
+  sessionId: string;
+  questionId: string;
+  targetId: string;
+  skill: string;
+  mode: string;
+  isReview: boolean;
+  attemptNumber: number;
+  correct: boolean;
+  skipped: boolean;
+  selfRated: boolean;
+  contentVersion: string;
+  releaseId: string;
+  label: string;
+  at: Date;
+}
+let qn = 0;
+const la = (sessionId: string, targetId: string, at: string, over: Partial<La> = {}): La => ({
+  userId: 'u1',
+  sessionId,
+  questionId: 'q' + qn++,
+  targetId,
+  skill: 'name:en',
+  mode: 'flashcard',
+  isReview: false,
+  attemptNumber: 1,
+  correct: true,
+  skipped: false,
+  selfRated: false,
+  contentVersion: 'v',
+  releaseId: 'r1',
+  label: 'L ' + targetId,
+  at: new Date(at),
+  ...over,
+});
+
+function meDb(progress: Rec[], log: La[] = [], active: { id: string } | null = null) {
+  const store = fakeDb(progress, {
+    learningAttempt: {
+      findMany: async (arg: { where: { userId: string } }) => (
+        (store.calls['learningAttempt.findMany'] ??= []).push(arg),
+        log
+          .filter((r) => r.userId === arg.where.userId)
+          .sort((a, b) => a.at.getTime() - b.at.getTime())
+      ),
+    },
+    gameSession: {
+      findFirst: async (arg: unknown) => (
+        (store.calls['gameSession.findFirst'] ??= []).push(arg),
+        active
+      ),
+    },
+  });
+  return store;
+}
+const hsRec = (over: Partial<Rec> = {}) =>
+  rec('hs-1', { skill: 'hs', contentVersion: scenarioFingerprint(hsData), ...over });
+
+test('/me/mastery: every current item, status by effective due, level from scoped rows', async () => {
+  const rows = [
+    // Raw dueAt passed, stage-2 interval from lastAttemptAt not yet: learning, level 3.
+    rec('item-B', { stage: 2, dueAt: new Date(NOW - DAY), lastAttemptAt: new Date(NOW - DAY) }),
+    // Stale fingerprint: ignored -> new.
+    rec('item-C', { stage: 3, contentVersion: 'old' }),
+    rec('item-D', { stage: 0 }),
+    // Listening only: not a learn skill, not the item's own target id.
+    rec('item-E/listening/en', { skill: 'listening' }),
+  ];
+  const svc = new ProgressService(meDb(rows).db, catalogFake);
+  assert.deepEqual(await svc.mastery(student, NOW), {
+    'item-A': { status: 'new', level: 0 },
+    'item-B': { status: 'learning', level: 3 },
+    'item-C': { status: 'new', level: 0 },
+    'item-D': { status: 'due', level: 1 },
+    'item-E': { status: 'new', level: 0 },
+  });
+});
+
+test('/me/*: two students see only their own rows', async () => {
+  const rows = [
+    rec('item-B', { stage: 1, dueAt: new Date(NOW + 5 * DAY) }),
+    rec('item-D', { userId: 'u2', stage: 3, dueAt: new Date(NOW + 20 * DAY) }),
+  ];
+  const log = [
+    la('s1', 'item-B', '2026-06-09T03:00:00.000Z'),
+    la('s2', 'item-D', '2026-06-09T03:00:00.000Z', { userId: 'u2', correct: false }),
+  ];
+  const { db, calls } = meDb(rows, log);
+  const svc = new ProgressService(db, catalogFake);
+  const other = actor('student', 'u2', 'a2');
+  const [m1, m2] = [await svc.mastery(student, NOW), await svc.mastery(other, NOW)];
+  assert.deepEqual(
+    [m1['item-B'], m1['item-D']],
+    [
+      { status: 'learning', level: 2 },
+      { status: 'new', level: 0 },
+    ],
+  );
+  assert.deepEqual(
+    [m2['item-B'], m2['item-D']],
+    [
+      { status: 'new', level: 0 },
+      { status: 'learning', level: 4 },
+    ],
+  );
+  const [r1, r2] = [await svc.review(student, NOW), await svc.review(other, NOW)];
+  assert.deepEqual(
+    r1.scheduled.map((e) => e.targetId),
+    ['item-B'],
+  );
+  assert.deepEqual(
+    r2.scheduled.map((e) => e.targetId),
+    ['item-D'],
+  );
+  const [p1, p2] = [await svc.progress(student, NOW), await svc.progress(other, NOW)];
+  assert.equal(p1.figures.firstTryPercent, 100);
+  assert.equal(p2.figures.firstTryPercent, 0);
+  assert.deepEqual(
+    p1.sessions.map((s) => s.sessionId),
+    ['s1'],
+  );
+  assert.deepEqual(
+    p2.sessions.map((s) => s.sessionId),
+    ['s2'],
+  );
+  for (const c of [...calls['reviewProgress.findMany']!, ...calls['learningAttempt.findMany']!])
+    assert.ok(['u1', 'u2'].includes((c as { where: { userId: string } }).where.userId));
+});
+
+test('/me/review splits due and scheduled by effective due, earliest first', async () => {
+  const rows = [
+    // Raw due passed but effective due is lastAttemptAt + 7d = NOW + 6d: scheduled.
+    rec('item-B', { stage: 2, dueAt: new Date(NOW - DAY), lastAttemptAt: new Date(NOW - DAY) }),
+    rec('item-D', { dueAt: new Date(NOW - 4 * DAY), lastAttemptAt: new Date(NOW - 5 * DAY) }),
+    rec('item-A', { stage: 1, dueAt: new Date(NOW + 2 * DAY), lastAttemptAt: new Date(NOW) }),
+    rec('item-E/listening/en', {
+      skill: 'listening',
+      dueAt: new Date(NOW - 2 * DAY),
+      lastAttemptAt: new Date(NOW - 3 * DAY),
+    }),
+    hsRec({ dueAt: new Date(NOW - 3 * DAY), lastAttemptAt: new Date(NOW - 4 * DAY) }),
+    rec('item-C', { contentVersion: 'old' }),
+  ];
+  const r = await new ProgressService(meDb(rows).db, catalogFake).review(student, NOW);
+  assert.deepEqual(r.due, [
+    {
+      targetId: 'item-D',
+      itemId: 'item-D',
+      label: 'D',
+      skill: 'name:en',
+      stage: 0,
+      dueAt: iso(NOW - 4 * DAY),
+    },
+    {
+      targetId: 'hs-1',
+      itemId: null,
+      label: 'B',
+      skill: 'hs',
+      stage: 0,
+      dueAt: iso(NOW - 3 * DAY),
+    },
+    {
+      targetId: 'item-E/listening/en',
+      itemId: 'item-E',
+      label: 'E',
+      skill: 'listening',
+      stage: 0,
+      dueAt: iso(NOW - 2 * DAY),
+    },
+  ]);
+  assert.deepEqual(r.scheduled, [
+    {
+      targetId: 'item-A',
+      itemId: 'item-A',
+      label: 'A',
+      skill: 'name:en',
+      stage: 1,
+      dueAt: iso(NOW + 3 * DAY),
+    },
+    {
+      targetId: 'item-B',
+      itemId: 'item-B',
+      label: 'B',
+      skill: 'name:en',
+      stage: 2,
+      dueAt: iso(NOW + 6 * DAY),
+    },
+  ]);
+});
+
+test('/me/home: haul, cast, due count, skills and the resumable session', async () => {
+  const rows = [
+    rec('item-D', { dueAt: new Date(NOW - 4 * DAY), lastAttemptAt: new Date(NOW - 5 * DAY) }),
+    rec('item-B', { stage: 2, dueAt: new Date(NOW - DAY), lastAttemptAt: new Date(NOW - DAY) }),
+    hsRec({ dueAt: new Date(NOW - 3 * DAY), lastAttemptAt: new Date(NOW - 4 * DAY) }),
+  ];
+  const { db, calls } = meDb(rows, [], { id: 'g1' });
+  const h = await new ProgressService(db, catalogFake).home(student, NOW);
+  assert.equal(h.releaseId, 'r1');
+  assert.equal(h.internal, false);
+  assert.equal(h.learnable, 5);
+  assert.equal(h.due, 2, 'item-D and hs-1 are effectively due; item-B is not');
+  assert.deepEqual(
+    h.haul.map((i) => i.itemId),
+    ['item-D', 'item-A', 'item-C', 'item-E'],
+  );
+  assert.deepEqual(h.cast, {
+    kind: 'review',
+    targets: [
+      { targetId: 'item-D', skill: 'name:en' },
+      { targetId: 'hs-1', skill: 'hs' },
+    ],
+  });
+  assert.deepEqual(
+    h.skills.map((s) => [s.key, s.done, s.total]),
+    [
+      ['en', 1, 5],
+      ['ja', 0, 5],
+      ['scientific', 0, 5],
+      ['hs', 0, 1],
+    ],
+  );
+  assert.equal(h.activeSessionId, 'g1');
+  assert.deepEqual(calls['gameSession.findFirst']![0], {
+    where: {
+      actorId: 'a1',
+      expiresAt: { gt: new Date(NOW) },
+      questions: { some: { attempt: { is: null } } },
+      release: { internal: false },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  });
+  const none = await new ProgressService(meDb([]).db, catalogFake).home(student, NOW);
+  assert.equal(none.activeSessionId, null);
+  assert.equal(none.due, 0);
+  assert.deepEqual(none.cast, { kind: 'flashcard', revisionId: 'rev-A' });
+});
+
+test('/me/progress: figures, sessions, streak and badge inputs from a sample log', async () => {
+  const day = (d: string, h = '03') => `2026-05-0${d}T${h}:00:00.000Z`;
+  const log = [
+    la('d1', 's10', day('1', '01'), { skipped: true, correct: false }),
+    la('d1', 's0', day('1')),
+    la('d1', 's1', day('1'), { selfRated: true }),
+    la('d1', 'hs-1', day('1'), { skill: 'hs', correct: false }),
+    la('d2', 's2', day('2')),
+    la('d2', 's3', day('2'), { correct: false }),
+    la('d3', 's4', day('3')),
+    la('d4', 's5', day('4')),
+    la('d5', 's6', day('5')),
+    la('d6', 's7', day('6')),
+    la('r7', 's8', day('7'), { isReview: true }),
+    la('last', 's9', '2026-06-09T03:00:00.000Z', { isReview: true }),
+    la('last', 's0', '2026-06-09T04:00:00.000Z', { isReview: true, attemptNumber: 2 }),
+    la('last', 's11', '2026-06-09T05:00:00.000Z', { isReview: true }),
+    la('x', 's20', '2026-06-09T06:00:00.000Z', { userId: 'u2' }),
+  ];
+  const rows = [rec('item-B', { stage: 1 }), rec('item-D', { stage: 3 })];
+  const { db, calls } = meDb(rows, log);
+  const p = await new ProgressService(db, catalogFake).progress(student, NOW);
+  assert.deepEqual(calls['learningAttempt.findMany']![0], {
+    where: { userId: 'u1' },
+    orderBy: { at: 'asc' },
+  });
+  assert.deepEqual(p.figures, { answered: 12, firstTryPercent: 83, selfRated: 1 });
+  assert.deepEqual(
+    p.sessions.map((s) => s.sessionId),
+    ['last', 'r7', 'd6', 'd5', 'd4'],
+  );
+  assert.deepEqual(p.sessions[0], {
+    sessionId: 'last',
+    at: '2026-06-09T05:00:00.000Z',
+    mode: 'review',
+    answered: 3,
+    firstTry: 2,
+    selfRated: 0,
+    percent: 67,
+  });
+  assert.deepEqual(p.mastery, { unlearned: 3, level1: 0, level2: 1, level3: 0, level4: 1 });
+  assert.deepEqual(p.achievements.streak, { current: 1, longest: 7 });
+  const badge = Object.fromEntries(p.achievements.badges.map((b) => [b.id, b.earnedAt]));
+  // 11 species (skipped s10 and HS cases excluded); first10 dated at the 10th species' first seen.
+  assert.equal(badge.first10, '2026-06-09T03:00:00.000Z');
+  // Longest streak (7) counts even though the current one is 1; dated at the latest species.
+  assert.equal(badge.streak7, '2026-06-09T05:00:00.000Z');
+  assert.equal(badge.species100, null);
+  assert.equal(badge.solid50, null);
+  assert.equal(badge.review10, null);
+  assert.equal(p.skills.length, 4);
+});
+
+test('/me/* responses never carry restricted catalog fields', async () => {
+  const leaky = {
+    ...catalogFake,
+    overview: async () => {
+      const o = await catalogFake.overview(student);
+      return {
+        ...o,
+        items: o.items.map((i) => ({
+          ...i,
+          rarity: 'rare',
+          marketPrice: 1,
+          hsHints: ['x'],
+          provenance: 'p',
+          tradeRestriction: 't',
+        })),
+      };
+    },
+  } as unknown as Catalog;
+  const rows = [rec('item-B'), rec('item-D', { stage: 2, dueAt: new Date(NOW + DAY) }), hsRec()];
+  const log = [la('s1', 'item-B', '2026-06-09T03:00:00.000Z')];
+  const svc = new ProgressService(meDb(rows, log, { id: 'g1' }).db, leaky);
+  const controller = new MeProgressController(svc);
+  const req = { actor: student } as unknown as ActorRequest;
+  for (const res of [
+    await controller.home(req),
+    await controller.review(req),
+    await controller.progress(req),
+    await controller.mastery(req),
+  ])
+    assert.ok(!FORBIDDEN.test(JSON.stringify(res)), JSON.stringify(res));
 });

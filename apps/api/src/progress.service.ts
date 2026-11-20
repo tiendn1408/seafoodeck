@@ -3,8 +3,19 @@ import type { AuthSession } from './generated/prisma/client';
 import { Db } from './db';
 import { Catalog } from './catalog';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
-import { activeRows, dueTargets, masteryLevel } from './progress-derive';
+import {
+  activeRows,
+  dueTargets,
+  itemStatus,
+  masteryCounts,
+  masteryLevel,
+  pickHaul,
+  planCast,
+  skillProgress,
+} from './progress-derive';
 import type { OverviewData, VersionOf } from './progress-derive';
+import { badges, figures, recentSessions, streakDays } from './progress-achievements';
+import type { LogRow } from './progress-achievements';
 import { DAY, effectiveDueAt } from './progress-review';
 import type { ReviewRow } from './progress-review';
 
@@ -155,31 +166,35 @@ export class ProgressService {
       },
     });
     const cases = new Map<string, string>();
-    for (const s of scenarios)
+    const scenarioRevision = new Map<string, string>();
+    for (const s of scenarios) {
       cases.set(s.id, scenarioFingerprint(s.data as Parameters<typeof scenarioFingerprint>[0]));
+      scenarioRevision.set(s.id, s.revisionId);
+    }
     const versionOf: VersionOf = (id) => items.get(itemOf(id)) ?? cases.get(id);
-    return { release, versionOf };
+    return { release, versionOf, scenarioRevision };
   }
 
   /** The student's ReviewProgress rows scoped to the current release (empty for non-students). */
   async active(actor: AuthSession) {
-    const { release, versionOf } = await this.versions(actor);
+    const { release, versionOf, scenarioRevision } = await this.versions(actor);
     const userId = studentId(actor);
     const all = userId
       ? (await this.db.reviewProgress.findMany({ where: { userId } })).map(toRow)
       : [];
-    return { release, versionOf, all, rows: activeRows(all, versionOf) };
+    return { release, versionOf, scenarioRevision, all, rows: activeRows(all, versionOf) };
   }
 
   async context(actor: AuthSession): Promise<{
     overview: OverviewData;
     rows: ReviewRow[];
     versionOf: VersionOf;
+    scenarioRevision: Map<string, string>;
     releaseId: string;
     internal: boolean;
   }> {
     const o = await this.catalog.overview(actor);
-    const { rows, versionOf } = await this.active(actor);
+    const { rows, versionOf, scenarioRevision } = await this.active(actor);
     return {
       overview: {
         items: o.items.map((i) => ({
@@ -195,6 +210,7 @@ export class ProgressService {
       },
       rows,
       versionOf,
+      scenarioRevision,
       releaseId: o.releaseId,
       internal: o.internal,
     };
@@ -236,4 +252,155 @@ export class ProgressService {
     if (!studentId(actor)) return null;
     return (await this.active(actor)).rows;
   }
+
+  /**
+   * Most recent unexpired game session of this login that still has an unanswered question.
+   * Scoped to the session (`actorId`), since only the owning login can resume it.
+   */
+  private async resumable(actor: AuthSession, now: number): Promise<string | null> {
+    const s = await this.db.gameSession.findFirst({
+      where: {
+        actorId: actor.id,
+        expiresAt: { gt: new Date(now) },
+        questions: { some: { attempt: { is: null } } },
+        ...(!actor.internal ? { release: { internal: false } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    return s?.id ?? null;
+  }
+
+  /** `due` counts active rows whose effective due date is at or before now. */
+  async home(actor: AuthSession, now = Date.now()) {
+    const c = await this.context(actor);
+    return {
+      releaseId: c.releaseId,
+      internal: c.internal,
+      learnable: c.overview.learnable,
+      haul: pickHaul(c.overview, c.rows, now),
+      cast: planCast(c.overview, c.rows, now),
+      due: c.rows.filter((r) => Date.parse(effectiveDueAt(r)) <= now).length,
+      skills: skillProgress(c.overview, c.rows),
+      activeSessionId: await this.resumable(actor, now),
+    };
+  }
+
+  /** Active rows split into due (effective due <= now) and scheduled, each earliest first. */
+  async review(
+    actor: AuthSession,
+    now = Date.now(),
+  ): Promise<{
+    due: ReviewEntry[];
+    scheduled: ReviewEntry[];
+  }> {
+    const c = await this.context(actor);
+    const byItem = new Map(c.overview.items.map((i) => [i.itemId, i]));
+    const byRevision = new Map(c.overview.items.map((i) => [i.revisionId, i]));
+    const entries = c.rows
+      .map((r): ReviewEntry => {
+        const hs = r.skill === 'hs';
+        const item = hs
+          ? byRevision.get(c.scenarioRevision.get(r.targetId) ?? '')
+          : byItem.get(itemOf(r.targetId));
+        return {
+          targetId: r.targetId,
+          itemId: hs ? null : itemOf(r.targetId),
+          label: item?.vi ?? (hs ? 'Hồ sơ HS' : 'Mục học'),
+          skill: r.skill,
+          stage: r.stage,
+          dueAt: effectiveDueAt(r),
+        };
+      })
+      .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
+    return {
+      due: entries.filter((e) => Date.parse(e.dueAt) <= now),
+      scheduled: entries.filter((e) => Date.parse(e.dueAt) > now),
+    };
+  }
+
+  /** The student's whole attempt log, oldest first. */
+  private async log(actor: AuthSession): Promise<LogRow[]> {
+    const userId = studentId(actor);
+    if (!userId) return [];
+    const rows = await this.db.learningAttempt.findMany({
+      where: { userId },
+      orderBy: { at: 'asc' },
+    });
+    return rows.map((r) => ({
+      sessionId: r.sessionId,
+      targetId: r.targetId,
+      skill: r.skill,
+      mode: r.mode,
+      isReview: r.isReview,
+      attemptNumber: r.attemptNumber,
+      correct: r.correct,
+      skipped: r.skipped,
+      selfRated: r.selfRated,
+      label: r.label,
+      at: r.at.toISOString(),
+    }));
+  }
+
+  async progress(actor: AuthSession, now = Date.now()) {
+    const c = await this.context(actor);
+    const log = await this.log(actor);
+    const mastery = masteryCounts(c.overview, c.rows);
+    const streak = streakDays(log, now);
+    return {
+      skills: skillProgress(c.overview, c.rows),
+      mastery,
+      sessions: recentSessions(log, 5),
+      achievements: {
+        streak,
+        badges: badges({
+          ...speciesSeen(log),
+          solid: mastery.level2 + mastery.level3 + mastery.level4,
+          reviewSessions: new Set(log.filter((r) => r.isReview).map((r) => r.sessionId)).size,
+          streak: streak.longest,
+        }),
+      },
+      figures: figures(log),
+    };
+  }
+
+  /** Status and mastery level of every item in the current catalog. */
+  async mastery(
+    actor: AuthSession,
+    now = Date.now(),
+  ): Promise<Record<string, { status: 'new' | 'due' | 'learning'; level: 0 | 1 | 2 | 3 | 4 }>> {
+    const c = await this.context(actor);
+    return Object.fromEntries(
+      c.overview.items.map((i) => [
+        i.itemId,
+        { status: itemStatus(i.itemId, c.rows, now), level: masteryLevel(c.rows, i.itemId) },
+      ]),
+    );
+  }
+}
+
+export interface ReviewEntry {
+  targetId: string;
+  /** Catalog item of an item target (listening suffix stripped); null for HS cases. */
+  itemId: string | null;
+  label: string;
+  skill: string;
+  stage: number;
+  /** Effective due date (ISO). */
+  dueAt: string;
+}
+
+/**
+ * Distinct species answered (not skipped, HS cases excluded) and, for badge dating, one instant
+ * per species: when it was first answered.
+ */
+export function speciesSeen(log: LogRow[]): { species: number; at: string[] } {
+  const first = new Map<string, string>();
+  for (const r of log) {
+    if (r.skipped || r.skill === 'hs') continue;
+    const id = itemOf(r.targetId);
+    const seen = first.get(id);
+    if (!seen || Date.parse(r.at) < Date.parse(seen)) first.set(id, r.at);
+  }
+  return { species: first.size, at: [...first.values()] };
 }

@@ -12,14 +12,24 @@ import {
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiOkResponse,
   ApiProperty,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Db } from './db';
-import { MeResponse, PasswordChangedResponse } from './contract';
+import {
+  MeHomeResponse,
+  MeMasteryEntryResponse,
+  MeProgressResponse,
+  MeResponse,
+  MeReviewResponse,
+  PasswordChangedResponse,
+} from './contract';
+import { ProgressService } from './progress.service';
 import {
   AccessGuard,
   ActorRequest,
@@ -29,6 +39,7 @@ import {
   passwordHash,
   passwordMinFor,
   requireAccount,
+  requireStudent,
   revokeUserSessions,
 } from './security';
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -117,5 +128,47 @@ export class MeController {
       });
     });
     return { changed: true };
+  }
+}
+/**
+ * The student's own progress (`userId` from the session). Lives in the learning module, beside
+ * ProgressService; account students only.
+ */
+@ApiTags('Me')
+@ApiExtraModels(MeMasteryEntryResponse)
+@UseGuards(AccessGuard)
+@ApiCookieAuth('seafoodeck_session')
+@Controller('me')
+export class MeProgressController {
+  constructor(private svc: ProgressService) {}
+  @ApiOkResponse({ type: MeHomeResponse })
+  @Get('home')
+  async home(@Req() req: ActorRequest) {
+    requireStudent(req);
+    return this.svc.home(req.actor);
+  }
+  @ApiOkResponse({ type: MeReviewResponse })
+  @Get('review')
+  async review(@Req() req: ActorRequest) {
+    requireStudent(req);
+    return this.svc.review(req.actor);
+  }
+  @ApiOkResponse({ type: MeProgressResponse })
+  @Get('progress')
+  async progress(@Req() req: ActorRequest) {
+    requireStudent(req);
+    return this.svc.progress(req.actor);
+  }
+  @ApiOkResponse({
+    description: 'Status and mastery level per itemId of the current catalog.',
+    schema: {
+      type: 'object',
+      additionalProperties: { $ref: getSchemaPath(MeMasteryEntryResponse) },
+    },
+  })
+  @Get('mastery')
+  async mastery(@Req() req: ActorRequest) {
+    requireStudent(req);
+    return this.svc.mastery(req.actor);
   }
 }

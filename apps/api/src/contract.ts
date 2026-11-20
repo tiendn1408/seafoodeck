@@ -187,3 +187,96 @@ export class CreatedUserResponse {
   @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
   @ApiProperty() mustChangePassword!: boolean;
 }
+export class CastTargetResponse {
+  @ApiProperty() targetId!: string;
+  @ApiProperty() skill!: string;
+}
+export class CastPlanResponse {
+  @ApiProperty({ enum: ['review', 'flashcard', 'done'] }) kind!: 'review' | 'flashcard' | 'done';
+  @ApiProperty({ required: false, type: [CastTargetResponse], description: 'kind = review.' })
+  targets?: CastTargetResponse[];
+  @ApiProperty({ required: false, description: 'kind = flashcard.' }) revisionId?: string;
+}
+export class SkillProgressResponse {
+  @ApiProperty({ enum: ['en', 'ja', 'scientific', 'hs'] }) key!: 'en' | 'ja' | 'scientific' | 'hs';
+  @ApiProperty() label!: string;
+  @ApiProperty() done!: number;
+  @ApiProperty() total!: number;
+}
+export class MeHomeResponse {
+  @ApiProperty() releaseId!: string;
+  @ApiProperty() internal!: boolean;
+  @ApiProperty() learnable!: number;
+  @ApiProperty({ type: [OverviewItemResponse] }) haul!: OverviewItemResponse[];
+  @ApiProperty({ type: CastPlanResponse }) cast!: CastPlanResponse;
+  @ApiProperty({ description: 'Active review rows whose effective due date is now or earlier.' })
+  due!: number;
+  @ApiProperty({ type: [SkillProgressResponse] }) skills!: SkillProgressResponse[];
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'Latest unexpired session of this login that still has unanswered questions.',
+  })
+  activeSessionId!: string | null;
+}
+export class ReviewEntryResponse {
+  @ApiProperty() targetId!: string;
+  @ApiProperty({ nullable: true, type: String, description: 'Null for HS cases.' })
+  itemId!: string | null;
+  @ApiProperty() label!: string;
+  @ApiProperty() skill!: string;
+  @ApiProperty() stage!: number;
+  @ApiProperty({ description: 'Effective due date (ISO).' }) dueAt!: string;
+}
+export class MeReviewResponse {
+  @ApiProperty({ type: [ReviewEntryResponse], description: 'Due now, earliest first.' })
+  due!: ReviewEntryResponse[];
+  @ApiProperty({ type: [ReviewEntryResponse], description: 'Due later, earliest first.' })
+  scheduled!: ReviewEntryResponse[];
+}
+export class MasteryCountsResponse {
+  @ApiProperty() unlearned!: number;
+  @ApiProperty() level1!: number;
+  @ApiProperty() level2!: number;
+  @ApiProperty() level3!: number;
+  @ApiProperty() level4!: number;
+}
+export class SessionHistoryResponse {
+  @ApiProperty() sessionId!: string;
+  @ApiProperty() at!: string;
+  @ApiProperty() mode!: string;
+  @ApiProperty() answered!: number;
+  @ApiProperty() firstTry!: number;
+  @ApiProperty() selfRated!: number;
+  @ApiProperty({ nullable: true, type: Number }) percent!: number | null;
+}
+export class StreakResponse {
+  @ApiProperty() current!: number;
+  @ApiProperty() longest!: number;
+}
+export class BadgeResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty({ nullable: true, type: String }) earnedAt!: string | null;
+}
+export class AchievementsResponse {
+  @ApiProperty({ type: StreakResponse }) streak!: StreakResponse;
+  @ApiProperty({ type: [BadgeResponse] }) badges!: BadgeResponse[];
+}
+export class FiguresResponse {
+  @ApiProperty() answered!: number;
+  @ApiProperty({ nullable: true, type: Number }) firstTryPercent!: number | null;
+  @ApiProperty() selfRated!: number;
+}
+export class MeProgressResponse {
+  @ApiProperty({ type: [SkillProgressResponse] }) skills!: SkillProgressResponse[];
+  @ApiProperty({ type: MasteryCountsResponse }) mastery!: MasteryCountsResponse;
+  @ApiProperty({ type: [SessionHistoryResponse], description: 'Latest five, newest first.' })
+  sessions!: SessionHistoryResponse[];
+  @ApiProperty({ type: AchievementsResponse }) achievements!: AchievementsResponse;
+  @ApiProperty({ type: FiguresResponse }) figures!: FiguresResponse;
+}
+export class MeMasteryEntryResponse {
+  @ApiProperty({ enum: ['new', 'due', 'learning'] }) status!: 'new' | 'due' | 'learning';
+  @ApiProperty({ enum: [0, 1, 2, 3, 4] }) level!: 0 | 1 | 2 | 3 | 4;
+}

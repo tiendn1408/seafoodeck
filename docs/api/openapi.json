@@ -494,6 +494,113 @@
         ]
       }
     },
+    "/api/v1/me/home": {
+      "get": {
+        "operationId": "MeProgressController_home",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeHomeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/me/review": {
+      "get": {
+        "operationId": "MeProgressController_review",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/me/progress": {
+      "get": {
+        "operationId": "MeProgressController_progress",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeProgressResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/me/mastery": {
+      "get": {
+        "operationId": "MeProgressController_mastery",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Status and mastery level per itemId of the current catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/MeMasteryEntryResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
     "/api/v1/admin/overview": {
       "get": {
         "operationId": "AdminController_overview",
@@ -1880,6 +1987,379 @@
         "required": [
           "key",
           "answer"
+        ]
+      },
+      "MeMasteryEntryResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "due",
+              "learning"
+            ]
+          },
+          "level": {
+            "type": "number",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "level"
+        ]
+      },
+      "CastTargetResponse": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string"
+          },
+          "skill": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetId",
+          "skill"
+        ]
+      },
+      "CastPlanResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "review",
+              "flashcard",
+              "done"
+            ]
+          },
+          "targets": {
+            "description": "kind = review.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CastTargetResponse"
+            }
+          },
+          "revisionId": {
+            "type": "string",
+            "description": "kind = flashcard."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "SkillProgressResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "en",
+              "ja",
+              "scientific",
+              "hs"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "done": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "done",
+          "total"
+        ]
+      },
+      "MeHomeResponse": {
+        "type": "object",
+        "properties": {
+          "releaseId": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "learnable": {
+            "type": "number"
+          },
+          "haul": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewItemResponse"
+            }
+          },
+          "cast": {
+            "$ref": "#/components/schemas/CastPlanResponse"
+          },
+          "due": {
+            "type": "number",
+            "description": "Active review rows whose effective due date is now or earlier."
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillProgressResponse"
+            }
+          },
+          "activeSessionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Latest unexpired session of this login that still has unanswered questions."
+          }
+        },
+        "required": [
+          "releaseId",
+          "internal",
+          "learnable",
+          "haul",
+          "cast",
+          "due",
+          "skills",
+          "activeSessionId"
+        ]
+      },
+      "ReviewEntryResponse": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for HS cases."
+          },
+          "label": {
+            "type": "string"
+          },
+          "skill": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "number"
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "Effective due date (ISO)."
+          }
+        },
+        "required": [
+          "targetId",
+          "itemId",
+          "label",
+          "skill",
+          "stage",
+          "dueAt"
+        ]
+      },
+      "MeReviewResponse": {
+        "type": "object",
+        "properties": {
+          "due": {
+            "description": "Due now, earliest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewEntryResponse"
+            }
+          },
+          "scheduled": {
+            "description": "Due later, earliest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewEntryResponse"
+            }
+          }
+        },
+        "required": [
+          "due",
+          "scheduled"
+        ]
+      },
+      "MasteryCountsResponse": {
+        "type": "object",
+        "properties": {
+          "unlearned": {
+            "type": "number"
+          },
+          "level1": {
+            "type": "number"
+          },
+          "level2": {
+            "type": "number"
+          },
+          "level3": {
+            "type": "number"
+          },
+          "level4": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "unlearned",
+          "level1",
+          "level2",
+          "level3",
+          "level4"
+        ]
+      },
+      "SessionHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "answered": {
+            "type": "number"
+          },
+          "firstTry": {
+            "type": "number"
+          },
+          "selfRated": {
+            "type": "number"
+          },
+          "percent": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "sessionId",
+          "at",
+          "mode",
+          "answered",
+          "firstTry",
+          "selfRated",
+          "percent"
+        ]
+      },
+      "StreakResponse": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "number"
+          },
+          "longest": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "current",
+          "longest"
+        ]
+      },
+      "BadgeResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "earnedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "earnedAt"
+        ]
+      },
+      "AchievementsResponse": {
+        "type": "object",
+        "properties": {
+          "streak": {
+            "$ref": "#/components/schemas/StreakResponse"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BadgeResponse"
+            }
+          }
+        },
+        "required": [
+          "streak",
+          "badges"
+        ]
+      },
+      "FiguresResponse": {
+        "type": "object",
+        "properties": {
+          "answered": {
+            "type": "number"
+          },
+          "firstTryPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "selfRated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "answered",
+          "firstTryPercent",
+          "selfRated"
+        ]
+      },
+      "MeProgressResponse": {
+        "type": "object",
+        "properties": {
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillProgressResponse"
+            }
+          },
+          "mastery": {
+            "$ref": "#/components/schemas/MasteryCountsResponse"
+          },
+          "sessions": {
+            "description": "Latest five, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionHistoryResponse"
+            }
+          },
+          "achievements": {
+            "$ref": "#/components/schemas/AchievementsResponse"
+          },
+          "figures": {
+            "$ref": "#/components/schemas/FiguresResponse"
+          }
+        },
+        "required": [
+          "skills",
+          "mastery",
+          "sessions",
+          "achievements",
+          "figures"
         ]
       },
       "ImportDto": {
