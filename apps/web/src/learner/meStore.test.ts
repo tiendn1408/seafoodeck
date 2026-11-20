@@ -55,22 +55,34 @@ afterEach(() => {
 });
 
 describe('useMe', () => {
-  it('ignores a stale response arriving after the key changed', async () => {
-    let resolveOld!: (r: Response) => void;
-    fetchMock.mockImplementationOnce(() => new Promise<Response>((r) => (resolveOld = r)));
-    fetchMock.mockImplementationOnce(() => reply({ who: 'b' }));
-    const { result, rerender } = renderHook(
-      ({ id }: { id: string }) => useMe<{ who: string }>('/me/home', id),
-      { initialProps: { id: 'u1' } },
-    );
-    rerender({ id: 'u2' });
-    await waitFor(() => expect(result.current.data).toEqual({ who: 'b' }));
-    await act(async () => {
-      resolveOld(new Response(JSON.stringify({ who: 'a' })));
-      await new Promise((r) => setTimeout(r, 10));
+  describe('superseded requests', () => {
+    // Request A is superseded by a same-key refresh (B); A then settles late, ignoring its abort signal.
+    async function supersede(
+      settleA: (a: { resolve(r: Response): void; reject(e: unknown): void }) => void,
+    ) {
+      let a!: { resolve(r: Response): void; reject(e: unknown): void };
+      fetchMock.mockImplementationOnce(
+        () => new Promise<Response>((resolve, reject) => (a = { resolve, reject })),
+      );
+      fetchMock.mockImplementationOnce(() => reply({ n: 2 }));
+      const { result } = renderHook(() => useMe<{ n: number }>('/me/home', 'u1'));
+      act(() => result.current.refresh());
+      await waitFor(() => expect(result.current.data).toEqual({ n: 2 }));
+      await act(async () => {
+        settleA(a);
+        await new Promise((r) => setTimeout(r, 10));
+      });
+      return result;
+    }
+    it('ignores a late failure of a superseded request', async () => {
+      const result = await supersede((a) => a.reject(new TypeError('offline')));
+      expect(result.current.error).toBe('');
+      expect(result.current.data).toEqual({ n: 2 });
     });
-    expect(result.current.data).toEqual({ who: 'b' });
-    expect(result.current.error).toBe('');
+    it('ignores a late success of a superseded request', async () => {
+      const result = await supersede((a) => a.resolve(new Response(JSON.stringify({ n: 1 }))));
+      expect(result.current.data).toEqual({ n: 2 });
+    });
   });
 
   it('refreshMe(path) refreshes only matching paths', async () => {
@@ -178,14 +190,16 @@ describe('useMe', () => {
     expect(handler).toHaveBeenCalledTimes(2);
   });
 
-  it('unsubscribe only clears the handler it registered', () => {
+  it('unsubscribe only clears the handler it registered', async () => {
     const first = vi.fn();
     const off = setAuthRequiredHandler(first);
     const second = vi.fn();
     setAuthRequiredHandler(second);
     off();
     fetchMock.mockImplementation(() => reply({ code: 'MUST_CHANGE_PASSWORD' }, 403));
-    return api('/x').catch(() => expect(second).toHaveBeenCalledTimes(1));
+    await expect(api('/x')).rejects.toBeInstanceOf(ApiError);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(first).not.toHaveBeenCalled();
   });
 
   it('api supports PATCH', async () => {
