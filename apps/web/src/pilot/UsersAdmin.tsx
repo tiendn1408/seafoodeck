@@ -20,9 +20,11 @@ export const ROLE_LABEL: Record<string, string> = {
   admin: 'Quản trị',
 };
 const SELF_REASON = 'Không thể khóa hoặc xóa tài khoản bạn đang dùng.';
+const PAUSED_REASON = 'Đóng khung mật khẩu tạm trước.';
 const ONCE = 'Mật khẩu chỉ hiện lúc này. Đưa cho người dùng và yêu cầu họ đổi ngay.';
 const ONCE_SELF =
-  'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại".';
+  'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại". ' +
+  'Đừng rời trang này trước khi ghi lại mật khẩu.';
 
 /** Same alphabet as the server's temporary passwords: no 0 O o 1 l I. */
 export const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -111,6 +113,16 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
     }, SEARCH_DELAY);
     return () => clearTimeout(t);
   }, [query, q, paused]);
+  // Reloading or closing the tab would lose the own temporary password: ask first.
+  useEffect(() => {
+    if (!paused) return;
+    const ask = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', ask);
+    return () => window.removeEventListener('beforeunload', ask);
+  }, [paused]);
 
   const params = new URLSearchParams();
   if (role) params.set('role', role);
@@ -130,8 +142,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       .then((d) => {
         if (!current) return;
         // The last row of a later page went away (deleted, or locked under "active"): step back.
-        if (!d.items.length && d.total > 0 && d.page > 1) {
-          setPage(Math.ceil(d.total / d.limit));
+        const last = Math.max(1, Math.ceil(d.total / d.limit));
+        if (!d.items.length && d.page > last) {
+          setPage(last);
           return;
         }
         setData(d);
@@ -154,6 +167,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
 
   const refresh = () => setReload((n) => n + 1);
   const open = (next: Pending) => {
+    // Any request now would hit MUST_CHANGE_PASSWORD and lose the own temporary password.
+    if (paused) return;
     setActionError('');
     setRowError('');
     setPending(next);
@@ -195,7 +210,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
 
   return (
     <div className="users-admin">
-      <AdminTabs current="users" />
+      <AdminTabs current="users" disabled={paused} />
       <header className="users-head">
         <div>
           <h1 ref={head} tabIndex={-1}>
@@ -203,7 +218,13 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           </h1>
           <p>Tạo tài khoản, khóa, đặt lại mật khẩu hoặc xóa người dùng.</p>
         </div>
-        <button type="button" className="users-primary" onClick={() => open({ kind: 'create' })}>
+        <button
+          type="button"
+          className="users-primary"
+          disabled={paused}
+          title={paused ? PAUSED_REASON : undefined}
+          onClick={() => open({ kind: 'create' })}
+        >
           Tạo người dùng
         </button>
       </header>
@@ -269,7 +290,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              if (!paused) setQuery(e.target.value);
+            }}
           />
         </label>
       </div>
@@ -346,6 +369,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                               type="button"
                               className="users-secondary"
                               disabled={busy || paused}
+                              title={paused ? PAUSED_REASON : undefined}
                               onClick={() => void unlock(u)}
                             >
                               Mở khóa<span className="users-sr"> {u.username}</span>
@@ -354,8 +378,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                             <button
                               type="button"
                               className="users-secondary"
-                              disabled={self}
-                              title={self ? SELF_REASON : undefined}
+                              disabled={self || paused}
+                              title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                               onClick={() => open({ kind: 'lock', user: u })}
                             >
                               Khóa<span className="users-sr"> {u.username}</span>
@@ -364,6 +388,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           <button
                             type="button"
                             className="users-secondary"
+                            disabled={paused}
+                            title={paused ? PAUSED_REASON : undefined}
                             onClick={() => open({ kind: 'reset', user: u })}
                           >
                             Đặt lại mật khẩu<span className="users-sr"> {u.username}</span>
@@ -371,8 +397,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           <button
                             type="button"
                             className="users-secondary"
-                            disabled={self}
-                            title={self ? SELF_REASON : undefined}
+                            disabled={self || paused}
+                            title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                             onClick={() => open({ kind: 'delete', user: u })}
                           >
                             Xóa<span className="users-sr"> {u.username}</span>
@@ -469,7 +495,9 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
             <button
               type="button"
               className="users-primary"
-              disabled={busy}
+              // A list request still in flight could reach the server after the reset and, for
+              // an own reset, trigger MUST_CHANGE_PASSWORD: wait for it.
+              disabled={busy || loading}
               onClick={() =>
                 void run(async () => {
                   setNotice('');

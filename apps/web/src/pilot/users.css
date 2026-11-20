@@ -32,6 +32,9 @@
   color: var(--ice-ink);
   border-bottom-color: var(--action);
 }
+.admin-tabs a[aria-disabled='true'] {
+  cursor: not-allowed;
+}
 .admin-tabs a:focus-visible {
   outline: 3px solid var(--ice-focus);
   outline-offset: 3px;

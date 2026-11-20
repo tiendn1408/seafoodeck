@@ -455,10 +455,15 @@ describe('UsersAdmin row actions', () => {
     expect(host.textContent).toContain('Trang 1/1');
   });
 
-  it('self reset: only the reset call, the list stays paused while the password shows, refresh on close', async () => {
+  it('self reset: only the reset call, every mutation and the list stay paused until close', async () => {
+    // 21 users, so "Trang sau" would be enabled if the list were not paused.
+    routes['GET /admin/users?page=1&limit=20'] = () => page(rows, 21);
     routes['POST /admin/users/me/reset-password'] = () =>
       json({ temporaryPassword: 'SelfTmp7xKq9Rz2aBcDe' });
+    const added = vi.spyOn(window, 'addEventListener');
+    const removed = vi.spyOn(window, 'removeEventListener');
     const host = await screen('me');
+    expect(button(host, 'Trang sau').disabled).toBe(false);
     const before = calls.length;
     await click(button(rowOf(host, 'me'), 'Đặt lại mật khẩu'));
     await click(button(dialog()!, 'Đặt lại'));
@@ -469,22 +474,94 @@ describe('UsersAdmin row actions', () => {
     expect(reveal.textContent).toContain(
       'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại".',
     );
-    // Typing, filtering and paging are off while the own temporary password is on screen.
+    expect(reveal.textContent).toContain('Đừng rời trang này trước khi ghi lại mật khẩu.');
+    // Leaving the page asks first; the admin tabs are off.
+    const unload = added.mock.calls.find(([t]) => t === 'beforeunload')?.[1];
+    expect(unload).toBeTypeOf('function');
+    const ev = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    for (const a of host.querySelectorAll('nav[aria-label="Khu quản trị"] a')) {
+      expect(a.getAttribute('aria-disabled'), a.textContent!).toBe('true');
+      expect(a.hasAttribute('href'), a.textContent!).toBe(false);
+    }
+    // Typing, filtering and paging are off.
     const search = field(host, 'Tìm');
     expect(search.disabled).toBe(true);
     setValue(search, 'abc');
     await tick(350);
+    for (const s of host.querySelectorAll<HTMLSelectElement>('.users-filters select'))
+      expect(s.disabled).toBe(true);
     expect(button(host, 'Trang sau').disabled).toBe(true);
-    expect(host.querySelector<HTMLSelectElement>('.users-filters select')!.disabled).toBe(true);
+    expect(button(host, 'Trang trước').disabled).toBe(true);
+    // Every mutation is off too, on every row (each would hit MUST_CHANGE_PASSWORD).
+    const mutations = [
+      button(host, 'Tạo người dùng'),
+      ...host.querySelectorAll<HTMLButtonElement>('.users-actions button'),
+    ];
+    expect(mutations.length).toBe(1 + 3 * rows.length);
+    for (const b of mutations) {
+      expect(b.disabled, b.textContent!).toBe(true);
+      await click(b);
+    }
+    expect(button(rowOf(host, 'u2'), 'Khóa').title).toBe('Đóng khung mật khẩu tạm trước.');
+    expect(dialog()).toBeNull();
     expect(calls.slice(before).map((c) => c.key)).toEqual(['POST /admin/users/me/reset-password']);
     expect(host.textContent).toContain('SelfTmp7xKq9Rz2aBcDe');
     await click(button(reveal, 'Đóng'));
-    await tick();
+    await tick(350);
     expect(host.textContent).not.toContain('SelfTmp7xKq9Rz2aBcDe');
+    // Only the plain refresh: the value typed while disabled never became a search.
     expect(calls.slice(before).map((c) => c.key)).toEqual([
       'POST /admin/users/me/reset-password',
       'GET /admin/users?page=1&limit=20',
     ]);
+    expect(removed.mock.calls.some(([t, f]) => t === 'beforeunload' && f === unload)).toBe(true);
+    expect(host.querySelector('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toBeNull();
+  });
+
+  it('the reset confirm waits while the list is loading', async () => {
+    let release: () => void = () => {};
+    const host = await screen();
+    routes['GET /admin/users?role=manager&page=1&limit=20'] = () =>
+      new Promise<Response>((r) => {
+        release = () =>
+          void r(new Response(JSON.stringify({ items: rows, total: 3, page: 1, limit: 20 })));
+      });
+    select(host, 'Vai trò', 'manager');
+    await tick();
+    await click(button(rowOf(host, 'me'), 'Đặt lại mật khẩu'));
+    expect(button(dialog()!, 'Đặt lại').disabled).toBe(true);
+    await act(async () => release());
+    await tick();
+    expect(button(dialog()!, 'Đặt lại').disabled).toBe(false);
+  });
+
+  it('clamps when the server sends an empty later page whose page equals the computed last', async () => {
+    routes['GET /admin/users?page=1&limit=20'] = () => page(rows, 21);
+    routes['GET /admin/users?page=2&limit=20'] = () =>
+      json({ items: [], total: 21, page: 2, limit: 20 });
+    const host = await screen();
+    await click(button(host, 'Trang sau'));
+    await tick();
+    await tick();
+    // Page 2 of 2 is the last page; an empty answer must not leave the list loading forever.
+    expect(host.textContent).not.toContain('Đang tải');
+    expect(host.textContent).toContain('Trang 2/2');
+  });
+
+  it('clamps to page 1 when everything went away (total 0 on a later page)', async () => {
+    routes['GET /admin/users?page=1&limit=20'] = () => page(rows, 21);
+    routes['GET /admin/users?page=2&limit=20'] = () =>
+      json({ items: [], total: 0, page: 2, limit: 20 });
+    const host = await screen();
+    routes['GET /admin/users?page=1&limit=20'] = () => page([], 0);
+    await click(button(host, 'Trang sau'));
+    await tick();
+    await tick();
+    expect(lists().at(-1)).toBe('GET /admin/users?page=1&limit=20');
+    expect(host.textContent).toContain('Trang 1/1');
+    expect(host.textContent).not.toContain('Trang 2/1');
   });
 
   it("disables the acting admin's own Khóa and Xóa, with a reason", async () => {
