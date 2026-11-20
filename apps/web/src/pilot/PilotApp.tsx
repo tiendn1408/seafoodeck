@@ -14,7 +14,7 @@ import { AppShell } from '../learner/AppShell';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
 import { Login, StaffLogin } from '../learner/Login';
-import { clearMe } from '../learner/meStore';
+import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
 import { ManagerNotice } from '../learner/ManagerNotice';
@@ -27,6 +27,10 @@ import { Review } from '../learner/Review';
 import { Progress } from '../learner/Progress';
 import { Study } from '../learner/study/Study';
 import { LEDGER_KEY, loadLedger, mergeScore, mergeGame, type Ledger } from '../learner/ledger';
+/** After a session starts or finishes, refetch the learner's /me views that are mounted. */
+function refreshProgress() {
+  for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
+}
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -102,6 +106,7 @@ export default function PilotApp() {
       });
       setGame(next);
       persist({ ...ledger, sessionId: next.id });
+      refreshProgress();
       location.hash = 'study';
     } catch (e) {
       setError((e as Error).message);
@@ -109,12 +114,11 @@ export default function PilotApp() {
       setPending(false);
     }
   }
-  async function resume() {
-    if (!ledger.sessionId) return;
+  async function resume(sessionId: string) {
     setPending(true);
     setError('');
     try {
-      const restored = await api<Game>(`/learning/sessions/${ledger.sessionId}`);
+      const restored = await api<Game>(`/learning/sessions/${sessionId}`);
       setGame(restored);
       persist(mergeGame(ledger, restored));
       location.hash = 'study';
@@ -154,6 +158,10 @@ export default function PilotApp() {
   }, [auth, forced, permitted, route, game, ledger]);
   function record(result: Score, g: Game) {
     persist(mergeScore(ledger, result, g));
+  }
+  function changeGame(g: Game) {
+    setGame(g);
+    if (g.questions.length > 0 && g.questions.every((q) => q.result)) refreshProgress();
   }
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -250,12 +258,12 @@ export default function PilotApp() {
             {route === 'home' && kind === 'manager' && <ManagerNotice />}
             {route === 'home' && kind !== 'manager' && (
               <Home
-                ledger={ledger}
-                now={now}
+                kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}
+                userId={auth.userId}
                 pending={pending}
                 onStart={start}
-                onResume={ledger.sessionId ? resume : undefined}
-                onVersion={setVersion}
+                onResume={resume}
+                onSignIn={logout}
                 onOpenLibrary={(taxon) => {
                   setLibraryView(openGroup(taxon));
                   location.hash = 'library';
@@ -285,7 +293,7 @@ export default function PilotApp() {
                   key={game.id}
                   game={game}
                   ledger={ledger}
-                  onChange={setGame}
+                  onChange={changeGame}
                   onRecord={record}
                   onRetry={() => start('review', undefined, 'en', game.id)}
                   pending={pending}

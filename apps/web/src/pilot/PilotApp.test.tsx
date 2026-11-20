@@ -237,6 +237,35 @@ describe('PilotApp role-aware routes', () => {
     }
   });
 
+  it('student home reads /me/home and resumes the server session id, not the ledger', async () => {
+    localStorage.setItem(
+      'seafood-deck:pilot:v1',
+      JSON.stringify({ sessionId: 'old-local', attempts: [], reviews: {} }),
+    );
+    const game = { id: 's9', mode: 'flashcard', kind: 'en', questions: [] };
+    routes['GET /auth/me'] = () => json(view('student'));
+    routes['GET /me/home'] = () =>
+      json({
+        releaseId: 'rel1',
+        internal: false,
+        learnable: 1,
+        haul: [],
+        cast: { kind: 'done' },
+        due: 0,
+        skills: [],
+        activeSessionId: 's9',
+      });
+    routes['GET /learning/sessions/s9'] = () => json(game);
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(calls).toContain('GET /me/home');
+    await click(button(host, 'Tiếp tục'));
+    await tick();
+    expect(location.hash).toBe('#study');
+    expect(calls.filter((c) => c.includes('old-local'))).toEqual([]);
+  });
+
   it('manager on home sees the notice, not the learner home', async () => {
     routes['GET /auth/me'] = () => json(view('manager'));
     const host = mount(<PilotApp />);

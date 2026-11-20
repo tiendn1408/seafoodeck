@@ -1,20 +1,16 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { ArrowRight, BookOpen, Library, PackageCheck, ScanLine, Tags } from 'lucide-react';
-import {
-  api,
-  type CatalogItem,
-  type CatalogOverview,
-  type CatalogPage,
-  type Game,
-} from '../pilot/api';
+import { api, type CatalogItem, type CatalogPage, type Game, type MeHome } from '../pilot/api';
 import { SignedImage } from '../pilot/Media';
 import { ErrorNote } from './ErrorNote';
 import { FloatRope, type RopeFloat } from './FloatRope';
 import { GroupEntry } from './GroupEntry';
 import { SpeciesCard } from './SpeciesCard';
-import { groupTone, pickHaul, planCast, skillProgress, type GroupKey } from './haul';
-import type { Ledger } from './ledger';
+import { groupTone, type GroupKey } from './haul';
+import { useMe } from './meStore';
+import { TrialNudge } from './TrialNudge';
 import { useMedia } from './useMedia';
+import { useOverview } from './useOverview';
 import './home.css';
 
 type Target = { targetId: string; skill: string };
@@ -65,6 +61,9 @@ const skillColor: Record<string, string> = {
   hs: 'var(--action)',
 };
 
+// Students get the release from /me/home; the catalogue overview only feeds the pickers here.
+const ignoreVersion = () => {};
+
 /** True while the tab is hidden, so ambient motion can stop. */
 function usePageHidden() {
   const [hidden, setHidden] = useState(
@@ -79,46 +78,35 @@ function usePageHidden() {
 }
 
 export function Home({
-  ledger,
-  now,
+  kind: learner,
+  userId,
   pending,
   onStart,
   onResume,
-  onVersion,
+  onSignIn,
   onOpenLibrary,
 }: {
-  ledger: Ledger;
-  now: number;
+  /** `staff` gets the reduced Home without the sign-in nudge: /me/* admits account students only. */
+  kind: 'student' | 'trial' | 'staff';
+  userId?: string;
   pending: boolean;
   onStart: StartSession;
-  onResume?: () => Promise<void>;
-  onVersion: (releaseId: string) => void;
+  onResume?: (sessionId: string) => Promise<void>;
+  onSignIn: () => void;
   onOpenLibrary: (taxon: Taxon | '') => void;
 }) {
-  const [overview, setOverview] = useState<CatalogOverview | null>(null),
-    [error, setError] = useState(''),
-    [retry, setRetry] = useState(0),
-    [game, setGame] = useState<Game | null>(null),
+  const trial = learner !== 'student';
+  // Only account students read /me/*: an undefined user id keeps the hook idle.
+  const me = useMe<MeHome>('/me/home', trial ? undefined : userId);
+  const home = trial ? null : me.data;
+  const { overview, error: overviewError, retry: retryOverview } = useOverview(ignoreVersion);
+  const [game, setGame] = useState<Game | null>(null),
     [audioItems, setAudioItems] = useState<CatalogItem[]>([]),
     [revision, setRevision] = useState(''),
     [kind, setKind] = useState('en');
   const hidden = usePageHidden();
   const wide = useMedia('(min-width: 900px)');
   const roomy = useMedia('(min-width: 600px)');
-
-  useEffect(() => {
-    const c = new AbortController();
-    api<CatalogOverview>('/catalog/overview', undefined, c.signal)
-      .then((o) => {
-        setOverview(o);
-        setError('');
-        onVersion(o.releaseId);
-      })
-      .catch((e) => {
-        if (e.name !== 'AbortError') setError(e.message);
-      });
-    return () => c.abort();
-  }, [retry, onVersion]);
 
   // Pronunciation media is not part of the overview; only "Nghe và chọn tên" needs it.
   useEffect(() => {
@@ -129,8 +117,8 @@ export function Home({
     return () => c.abort();
   }, []);
 
-  // Draw the rope from the unfinished session, fetched once per session id.
-  const sessionId = ledger.sessionId;
+  // Draw the rope from the server's unfinished session, fetched once per session id.
+  const sessionId = home?.activeSessionId ?? null;
   useEffect(() => {
     if (!sessionId) return;
     let alive = true;
@@ -146,13 +134,12 @@ export function Home({
     };
   }, [sessionId]);
 
-  const reviews = Object.values(ledger.reviews);
-  const loading = !overview && !error;
-  const haul = overview ? pickHaul(overview, reviews, ledger.attempts, now) : [];
-  const plan = overview ? planCast(overview, reviews, ledger.attempts, now) : null;
+  const loading = !trial && !home && !me.error;
+  const haul = home?.haul ?? [];
+  const plan = home?.cast ?? null;
   const shown = wide ? 5 : roomy ? 3 : 2;
-  const groupOf = new Map(
-    overview?.items.map((i) => [i.itemId, groupTone(i.taxonomicGroup).key]) ?? [],
+  const groupOf = new Map<string, GroupKey>(
+    [...(overview?.items ?? []), ...haul].map((i) => [i.itemId, groupTone(i.taxonomicGroup).key]),
   );
   const session = sessionId && game?.id === sessionId ? game : null;
   const rope: { total: number; done: RopeFloat[] } = session
@@ -189,12 +176,14 @@ export function Home({
     ).length >= 3;
 
   function cast() {
-    if (plan?.kind === 'review') void onStart('review', undefined, 'en', undefined, plan.targets);
+    // The server picks the due targets itself; the client never sends reviewTargets.
+    if (plan?.kind === 'review') void onStart('review', undefined, 'en', undefined, undefined);
     else if (plan?.kind === 'flashcard') void onStart('flashcard', plan.revisionId, 'en');
   }
   const nextName =
     plan?.kind === 'flashcard'
-      ? overview?.items.find((i) => i.revisionId === plan.revisionId)?.vi
+      ? (haul.find((i) => i.revisionId === plan.revisionId)?.vi ??
+        overview?.items.find((i) => i.revisionId === plan.revisionId)?.vi)
       : undefined;
   // Each practice key is led by a species photo: the chosen species for the name modes,
   // another photographed species for "Đoán hình"; HS keeps its icon (it is about packaging).
@@ -211,7 +200,17 @@ export function Home({
       </div>
 
       <section className="home-hero" aria-labelledby="home-title">
-        {loading ? (
+        {trial ? (
+          <div className="home-title">
+            <h1 id="home-title">
+              {learner === 'trial'
+                ? 'Học thử: chọn loài và chế độ luyện'
+                : 'Chọn loài và chế độ luyện'}
+            </h1>
+            <p className="home-sub">Mỗi lượt khoảng 2 phút.</p>
+            {learner === 'trial' && <TrialNudge onSignIn={onSignIn} />}
+          </div>
+        ) : loading ? (
           <>
             <div className="home-title">
               <h1 id="home-title" className="home-sr">
@@ -236,12 +235,12 @@ export function Home({
               ))}
             </div>
           </>
-        ) : error ? (
+        ) : !home ? (
           <div className="home-title">
             <h1 id="home-title">Chưa kéo được mẻ lưới hôm nay.</h1>
-            <ErrorNote message={error} retry={() => setRetry((n) => n + 1)} />
+            <ErrorNote message={me.error} retry={me.refresh} />
           </div>
-        ) : overview && !overview.items.length ? (
+        ) : !home.learnable ? (
           <div className="home-title home-empty">
             <h1 id="home-title">Bộ nội dung này chưa có loài để học.</h1>
             <p className="home-sub">
@@ -300,13 +299,18 @@ export function Home({
             </div>
           </>
         )}
-        {onResume && (
+        {home && me.error && (
+          <div className="home-resume">
+            <ErrorNote message={me.error} retry={me.refresh} />
+          </div>
+        )}
+        {onResume && sessionId && (
           <div className="home-resume">
             <button
               type="button"
               className="home-secondary"
               disabled={pending}
-              onClick={() => void onResume()}
+              onClick={() => void onResume(sessionId)}
             >
               Tiếp tục phiên học
             </button>
@@ -324,7 +328,7 @@ export function Home({
             ))}
           </div>
         )}
-        {(!overview || overview.items.length > 0) && (
+        {!trial && (!home || home.learnable > 0) && (
           <div className="home-rope">
             <p className="home-rope-caption">{ropeCaption}</p>
             <FloatRope
@@ -337,11 +341,11 @@ export function Home({
       </section>
 
       <div className="home-split">
-        {overview && overview.items.length > 0 && (
+        {home && home.learnable > 0 && (
           <section className="home-band home-skills" aria-labelledby="skills-title">
             <h2 id="skills-title">Bốn kỹ năng của bạn</h2>
             <ul>
-              {skillProgress(overview, reviews).map((s) => (
+              {home.skills.map((s) => (
                 <li
                   key={s.key}
                   style={
@@ -400,12 +404,12 @@ export function Home({
               </div>
             )}
           </div>
-          {loading ? (
+          {!overview && !overviewError ? (
             <p role="status" className="home-muted">
               Đang tải danh mục từ máy chủ…
             </p>
           ) : !overview ? (
-            <p className="home-muted">Tải lại mẻ lưới ở trên để mở các chế độ luyện.</p>
+            <ErrorNote message={overviewError} retry={retryOverview} />
           ) : !overview.items.length ? (
             <p className="home-muted">Chưa có mục học trong bộ đã xuất bản.</p>
           ) : (
