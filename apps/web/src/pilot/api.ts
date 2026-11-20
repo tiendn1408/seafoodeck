@@ -3,6 +3,9 @@ export interface AuthView {
   internal: boolean;
   csrf: string;
   expiresAt: string;
+  userId?: string;
+  displayName?: string | null;
+  mustChangePassword?: boolean;
 }
 export interface CatalogItem {
   revisionId: string;
@@ -63,6 +66,92 @@ export interface Score {
   source?: string;
   correctOption?: string;
   correctPairs?: Record<string, string>;
+  /** Present for account students: review rows this answer touched. */
+  progress?: ProgressEntry[];
+}
+export type MasteryLevel = 0 | 1 | 2 | 3 | 4;
+export interface ProgressEntry {
+  targetId: string;
+  skill: string;
+  stage: number;
+  dueAt: string;
+  level: MasteryLevel;
+}
+export interface OverviewItem {
+  revisionId: string;
+  itemId: string;
+  vi: string;
+  scientific: string;
+  taxonomicGroup: string | null;
+  imageId: string | null;
+}
+export type CastPlan =
+  | { kind: 'review'; targets: { targetId: string; skill: string }[] }
+  | { kind: 'flashcard'; revisionId: string }
+  | { kind: 'done' };
+export interface SkillProgress {
+  key: 'en' | 'ja' | 'scientific' | 'hs';
+  label: string;
+  done: number;
+  total: number;
+}
+export interface MeHome {
+  releaseId: string;
+  internal: boolean;
+  learnable: number;
+  haul: OverviewItem[];
+  cast: CastPlan;
+  due: number;
+  skills: SkillProgress[];
+  activeSessionId: string | null;
+}
+export interface MeReviewEntry {
+  targetId: string;
+  /** Catalog item of an item target; null for HS cases. */
+  itemId: string | null;
+  label: string;
+  skill: string;
+  stage: number;
+  /** Effective due date (ISO). */
+  dueAt: string;
+}
+export interface MeReview {
+  due: MeReviewEntry[];
+  scheduled: MeReviewEntry[];
+}
+export interface MeBadge {
+  id: string;
+  label: string;
+  earnedAt: string | null;
+}
+export interface MeSessionRow {
+  sessionId: string;
+  at: string;
+  mode: string;
+  answered: number;
+  firstTry: number;
+  selfRated: number;
+  percent: number | null;
+}
+export interface MeProgress {
+  skills: SkillProgress[];
+  /** Species count per mastery level, index 0 (not studied) to 4. */
+  mastery: number[];
+  sessions: MeSessionRow[];
+  achievements: { streak: { current: number; longest: number }; badges: MeBadge[] };
+  figures: { answered: number; firstTryPercent: number | null; selfRated: number };
+}
+export type MeMastery = Record<string, { status: 'new' | 'due' | 'learning'; level: MasteryLevel }>;
+export interface SessionSummaryResponse {
+  total: number;
+  caught: number;
+  entries: {
+    targetId: string;
+    label: string;
+    correct: boolean;
+    skipped: boolean;
+    nextReviewInDays: number | null;
+  }[];
 }
 export interface Option {
   id: string;
@@ -102,6 +191,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public code?: string,
   ) {
     super(message);
   }
@@ -110,11 +200,22 @@ let csrf = '';
 export function setCsrf(value: string) {
   csrf = value;
 }
-export async function api<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+type AuthRequiredHandler = (code: string) => void;
+let authRequired: AuthRequiredHandler | null = null;
+/** Called for any API response carrying code MUST_CHANGE_PASSWORD. */
+export function setAuthRequiredHandler(fn: AuthRequiredHandler | null) {
+  authRequired = fn;
+}
+export async function api<T>(
+  path: string,
+  body?: unknown,
+  signal?: AbortSignal,
+  method?: 'POST' | 'PATCH',
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch('/api/v1' + path, {
-      method: body === undefined ? 'GET' : 'POST',
+      method: body === undefined ? 'GET' : (method ?? 'POST'),
       credentials: 'same-origin',
       headers:
         body === undefined
@@ -139,13 +240,17 @@ export async function api<T>(path: string, body?: unknown, signal?: AbortSignal)
       response.status,
     );
   }
-  if (!response.ok)
+  if (!response.ok) {
+    const code = typeof data?.code === 'string' ? data.code : undefined;
+    if (code === 'MUST_CHANGE_PASSWORD') authRequired?.(code);
     throw new ApiError(
       Array.isArray(data.message)
         ? data.message.join('; ')
         : (data.message ?? 'Không thực hiện được yêu cầu.'),
       response.status,
+      code,
     );
+  }
   return data;
 }
 export const vi = (item: CatalogItem) => item.names.find((n) => n.kind === 'vi')?.label ?? item.sku;
