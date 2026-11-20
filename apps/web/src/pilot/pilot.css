@@ -269,3 +269,40 @@
   grid-template-columns: minmax(0, 480px);
   justify-content: center;
 }
+
+/* Login / change-password actions: salmon press button (action-ink text, never white). */
+.pilot-login .btn.primary {
+  min-height: 44px;
+  background: var(--action);
+  color: var(--action-ink);
+  border-color: var(--action-lip);
+  box-shadow: 0 4px 0 var(--action-lip);
+  font-weight: 700;
+}
+.pilot-login .btn.primary:hover:not(:disabled) {
+  background: var(--action-hover);
+}
+.pilot-login .btn.primary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--action-lip);
+}
+.pilot-login .btn.primary:disabled {
+  background: var(--deep-700);
+  color: var(--deep-muted);
+  border-color: var(--deep-line);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.pilot-login .btn.secondary {
+  background: transparent;
+  color: var(--deep-ink);
+  border-color: var(--deep-accent);
+}
+.pilot-login :focus-visible {
+  outline: 3px solid var(--deep-accent);
+  outline-offset: 2px;
+}
+.pilot-login input::placeholder {
+  color: #526777; /* --muted on the white field */
+  opacity: 1;
+}

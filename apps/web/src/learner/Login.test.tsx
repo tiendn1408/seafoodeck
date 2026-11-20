@@ -110,4 +110,37 @@ describe('error contrast on the deep login screen', () => {
     expect(css).toMatch(/\.login-switch \{[^}]*color: var\(--deep-accent\)/);
     expect(css).toMatch(/\.pilot-login small \{[^}]*color: var\(--deep-muted\)/);
   });
+  it('every text colour on the login and change-password screens is >= 4.5:1', () => {
+    const styles = readFileSync(resolve(__dirname, '../styles.css'), 'utf8');
+    const ink = styles.match(/--ink:\s*(#[0-9a-f]{6})/i)![1];
+    const muted = styles.match(/--muted:\s*(#[0-9a-f]{6})/i)![1];
+    const grounds = ['deep-900', 'deep-800', 'deep-700'].map(token);
+    // h1, intro, labels, error text: deep-ink; link, focus: deep-accent; hint: deep-muted.
+    for (const fg of ['deep-ink', 'deep-accent', 'deep-muted'])
+      for (const bg of grounds) expect(ratio(token(fg), bg)).toBeGreaterThanOrEqual(4.5);
+    // input text and placeholder on the white field
+    expect(ratio(ink, '#ffffff')).toBeGreaterThanOrEqual(4.5);
+    expect(css).toMatch(
+      /\.pilot-login input,[^{]*\{[^}]*background: #fff;[^}]*color: var\(--ink\)/,
+    );
+    expect(css).toMatch(/::placeholder \{\s*color: #526777/);
+    expect(ratio(muted, '#ffffff')).toBeGreaterThanOrEqual(4.5);
+    // primary button: enabled, hover, disabled
+    expect(css).toMatch(
+      /\.pilot-login \.btn\.primary \{[^}]*background: var\(--action\);[^}]*color: var\(--action-ink\)/,
+    );
+    expect(css).toMatch(
+      /\.btn\.primary:hover:not\(:disabled\) \{[^}]*background: var\(--action-hover\)/,
+    );
+    expect(css).toMatch(
+      /\.btn\.primary:disabled \{[^}]*background: var\(--deep-700\);[^}]*color: var\(--deep-muted\)/,
+    );
+    expect(ratio(token('action-ink'), token('action'))).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(token('action-ink'), token('action-hover'))).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(token('deep-muted'), token('deep-700'))).toBeGreaterThanOrEqual(4.5);
+    // secondary (Hủy): deep-ink on the deep ground
+    expect(css).toMatch(/\.pilot-login \.btn\.secondary \{[^}]*color: var\(--deep-ink\)/);
+    // button fill reads against the deep ground (non-text, >= 3:1)
+    expect(ratio(token('action'), token('deep-800'))).toBeGreaterThanOrEqual(3);
+  });
 });

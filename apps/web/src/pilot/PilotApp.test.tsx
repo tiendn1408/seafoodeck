@@ -35,6 +35,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  localStorage.clear();
   unmountAll();
   vi.unstubAllGlobals();
 });
@@ -82,6 +83,22 @@ describe('PilotApp forced password flow', () => {
     const n = calls.filter((c) => c.includes('/learning/')).length;
     await tick();
     expect(calls.filter((c) => c.includes('/learning/')).length).toBe(n);
+  });
+
+  it('forced user on #study with a stored session never requests /learning/', async () => {
+    location.hash = '#study';
+    localStorage.setItem(
+      'seafood-deck:pilot:v1',
+      JSON.stringify({ sessionId: 's1', attempts: [], reviews: {} }),
+    );
+    routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
+    routes['GET /learning/sessions/s1'] = () => json(MUST, 403);
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.querySelector('.pilot-error')).toBeNull();
+    expect(calls.filter((c) => c.includes('/learning/'))).toEqual([]);
   });
 
   it('after a successful change it refetches /auth/me and shows normal content', async () => {
