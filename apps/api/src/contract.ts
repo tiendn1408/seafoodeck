@@ -281,3 +281,26 @@ export class MeMasteryEntryResponse {
   @ApiProperty({ enum: ['new', 'due', 'learning'] }) status!: 'new' | 'due' | 'learning';
   @ApiProperty({ enum: [0, 1, 2, 3, 4] }) level!: 0 | 1 | 2 | 3 | 4;
 }
+export class AdminUserRowResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() username!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() role!: string;
+  @ApiProperty() disabled!: boolean;
+  @ApiProperty() mustChangePassword!: boolean;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty({ nullable: true, type: String }) lastLoginAt!: string | null;
+}
+export class AdminUserPageResponse {
+  @ApiProperty({ type: [AdminUserRowResponse] }) items!: AdminUserRowResponse[];
+  @ApiProperty() total!: number;
+  @ApiProperty() page!: number;
+  @ApiProperty() limit!: number;
+}
+export class TemporaryPasswordResponse {
+  @ApiProperty({ description: 'Shown once; never stored or logged in clear.' })
+  temporaryPassword!: string;
+}
+export class DeletedUserResponse {
+  @ApiProperty() deleted!: boolean;
+}

@@ -1,0 +1,196 @@
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from './generated/prisma/client';
+import { Db } from './db';
+import { passwordHash, revokeUserSessions } from './security';
+import { generateTempPassword, normalizeUsername } from './users';
+import { withSerializableRetry } from './progress-record';
+
+export type AdminUserRow = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: string;
+  disabled: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+};
+export type UserListQuery = {
+  role?: string;
+  status?: 'active' | 'disabled';
+  q?: string;
+  page?: number;
+  limit?: number;
+};
+type Tx = Prisma.TransactionClient;
+/** Every column an admin row shows; passwordHash is never read for a row. */
+const ROW_SELECT = {
+  id: true,
+  username: true,
+  displayName: true,
+  role: true,
+  disabledAt: true,
+  mustChangePassword: true,
+  createdAt: true,
+  lastLoginAt: true,
+} as const;
+type RowSource = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  role: string;
+  disabledAt: Date | null;
+  mustChangePassword: boolean;
+  createdAt: Date;
+  lastLoginAt: Date | null;
+};
+const toRow = (u: RowSource): AdminUserRow => ({
+  id: u.id,
+  username: u.username,
+  displayName: u.displayName,
+  role: u.role,
+  disabled: !!u.disabledAt,
+  mustChangePassword: u.mustChangePassword,
+  createdAt: u.createdAt.toISOString(),
+  lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
+});
+const missing = () => new NotFoundException('Không tìm thấy người dùng.');
+const SERIALIZABLE = { isolationLevel: 'Serializable' } as const;
+
+/**
+ * Admin user management. Lock and delete run in a Serializable transaction (retried on
+ * serialization conflicts; exhausted retries surface as the global 409 BUSY) so the
+ * "at least one active admin" rule holds even when two admins act on each other at once.
+ */
+@Injectable()
+export class UsersService {
+  constructor(private db: Db) {}
+
+  async list(query: UserListQuery) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 50;
+    const q = query.q?.trim();
+    const where: Prisma.UserWhereInput = {
+      ...(query.role ? { role: query.role } : {}),
+      ...(query.status === 'active' ? { disabledAt: null } : {}),
+      ...(query.status === 'disabled' ? { disabledAt: { not: null } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { username: { contains: q, mode: 'insensitive' } },
+              { displayName: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+    const [rows, total] = await Promise.all([
+      this.db.user.findMany({
+        where,
+        select: ROW_SELECT,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.db.user.count({ where }),
+    ]);
+    return { items: rows.map(toRow), total, page, limit };
+  }
+
+  /** PATCH: displayName and/or lock state. A lock also revokes every session, atomically. */
+  async update(
+    actorId: string,
+    id: string,
+    dto: { displayName?: string | null; disabled?: boolean },
+  ): Promise<AdminUserRow> {
+    if (dto.disabled === true && id === actorId)
+      throw new BadRequestException('Không thể tự khóa tài khoản của chính mình.');
+    return withSerializableRetry(() =>
+      this.db.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
+        if (!user) throw missing();
+        const data: Prisma.UserUpdateInput = {};
+        const audits: { action: string; detail: Prisma.InputJsonObject }[] = [];
+        if (dto.displayName !== undefined) {
+          data.displayName = dto.displayName || null;
+          audits.push({ action: 'user.update', detail: { fields: ['displayName'] } });
+        }
+        if (dto.disabled === true) {
+          await this.keepAnActiveAdmin(tx, user, 'khóa');
+          data.disabledAt = user.disabledAt ?? new Date();
+          audits.push({ action: 'user.disable', detail: {} });
+        } else if (dto.disabled === false) {
+          data.disabledAt = null;
+          audits.push({ action: 'user.enable', detail: {} });
+        }
+        if (!audits.length) return toRow(user);
+        const updated = await tx.user.update({ where: { id }, data, select: ROW_SELECT });
+        if (dto.disabled === true) await revokeUserSessions(tx, id);
+        for (const a of audits)
+          await tx.audit.create({
+            data: { actorId, action: a.action, targetId: id, detail: a.detail },
+          });
+        return toRow(updated);
+      }, SERIALIZABLE),
+    );
+  }
+
+  /**
+   * New temporary password (length by role), forced change on next login, every session revoked.
+   * The response is the only place the secret appears: never in Audit, logs or errors.
+   */
+  async resetPassword(actorId: string, id: string): Promise<{ temporaryPassword: string }> {
+    return this.db.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id }, select: { id: true, role: true } });
+      if (!user) throw missing();
+      const temporaryPassword = generateTempPassword(user.role);
+      await tx.user.update({
+        where: { id },
+        data: { passwordHash: passwordHash(temporaryPassword), mustChangePassword: true },
+      });
+      await revokeUserSessions(tx, id);
+      await tx.audit.create({
+        data: { actorId, action: 'user.reset-password', targetId: id, detail: {} },
+      });
+      return { temporaryPassword };
+    });
+  }
+
+  /** Hard delete: sessions first, then the user (attempts and progress cascade). Audit survives. */
+  async remove(actorId: string, id: string, confirmUsername: string): Promise<{ deleted: true }> {
+    if (id === actorId) throw new BadRequestException('Không thể tự xóa tài khoản của chính mình.');
+    return withSerializableRetry(() =>
+      this.db.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
+        if (!user) throw missing();
+        if (normalizeUsername(confirmUsername ?? '') !== normalizeUsername(user.username))
+          throw new BadRequestException('Tên đăng nhập xác nhận không khớp.');
+        await this.keepAnActiveAdmin(tx, user, 'xóa');
+        await revokeUserSessions(tx, id);
+        await tx.user.delete({ where: { id } });
+        await tx.audit.create({
+          data: {
+            actorId,
+            action: 'user.delete',
+            targetId: id,
+            detail: { username: user.username, role: user.role },
+          },
+        });
+        return { deleted: true as const };
+      }, SERIALIZABLE),
+    );
+  }
+
+  /** Refuses a change that would leave no active admin (counted inside the caller's transaction). */
+  private async keepAnActiveAdmin(
+    tx: Tx,
+    user: { id: string; role: string; disabledAt: Date | null },
+    verb: string,
+  ) {
+    if (user.role !== 'admin' || user.disabledAt) return;
+    const others = await tx.user.count({
+      where: { role: 'admin', disabledAt: null, id: { not: user.id } },
+    });
+    if (others < 1)
+      throw new BadRequestException(`Không thể ${verb} quản trị viên đang hoạt động cuối cùng.`);
+  }
+}

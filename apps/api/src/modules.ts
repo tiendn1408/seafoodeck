@@ -22,6 +22,8 @@ import {
   AdminController,
 } from './controllers';
 import { AdminExtraController } from './admin-extra.controller';
+import { AdminUsersController } from './admin-users.controller';
+import { UsersService } from './users.service';
 @Global()
 @Module({ providers: [Db], exports: [Db] })
 export class DatabaseModule {}
@@ -63,6 +65,7 @@ export class MediaModule {}
 export class LearningModule {}
 @Module({
   imports: [DatabaseModule, AuthModule, CatalogModule, MediaModule],
-  controllers: [AdminController, AdminExtraController],
+  controllers: [AdminController, AdminExtraController, AdminUsersController],
+  providers: [UsersService],
 })
 export class AdminModule {}
