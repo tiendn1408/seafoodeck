@@ -13,5 +13,7 @@ describe('kindOf', () => {
     expect(kindOf(auth('manager'))).toBe('manager');
     for (const r of ['admin', 'editor', 'reviewer', 'publisher'])
       expect(kindOf(auth(r))).toBe('staff');
+    expect(kindOf(auth('wizard'))).toBe('guest');
+    expect(kindOf(auth(''))).toBe('guest');
   });
 });

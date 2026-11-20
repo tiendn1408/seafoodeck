@@ -11,6 +11,7 @@ const refetchers = new Set<{ path: string; run: () => void }>();
 let epoch = 0;
 const notify = () => listeners.forEach((l) => l());
 
+/** Empties the cache. Mounted hooks show no data until their key changes or `refresh()` is called; nothing refetches. */
 export function clearMe(): void {
   epoch++;
   cache.clear();
@@ -46,13 +47,14 @@ export function useMe<T>(path: string, userId: string | undefined) {
     notify();
     api<T>(path, undefined, c.signal)
       .then((data) => {
+        if (c.signal.aborted) return;
         if (started !== epoch) return;
         cache.set(key, data);
         setFailure(null);
         notify();
       })
       .catch((e: Error) => {
-        if (e.name === 'AbortError' || started !== epoch) return;
+        if (c.signal.aborted || e.name === 'AbortError' || started !== epoch) return;
         setFailure({ key, message: e.message || 'Không tải được dữ liệu.' });
       })
       .finally(() => {

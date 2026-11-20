@@ -135,8 +135,8 @@ export interface MeSessionRow {
 }
 export interface MeProgress {
   skills: SkillProgress[];
-  /** Species count per mastery level, index 0 (not studied) to 4. */
-  mastery: number[];
+  /** Species count per mastery level. */
+  mastery: { unlearned: number; level1: number; level2: number; level3: number; level4: number };
   sessions: MeSessionRow[];
   achievements: { streak: { current: number; longest: number }; badges: MeBadge[] };
   figures: { answered: number; firstTryPercent: number | null; selfRated: number };
@@ -203,8 +203,11 @@ export function setCsrf(value: string) {
 type AuthRequiredHandler = (code: string) => void;
 let authRequired: AuthRequiredHandler | null = null;
 /** Called for any API response carrying code MUST_CHANGE_PASSWORD. */
-export function setAuthRequiredHandler(fn: AuthRequiredHandler | null) {
+export function setAuthRequiredHandler(fn: AuthRequiredHandler | null): () => void {
   authRequired = fn;
+  return () => {
+    if (fn && authRequired === fn) authRequired = null;
+  };
 }
 export async function api<T>(
   path: string,

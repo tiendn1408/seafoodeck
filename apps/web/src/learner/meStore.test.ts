@@ -55,6 +55,36 @@ afterEach(() => {
 });
 
 describe('useMe', () => {
+  it('ignores a stale response arriving after the key changed', async () => {
+    let resolveOld!: (r: Response) => void;
+    fetchMock.mockImplementationOnce(() => new Promise<Response>((r) => (resolveOld = r)));
+    fetchMock.mockImplementationOnce(() => reply({ who: 'b' }));
+    const { result, rerender } = renderHook(
+      ({ id }: { id: string }) => useMe<{ who: string }>('/me/home', id),
+      { initialProps: { id: 'u1' } },
+    );
+    rerender({ id: 'u2' });
+    await waitFor(() => expect(result.current.data).toEqual({ who: 'b' }));
+    await act(async () => {
+      resolveOld(new Response(JSON.stringify({ who: 'a' })));
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    expect(result.current.data).toEqual({ who: 'b' });
+    expect(result.current.error).toBe('');
+  });
+
+  it('refreshMe(path) refreshes only matching paths', async () => {
+    fetchMock.mockImplementation(() => reply({ n: 1 }));
+    const a = renderHook(() => useMe('/me/home', 'u1'));
+    const b = renderHook(() => useMe('/me/review', 'u1'));
+    await waitFor(() => expect(a.result.current.data).not.toBeNull());
+    await waitFor(() => expect(b.result.current.data).not.toBeNull());
+    fetchMock.mockClear();
+    act(() => refreshMe('/me/review'));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/v1/me/review');
+  });
+
   it('returns cached data at once, then revalidates', async () => {
     fetchMock.mockImplementationOnce(() => reply({ n: 1 }));
     const first = renderHook(() => useMe<{ n: number }>('/me/home', 'u1'));
@@ -146,6 +176,16 @@ describe('useMe', () => {
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).code).toBe('MUST_CHANGE_PASSWORD');
     expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it('unsubscribe only clears the handler it registered', () => {
+    const first = vi.fn();
+    const off = setAuthRequiredHandler(first);
+    const second = vi.fn();
+    setAuthRequiredHandler(second);
+    off();
+    fetchMock.mockImplementation(() => reply({ code: 'MUST_CHANGE_PASSWORD' }, 403));
+    return api('/x').catch(() => expect(second).toHaveBeenCalledTimes(1));
   });
 
   it('api supports PATCH', async () => {
