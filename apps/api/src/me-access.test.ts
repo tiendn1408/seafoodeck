@@ -22,7 +22,7 @@ import type { Request, Response } from 'express';
 import { MeController, MeProgressController } from './me.controller';
 import type { ProgressService } from './progress.service';
 import { AuthController } from './auth.controller';
-import { UserDto } from './admin-extra.controller';
+import { UserDto, AdminExtraController } from './admin-extra.controller';
 import { CatalogController } from './controllers';
 import type { Db } from './db';
 
@@ -115,8 +115,8 @@ test('LoginLimiter: a blocked check does not count; succeed refunds the IP and c
 
 const slowLogin = (user: Record<string, unknown> | null, limiter: LoginLimiter) => {
   const { db } = accountDb(user);
-  const find = db.user.findUnique;
-  (db.user as { findUnique: unknown }).findUnique = async (a: unknown) => {
+  const find = db.user.findFirst;
+  (db.user as { findFirst: unknown }).findFirst = async (a: unknown) => {
     await new Promise((r) => setImmediate(r));
     return find(a as never);
   };
@@ -280,10 +280,26 @@ const accountDb = (user: Record<string, unknown> | null) => {
     (op: string, result: unknown = {}) =>
     async (args: Record<string, unknown>) => {
       calls.push({ op, args });
-      return typeof result === 'function' ? (result as () => unknown)() : result;
+      return typeof result === 'function' ? (result as (a: unknown) => unknown)(args) : result;
     };
   const db = {
-    user: { findUnique: rec('user.findUnique', () => user), update: rec('user.update') },
+    user: {
+      findUnique: rec('user.findUnique', () => user),
+      // Mimics a case-insensitive `equals` match when the fake row has a username.
+      findFirst: rec('user.findFirst', (args?: unknown) => {
+        const want = (args as { where?: { username?: { equals?: string } } } | undefined)?.where
+          ?.username?.equals;
+        const have = user?.username;
+        if (typeof want === 'string' && typeof have === 'string')
+          return want.toLowerCase() === have.toLowerCase() ? user : null;
+        return user;
+      }),
+      update: rec('user.update'),
+      create: rec('user.create', (args?: unknown) => {
+        if (user?.createError) throw user.createError;
+        return { id: 'new-id', ...(args as { data: object }).data };
+      }),
+    },
     authSession: { deleteMany: rec('authSession.deleteMany'), delete: rec('authSession.delete') },
     audit: { create: rec('audit.create') },
     $transaction: async (fn: (tx: unknown) => unknown) => fn(db),
@@ -542,4 +558,64 @@ test('login returns the same profile fields as GET /auth/me; invite login stays 
     if (prev === undefined) delete process.env.LEARNER_INVITE_CODE;
     else process.env.LEARNER_INVITE_CODE = prev;
   }
+});
+
+test('login matches the username case-insensitively and keeps stored case', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    username: 'An',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const { db, calls } = accountDb(user);
+  const ctrl = new AuthController(fakeAuth(), db, new LoginLimiter());
+  await ctrl.login({ username: 'aN', credential: 'correct-horse-16ch' }, loginReq, {} as Response);
+  assert.deepEqual(calls.find((c) => c.op === 'user.findFirst')!.args, {
+    where: { username: { equals: 'aN', mode: 'insensitive' } },
+  });
+  assert.equal(calls.filter((c) => c.op === 'user.update').length, 1);
+});
+
+test('login limiter budget is shared between An and aN', async () => {
+  const user = {
+    id: 'u1',
+    role: 'student',
+    username: 'An',
+    passwordHash: scrypt('correct-horse-16ch'),
+    disabledAt: null,
+  };
+  const limiter = new LoginLimiter();
+  const { db } = accountDb(user);
+  const ctrl = new AuthController(fakeAuth(), db, limiter);
+  const go = (username: string, credential: string) =>
+    httpStatus(ctrl.login({ username, credential }, loginReq, {} as Response));
+  for (let i = 0; i < 10; i++) assert.equal(await go(i % 2 ? 'An' : 'aN', 'wrong'), 401);
+  assert.equal(await go('AN', 'correct-horse-16ch'), 429);
+});
+
+test('POST /admin/users rejects a case-insensitive duplicate with 409 and a Vietnamese message', async () => {
+  const dto = { username: 'an', password: '12345678', role: 'student' } as UserDto;
+  const adminReq = { actor: { role: 'admin', userId: 'admin1' } } as unknown as ActorRequest;
+  const existing = { id: 'u1', username: 'An' };
+  const { db, calls } = accountDb(existing);
+  await assert.rejects(new AdminExtraController(db).user(adminReq, dto), (e: HttpException) => {
+    assert.equal(e.getStatus(), 409);
+    assert.equal((e.getResponse() as { message: string }).message, 'Tên đăng nhập đã tồn tại.');
+    return true;
+  });
+  assert.equal(
+    calls.some((c) => c.op === 'user.create'),
+    false,
+  );
+  // Unique-index race: the DB raises P2002 after the lookup saw nothing.
+  const race = accountDb(null);
+  (race.db.user as { create: unknown }).create = async () => {
+    throw Object.assign(new Error('unique'), { code: 'P2002' });
+  };
+  assert.equal(await httpStatus(new AdminExtraController(race.db).user(adminReq, dto)), 409);
+  // Stored with the typed case when free.
+  const free = accountDb(null);
+  const made = await new AdminExtraController(free.db).user(adminReq, { ...dto, username: 'Lan' });
+  assert.equal(made.username, 'Lan');
 });

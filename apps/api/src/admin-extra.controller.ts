@@ -26,6 +26,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Db } from './db';
+import { findUserByUsername } from './users';
 import {
   AdminOnlyGuard,
   AccessGuard,
@@ -95,15 +96,23 @@ export class AdminExtraController {
   @Post('users')
   async user(@Req() req: ActorRequest, @Body() dto: UserDto) {
     requireRole(req, ['admin']);
-    const row = await this.db.user.create({
-      data: {
-        username: dto.username,
-        role: dto.role,
-        passwordHash: passwordHash(dto.password),
-        displayName: dto.displayName || null,
-        mustChangePassword: dto.mustChangePassword ?? false,
-      },
-    });
+    const taken = () => new ConflictException('Tên đăng nhập đã tồn tại.');
+    if (await findUserByUsername(this.db, dto.username)) throw taken();
+    const row = await this.db.user
+      .create({
+        data: {
+          username: dto.username,
+          role: dto.role,
+          passwordHash: passwordHash(dto.password),
+          displayName: dto.displayName || null,
+          mustChangePassword: dto.mustChangePassword ?? false,
+        },
+      })
+      .catch((error: unknown) => {
+        // Lost a race with a concurrent create: the lower(username) unique index fired.
+        if ((error as { code?: string }).code === 'P2002') throw taken();
+        throw error;
+      });
     await this.db.audit.create({
       data: {
         actorId: req.actor.userId!,
