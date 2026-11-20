@@ -14,6 +14,7 @@ import { MeController } from './me.controller';
 import { Catalog } from './catalog';
 import { Media } from './media';
 import { Learning } from './learning';
+import { ProgressService } from './progress.service';
 import {
   CatalogController,
   MediaController,
@@ -56,7 +57,8 @@ export class MediaModule {}
 @Module({
   imports: [DatabaseModule, AuthModule, CatalogModule, MediaModule],
   controllers: [LearningController],
-  providers: [Learning],
+  providers: [Learning, ProgressService],
+  exports: [ProgressService],
 })
 export class LearningModule {}
 @Module({

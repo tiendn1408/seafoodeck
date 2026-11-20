@@ -363,6 +363,41 @@
         ]
       }
     },
+    "/api/v1/learning/sessions/{id}/summary": {
+      "get": {
+        "operationId": "LearningController_summary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Learning"
+        ]
+      }
+    },
     "/api/v1/learning/sessions/{id}/questions/{qid}/reveal": {
       "post": {
         "operationId": "LearningController_reveal",
@@ -1513,10 +1548,18 @@
             "type": "string"
           },
           "reviewTargets": {
+            "description": "Ignored for account students: the server picks due items in review mode.",
             "type": "array",
             "items": {
               "type": "object"
             }
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 30,
+            "default": 8,
+            "description": "Account students, review mode: how many due items the server picks."
           }
         },
         "required": [
@@ -1536,6 +1579,41 @@
         "required": [
           "id",
           "label"
+        ]
+      },
+      "ReviewProgressResponse": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string"
+          },
+          "skill": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "number"
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "Effective next due date (ISO)."
+          },
+          "level": {
+            "type": "number",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        "required": [
+          "targetId",
+          "skill",
+          "stage",
+          "dueAt",
+          "level"
         ]
       },
       "ScoreResponse": {
@@ -1579,6 +1657,13 @@
           },
           "correctPairs": {
             "type": "object"
+          },
+          "progress": {
+            "description": "Account students only: review rows this answer touched, read after the write.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewProgressResponse"
+            }
           }
         },
         "required": [
@@ -1693,6 +1778,59 @@
           "internal",
           "expiresAt",
           "questions"
+        ]
+      },
+      "SessionSummaryEntryResponse": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "correct": {
+            "type": "boolean"
+          },
+          "skipped": {
+            "type": "boolean"
+          },
+          "nextReviewInDays": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null for invite-code sessions, skipped entries and items without a schedule."
+          }
+        },
+        "required": [
+          "targetId",
+          "label",
+          "correct",
+          "skipped",
+          "nextReviewInDays"
+        ]
+      },
+      "SessionSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Graded entries (a matching question counts once per pair)."
+          },
+          "caught": {
+            "type": "number",
+            "description": "Entries answered correctly (not skipped)."
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummaryEntryResponse"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "caught",
+          "entries"
         ]
       },
       "RevealResponse": {

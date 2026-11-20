@@ -87,6 +87,37 @@ export class ScoreResponse {
   @ApiProperty({ required: false }) source?: string;
   @ApiProperty({ required: false }) correctOption?: string;
   @ApiProperty({ required: false, type: Object }) correctPairs?: Record<string, string>;
+  @ApiProperty({
+    required: false,
+    type: () => [ReviewProgressResponse],
+    description: 'Account students only: review rows this answer touched, read after the write.',
+  })
+  progress?: ReviewProgressResponse[];
+}
+export class ReviewProgressResponse {
+  @ApiProperty() targetId!: string;
+  @ApiProperty() skill!: string;
+  @ApiProperty() stage!: number;
+  @ApiProperty({ description: 'Effective next due date (ISO).' }) dueAt!: string;
+  @ApiProperty({ enum: [0, 1, 2, 3, 4] }) level!: 0 | 1 | 2 | 3 | 4;
+}
+export class SessionSummaryEntryResponse {
+  @ApiProperty() targetId!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty() correct!: boolean;
+  @ApiProperty() skipped!: boolean;
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    description: 'Null for invite-code sessions, skipped entries and items without a schedule.',
+  })
+  nextReviewInDays!: number | null;
+}
+export class SessionSummaryResponse {
+  @ApiProperty({ description: 'Graded entries (a matching question counts once per pair).' })
+  total!: number;
+  @ApiProperty({ description: 'Entries answered correctly (not skipped).' }) caught!: number;
+  @ApiProperty({ type: [SessionSummaryEntryResponse] }) entries!: SessionSummaryEntryResponse[];
 }
 export class QuestionResponse {
   @ApiProperty() id!: string;

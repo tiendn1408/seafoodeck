@@ -14,6 +14,7 @@ import { hash } from './security';
 import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
 import { buildLogRows, recordAttempt, withSerializableRetry } from './progress-record';
 import type { SubmitContext } from './progress-record';
+import { FINGERPRINT_KINDS, ProgressService, studentId, summarize } from './progress.service';
 type Option = { id: string; label: string };
 export interface PrivateQuestion {
   type: string;
@@ -164,7 +165,6 @@ export function grade(q: PrivateQuestion, answer: Record<string, unknown>) {
   }
   return { answered: true, skipped: false, correct, selfRated: false };
 }
-const FINGERPRINT_KINDS = ['vi', 'en', 'ja', 'scientific'];
 /**
  * Content fingerprints for logged targets: HS targets are TradeScenario ids; every other target
  * is an Item id (listening targets carry a `/listening/<kind>` suffix), fingerprinted from the
@@ -205,6 +205,7 @@ export class Learning {
     private db: Db,
     private catalog: Catalog,
     private media: Media,
+    private progress: ProgressService,
   ) {}
   async start(
     actor: AuthSession,
@@ -215,6 +216,7 @@ export class Learning {
     reviewTargets?: { targetId: string; skill: string }[],
     focusTarget = false,
     focusCaseId?: string,
+    limit = 8,
   ) {
     if (
       !['flashcard', 'match', 'image', 'hs', 'full', 'review', 'listening'].includes(mode) ||
@@ -223,6 +225,15 @@ export class Learning {
       throw new BadRequestException('Chế độ/hướng học không hợp lệ.');
     const release = await this.catalog.current(actor);
     let questions: PrivateQuestion[] = [];
+    let retryOf: string | undefined;
+    // Account students review what the server schedules; a retry (reviewOf) keeps its own path.
+    const serverChosen = mode === 'review' && actor.role === 'student' && !reviewOf;
+    if (serverChosen) {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 30)
+        throw new BadRequestException('Tối đa 30 mục ôn mỗi lượt.');
+      reviewTargets = await this.progress.dueForReview(actor, limit);
+      if (!reviewTargets.length) throw new BadRequestException('Chưa có mục nào đến hạn ôn.');
+    } else if (actor.role === 'student') reviewTargets = undefined;
     if (reviewTargets?.length) {
       if (mode !== 'review' || reviewTargets.length > 30)
         throw new BadRequestException('Tối đa 30 mục ôn mỗi lượt.');
@@ -239,16 +250,23 @@ export class Learning {
             releases: { some: { releaseId: release.id } },
           },
         });
-        const temporary = await this.start(
-          actor,
-          nextMode,
-          (direction ?? target.targetId.split('/listening/')[1] ?? 'en') as Kind,
-          revision?.id,
-          undefined,
-          undefined,
-          true,
-          category === 'hs' ? target.targetId : undefined,
-        );
+        let temporary: { id: string };
+        try {
+          temporary = await this.start(
+            actor,
+            nextMode,
+            (direction ?? target.targetId.split('/listening/')[1] ?? 'en') as Kind,
+            revision?.id,
+            undefined,
+            undefined,
+            true,
+            category === 'hs' ? target.targetId : undefined,
+          );
+        } catch (e) {
+          // Server-chosen items that no longer have enough data are skipped silently.
+          if (serverChosen && e instanceof BadRequestException) continue;
+          throw e;
+        }
         const built = await this.db.question.findMany({ where: { sessionId: temporary.id } });
         const found = built
           .map((q) => q.private as unknown as PrivateQuestion)
@@ -259,6 +277,7 @@ export class Learning {
                 Object.values(q.targets ?? {}).includes(target.targetId)),
           );
         await this.db.gameSession.delete({ where: { id: temporary.id } });
+        if (!found && serverChosen) continue;
         if (!found)
           throw new BadRequestException('Mục ôn không còn đủ dữ liệu trong bộ hiện hành.');
         questions.push(found);
@@ -271,6 +290,7 @@ export class Learning {
       if (!questions.length) throw new BadRequestException('Không có câu cần làm lại.');
       if (old.releaseId !== release.id)
         throw new ConflictException('Bộ học đã đổi; lịch sử cũ giữ riêng.');
+      retryOf = old.id;
     } else {
       const include = { names: true, media: { include: { asset: true } } } as const;
       const base = {
@@ -480,12 +500,15 @@ export class Learning {
         }
       }
     }
+    if (!questions.length && serverChosen)
+      throw new BadRequestException('Chưa có mục nào đến hạn ôn.');
     if (!questions.length) throw new BadRequestException('Không có câu hỏi hợp lệ.');
     const session = await this.db.gameSession.create({
       data: {
         actorId: actor.id,
         releaseId: release.id,
         mode,
+        ...(retryOf ? { reviewOfId: retryOf } : {}),
         expiresAt: new Date(Date.now() + Number(process.env.GAME_TTL_MINUTES ?? 120) * 60000),
         questions: {
           create: questions.map((q, position) => ({
@@ -563,7 +586,35 @@ export class Learning {
       : null;
     return { ...detail, audio: asset && !asset.revokedAt ? await this.media.url(asset) : null };
   }
+  /** Graded entries of the actor's own session with the student's next review in days. */
+  async summary(actor: AuthSession, sessionId: string) {
+    const s = await this.session(actor, sessionId);
+    return summarize(
+      s.questions.map((q) => q.attempt?.result ?? null),
+      await this.progress.summaryRows(actor),
+      Date.now(),
+    );
+  }
+  /**
+   * Grades an answer. For account students the response also carries `progress` for the review
+   * rows the answer touched (also on an idempotent replay); the stored Attempt.result and the
+   * response for every other role are unchanged.
+   */
   async submit(
+    actor: AuthSession,
+    sessionId: string,
+    questionId: string,
+    key: string,
+    answer: Record<string, unknown>,
+  ) {
+    const result = await this.gradeOnce(actor, sessionId, questionId, key, answer);
+    if (!studentId(actor)) return result;
+    return {
+      ...(result as Record<string, unknown>),
+      progress: await this.progress.afterSubmit(actor, result),
+    };
+  }
+  private async gradeOnce(
     actor: AuthSession,
     sessionId: string,
     questionId: string,

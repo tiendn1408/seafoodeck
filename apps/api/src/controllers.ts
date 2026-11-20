@@ -17,7 +17,10 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsInt,
   IsObject,
+  Max,
+  Min,
   IsOptional,
   IsString,
   MaxLength,
@@ -42,6 +45,7 @@ import {
   GameResponse,
   ScoreResponse,
   RevealResponse,
+  SessionSummaryResponse,
 } from './contract';
 import { validateHs, type HsData } from './hs';
 import { AccessGuard, ActorRequest, requireRole, AdminOnlyGuard, EditingGuard } from './security';
@@ -58,11 +62,27 @@ class StartDto {
   kind?: Kind;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(100) revisionId?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(100) reviewOf?: string;
-  @ApiProperty({ required: false, type: [Object] })
+  @ApiProperty({
+    required: false,
+    type: [Object],
+    description: 'Ignored for account students: the server picks due items in review mode.',
+  })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(30)
   reviewTargets?: { targetId: string; skill: string }[];
+  @ApiProperty({
+    required: false,
+    minimum: 1,
+    maximum: 30,
+    default: 8,
+    description: 'Account students, review mode: how many due items the server picks.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(30)
+  limit?: number;
 }
 class AnswerDto {
   @ApiProperty() @IsString() @MaxLength(100) key!: string;
@@ -160,12 +180,20 @@ export class LearningController {
       dto.revisionId,
       dto.reviewOf,
       dto.reviewTargets,
+      false,
+      undefined,
+      dto.limit,
     );
   }
   @ApiOkResponse({ type: GameResponse })
   @Get('sessions/:id')
   view(@Req() req: ActorRequest, @Param('id') id: string) {
     return this.learning.view(req.actor, id);
+  }
+  @ApiOkResponse({ type: SessionSummaryResponse })
+  @Get('sessions/:id/summary')
+  summary(@Req() req: ActorRequest, @Param('id') id: string) {
+    return this.learning.summary(req.actor, id);
   }
   @ApiCreatedResponse({ type: RevealResponse })
   @Post('sessions/:id/questions/:qid/reveal')

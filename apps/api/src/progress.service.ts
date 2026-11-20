@@ -1,0 +1,237 @@
+import { Injectable } from '@nestjs/common';
+import type { AuthSession } from './generated/prisma/client';
+import { Db } from './db';
+import { Catalog } from './catalog';
+import { itemFingerprint, scenarioFingerprint } from './progress-fingerprint';
+import { activeRows, dueTargets, masteryLevel } from './progress-derive';
+import type { OverviewData, VersionOf } from './progress-derive';
+import { DAY, effectiveDueAt } from './progress-review';
+import type { ReviewRow } from './progress-review';
+
+/** Name kinds that make up an item's content fingerprint (same as the submit log). */
+export const FINGERPRINT_KINDS = ['vi', 'en', 'ja', 'scientific'];
+/** Item id of a target: listening targets carry a `/listening/<kind>` suffix. */
+export const itemOf = (targetId: string) => targetId.split('/listening/')[0];
+/** Progress rows are written only for account students. */
+export const studentId = (actor: AuthSession) =>
+  actor.role === 'student' && actor.userId ? actor.userId : null;
+
+interface ProgressRecord {
+  targetId: string;
+  skill: string;
+  stage: number;
+  dueAt: Date;
+  lastAttemptAt: Date;
+  lastSessionId: string;
+  contentVersion: string;
+  selfRated: boolean;
+}
+const toRow = (p: ProgressRecord): ReviewRow => ({
+  targetId: p.targetId,
+  skill: p.skill,
+  stage: p.stage,
+  dueAt: p.dueAt.toISOString(),
+  lastSessionId: p.lastSessionId,
+  contentVersion: p.contentVersion,
+  selfRated: p.selfRated,
+  lastAttemptAt: p.lastAttemptAt.toISOString(),
+});
+
+export interface ProgressEntry {
+  targetId: string;
+  skill: string;
+  stage: number;
+  dueAt: string;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+interface GradedResult {
+  targetId?: string;
+  targetLabel?: string;
+  skill?: string;
+  correct?: boolean;
+  skipped?: boolean;
+  items?: { targetId: string; label?: string; correct?: boolean }[];
+}
+
+/** Review rows a graded result touched: none when skipped, one per pair for matching. */
+export function touchedTargets(result: GradedResult): { targetId: string; skill: string }[] {
+  if (result.skipped || !result.skill) return [];
+  if (result.items)
+    return result.items.map((i) => ({ targetId: i.targetId, skill: result.skill! }));
+  return result.targetId ? [{ targetId: result.targetId, skill: result.skill }] : [];
+}
+
+/** Whole days until the row's effective due date, rounded up, never negative. */
+export function nextReviewInDays(row: ReviewRow, now: number): number {
+  return Math.max(0, Math.ceil((Date.parse(effectiveDueAt(row)) - now) / DAY));
+}
+
+export interface SessionSummary {
+  total: number;
+  caught: number;
+  entries: {
+    targetId: string;
+    label: string;
+    correct: boolean;
+    skipped: boolean;
+    nextReviewInDays: number | null;
+  }[];
+}
+/**
+ * Summary of a session from its graded results (null = unanswered, left out). A matching question
+ * contributes one entry per pair. `caught` counts entries that are correct and not skipped.
+ * `rows` are the student's active progress rows, or null for sessions without an account.
+ */
+export function summarize(
+  results: unknown[],
+  rows: ReviewRow[] | null,
+  now: number,
+): SessionSummary {
+  const next = (targetId: string, skill: string | undefined, skipped: boolean) => {
+    if (!rows || skipped) return null;
+    const row = rows.find((r) => r.targetId === targetId && r.skill === skill);
+    return row ? nextReviewInDays(row, now) : null;
+  };
+  const entries = results.flatMap((value) => {
+    if (!value || typeof value !== 'object') return [];
+    const r = value as GradedResult;
+    const skipped = r.skipped === true;
+    if (r.items && !skipped)
+      return r.items.map((i) => ({
+        targetId: i.targetId,
+        label: i.label ?? '',
+        correct: i.correct === true,
+        skipped: false,
+        nextReviewInDays: next(i.targetId, r.skill, false),
+      }));
+    const targetId = r.targetId ?? '';
+    return [
+      {
+        targetId,
+        label: r.targetLabel ?? '',
+        correct: !skipped && r.correct === true,
+        skipped,
+        nextReviewInDays: next(targetId, r.skill, skipped),
+      },
+    ];
+  });
+  return {
+    total: entries.length,
+    caught: entries.filter((e) => e.correct && !e.skipped).length,
+    entries,
+  };
+}
+
+@Injectable()
+export class ProgressService {
+  constructor(
+    private db: Db,
+    private catalog: Catalog,
+  ) {}
+
+  /** Current content fingerprints of the actor's release: items by Item id, HS by scenario id. */
+  private async versions(actor: AuthSession) {
+    const release = await this.catalog.current(actor);
+    const revisions = await this.db.revision.findMany({
+      where: { releases: { some: { releaseId: release.id } } },
+      include: { names: true },
+    });
+    const items = new Map<string, string>();
+    for (const r of revisions)
+      items.set(
+        r.itemId,
+        itemFingerprint(
+          r.names
+            .filter((n) => FINGERPRINT_KINDS.includes(n.kind))
+            .map((n) => ({ kind: n.kind, label: n.label })),
+        ),
+      );
+    const scenarios = await this.db.tradeScenario.findMany({
+      where: {
+        revisionId: { in: revisions.map((r) => r.id) },
+        ...(!release.internal ? { status: 'approved' } : {}),
+      },
+    });
+    const cases = new Map<string, string>();
+    for (const s of scenarios)
+      cases.set(s.id, scenarioFingerprint(s.data as Parameters<typeof scenarioFingerprint>[0]));
+    const versionOf: VersionOf = (id) => items.get(itemOf(id)) ?? cases.get(id);
+    return { release, versionOf };
+  }
+
+  /** The student's ReviewProgress rows scoped to the current release (empty for non-students). */
+  async active(actor: AuthSession) {
+    const { release, versionOf } = await this.versions(actor);
+    const userId = studentId(actor);
+    const all = userId
+      ? (await this.db.reviewProgress.findMany({ where: { userId } })).map(toRow)
+      : [];
+    return { release, versionOf, all, rows: activeRows(all, versionOf) };
+  }
+
+  async context(actor: AuthSession): Promise<{
+    overview: OverviewData;
+    rows: ReviewRow[];
+    versionOf: VersionOf;
+    releaseId: string;
+    internal: boolean;
+  }> {
+    const o = await this.catalog.overview(actor);
+    const { rows, versionOf } = await this.active(actor);
+    return {
+      overview: {
+        items: o.items.map((i) => ({
+          revisionId: i.revisionId,
+          itemId: i.itemId,
+          vi: i.vi,
+          scientific: i.scientific,
+          taxonomicGroup: i.taxonomicGroup,
+          imageId: i.imageId,
+        })),
+        learnable: o.learnable,
+        hsCases: o.hsCases,
+      },
+      rows,
+      versionOf,
+      releaseId: o.releaseId,
+      internal: o.internal,
+    };
+  }
+
+  /** Targets due by effective due date, earliest first, at most `limit`. */
+  async dueForReview(
+    actor: AuthSession,
+    limit: number,
+    now = Date.now(),
+  ): Promise<{ targetId: string; skill: string }[]> {
+    if (!studentId(actor)) return [];
+    const { rows } = await this.active(actor);
+    return dueTargets(rows, now, limit);
+  }
+
+  /** Progress of the rows a graded result touched, read after the write (students only). */
+  async afterSubmit(actor: AuthSession, result: unknown): Promise<ProgressEntry[]> {
+    const touched = touchedTargets((result ?? {}) as GradedResult);
+    if (!touched.length || !studentId(actor)) return [];
+    const { all, rows } = await this.active(actor);
+    return touched.flatMap((t) => {
+      const row = all.find((r) => r.targetId === t.targetId && r.skill === t.skill);
+      if (!row) return [];
+      return [
+        {
+          targetId: row.targetId,
+          skill: row.skill,
+          stage: row.stage,
+          dueAt: effectiveDueAt(row),
+          level: masteryLevel(rows, itemOf(row.targetId)),
+        },
+      ];
+    });
+  }
+
+  /** Active rows for a session summary; null for sessions without a student account. */
+  async summaryRows(actor: AuthSession): Promise<ReviewRow[] | null> {
+    if (!studentId(actor)) return null;
+    return (await this.active(actor)).rows;
+  }
+}
