@@ -622,10 +622,16 @@ export class Learning {
   ) {
     const result = await this.gradeOnce(actor, sessionId, questionId, key, answer);
     if (!studentId(actor)) return result;
-    return {
-      ...(result as Record<string, unknown>),
-      progress: await this.progress.afterSubmit(actor, result),
-    };
+    // The answer is already committed; a failing progress read must not turn it into an error.
+    let progress: Awaited<ReturnType<ProgressService['afterSubmit']>> = [];
+    try {
+      progress = await this.progress.afterSubmit(actor, result);
+    } catch (e) {
+      console.error(
+        `afterSubmit failed after a committed answer (${e instanceof Error ? e.name : 'unknown error'}); returning empty progress.`,
+      );
+    }
+    return { ...(result as Record<string, unknown>), progress };
   }
   private async gradeOnce(
     actor: AuthSession,

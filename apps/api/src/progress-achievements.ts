@@ -103,6 +103,8 @@ type Stats = {
   reviewSessions: number;
   streak: number;
   at: string[];
+  /** Latest non-skipped answer instant: dates a reached badge when `at` has no instant (e.g. HS-only). */
+  lastAt?: string;
 };
 
 const BADGES: {
@@ -121,7 +123,7 @@ const BADGES: {
 
 /**
  * `stats.at` are the instants of the learner's progress events. Species-count badges are dated at
- * the Nth event (when the Nth species came in); the others at the latest event. Not reached: null.
+ * the Nth event (when the Nth species came in); the others at the latest event. Reached but undated: `stats.lastAt`. Not reached: null.
  */
 export function badges(stats: Stats): Badge[] {
   const at = [...stats.at].sort((a, b) => Date.parse(a) - Date.parse(b));
@@ -130,7 +132,7 @@ export function badges(stats: Stats): Badge[] {
     label: b.label,
     earnedAt:
       b.value(stats) >= b.need
-        ? ((b.nth ? at[b.need - 1] : undefined) ?? at[at.length - 1] ?? null)
+        ? ((b.nth ? at[b.need - 1] : undefined) ?? at[at.length - 1] ?? stats.lastAt ?? null)
         : null,
   }));
 }

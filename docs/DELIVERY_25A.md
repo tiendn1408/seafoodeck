@@ -65,3 +65,4 @@ Unit test dùng DB giả; lần chạy đầu trên Postgres thật (nộp đồ
 - Chưa có màn quản lý người dùng (tạo/khóa/đặt lại mật khẩu) trong trang quản trị; tạo tài khoản hiện chỉ qua API.
 - Chưa nhập tiến độ cũ từ trình duyệt lên server.
 - Chưa kiểm mục Nghe với bản thu thật; chưa chạy trên VPS.
+- Lưu ý vận hành: nếu tự khóa người dùng bằng SQL, hãy xóa luôn phiên của họ (`DELETE FROM "AuthSession" WHERE "userId" = '<id>'`), vì 2.5a chưa thu hồi phiên khi khóa; thu hồi đúng cách khi khóa sẽ có ở 2.5c.

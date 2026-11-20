@@ -978,3 +978,26 @@ test('solid species: stage >= 2 (remembered for a week or more) counts, stage 1 
   assert.equal(solidSpecies(o, at(1)), 0);
   assert.equal(solidSpecies(o, at(2)), 60);
 });
+
+test('submit tolerates afterSubmit failure: graded result, progress [], stored result unchanged', async () => {
+  const progress: Rec[] = [];
+  const { db, writes } = submitDb(progress);
+  const svc = new ProgressService(db, catalogFake);
+  svc.afterSubmit = async () => {
+    throw new Error('db hiccup');
+  };
+  const l = new Learning(db, catalogFake, {} as Media, svc);
+  const errors: unknown[][] = [];
+  const orig = console.error;
+  console.error = (...a: unknown[]) => void errors.push(a);
+  let r: Record<string, unknown>;
+  try {
+    r = (await l.submit(student, 'sess', 'q1', 'key-12345', answer)) as Record<string, unknown>;
+  } finally {
+    console.error = orig;
+  }
+  assert.deepEqual(r.progress, []);
+  assert.equal(r.correct, (writes[0] as Record<string, unknown>).correct);
+  assert.equal((writes[0] as Record<string, unknown>).progress, undefined);
+  assert.equal(errors.length, 1);
+});

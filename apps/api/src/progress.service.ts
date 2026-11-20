@@ -355,6 +355,7 @@ export class ProgressService {
         streak,
         badges: badges({
           ...speciesSeen(log),
+          lastAt: lastAnsweredAt(log),
           solid: solidSpecies(c.overview, c.rows),
           reviewSessions: new Set(log.filter((r) => r.isReview).map((r) => r.sessionId)).size,
           streak: streak.longest,
@@ -403,6 +404,16 @@ export function speciesSeen(log: LogRow[]): { species: number; at: string[] } {
     if (!seen || Date.parse(r.at) < Date.parse(seen)) first.set(id, r.at);
   }
   return { species: first.size, at: [...first.values()] };
+}
+
+/** Latest instant of a non-skipped log row (any skill, HS included); undefined when none. */
+export function lastAnsweredAt(log: LogRow[]): string | undefined {
+  let last: string | undefined;
+  for (const r of log) {
+    if (r.skipped) continue;
+    if (!last || Date.parse(r.at) > Date.parse(last)) last = r.at;
+  }
+  return last;
 }
 
 /**

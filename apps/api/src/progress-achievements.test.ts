@@ -120,3 +120,13 @@ test('badges: reached ones carry a date', () => {
   assert.equal(by.solid50, null);
   assert.equal(by.species100, null);
 });
+
+test('badges: reached badge with no species instants falls back to lastAt, never null', () => {
+  const lastAt = '2026-03-09T10:00:00.000Z';
+  const out = badges({ species: 0, solid: 0, reviewSessions: 10, streak: 7, at: [], lastAt });
+  const by = Object.fromEntries(out.map((b) => [b.id, b.earnedAt]));
+  assert.equal(by.review10, lastAt);
+  assert.equal(by.streak7, lastAt);
+  assert.equal(by.first10, null);
+  assert.equal(by.solid50, null);
+});
