@@ -1,7 +1,19 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Prisma } from './generated/prisma/client';
 import { Db } from './db';
-import { passwordHash, passwordHashAsync, passwordMinFor, revokeUserSessions } from './security';
+import {
+  passwordHash,
+  passwordHashAsync,
+  passwordMinFor,
+  revokeUserSessions,
+  SESSION_EXPIRED,
+} from './security';
 import { findUserByUsername, generateTempPassword, normalizeUsername } from './users';
 import { withSerializableRetry } from './progress-record';
 
@@ -76,6 +88,12 @@ const toRow = (u: RowSource): AdminUserRow => ({
   createdAt: u.createdAt.toISOString(),
   lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
 });
+/**
+ * Prisma's `contains` becomes `ILIKE '%' || $1 || '%'` with $1 passed through unescaped (checked
+ * against the Prisma 7 query compiler), so `%` and `_` would act as wildcards. Postgres' default
+ * LIKE escape character is the backslash: escape it first, then both wildcards.
+ */
+export const escapeLike = (text: string) => text.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 const missing = () => new NotFoundException('Không tìm thấy người dùng.');
 const SERIALIZABLE = { isolationLevel: 'Serializable' } as const;
 const TAKEN = 'Tên đăng nhập đã tồn tại.';
@@ -88,12 +106,14 @@ const TAKEN = 'Tên đăng nhập đã tồn tại.';
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  /** Pause between Serializable retries; undefined uses the real jittered sleep (tests inject one). */
+  retryWait?: (ms: number) => Promise<void>;
   constructor(private db: Db) {}
 
   async list(query: UserListQuery) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 50;
-    const q = query.q?.trim();
+    const q = query.q?.trim() ? escapeLike(query.q.trim()) : undefined;
     const where: Prisma.UserWhereInput = {
       ...(query.role ? { role: query.role } : {}),
       ...(query.status === 'active' ? { disabledAt: null } : {}),
@@ -128,41 +148,55 @@ export class UsersService {
   ): Promise<AdminUserRow> {
     if (dto.disabled === true && id === actorId)
       throw new BadRequestException('Không thể tự khóa tài khoản của chính mình.');
-    return withSerializableRetry(() =>
-      this.db.$transaction(async (tx) => {
-        const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
-        if (!user) throw missing();
-        const data: Prisma.UserUpdateInput = {};
-        const audits: { action: string; detail: Prisma.InputJsonObject }[] = [];
-        if (dto.displayName !== undefined) {
-          data.displayName = dto.displayName || null;
-          audits.push({ action: 'user.update', detail: { fields: ['displayName'] } });
-        }
-        if (dto.disabled === true) {
-          await this.keepAnActiveAdmin(tx, user, 'khóa');
-          data.disabledAt = user.disabledAt ?? new Date();
-          audits.push({ action: 'user.disable', detail: {} });
-        } else if (dto.disabled === false) {
-          data.disabledAt = null;
-          audits.push({ action: 'user.enable', detail: {} });
-        }
-        if (!audits.length) return toRow(user);
-        const updated = await tx.user.update({ where: { id }, data, select: ROW_SELECT });
-        if (dto.disabled === true) await revokeUserSessions(tx, id);
-        for (const a of audits)
-          await tx.audit.create({
-            data: { actorId, action: a.action, targetId: id, detail: a.detail },
-          });
-        return toRow(updated);
-      }, SERIALIZABLE),
+    return withSerializableRetry(
+      () =>
+        this.db.$transaction(async (tx) => {
+          await this.requireActiveActor(tx, actorId);
+          const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
+          if (!user) throw missing();
+          const data: Prisma.UserUpdateInput = {};
+          const audits: { action: string; detail: Prisma.InputJsonObject }[] = [];
+          if (dto.displayName !== undefined) {
+            data.displayName = dto.displayName || null;
+            audits.push({ action: 'user.update', detail: { fields: ['displayName'] } });
+          }
+          if (dto.disabled === true) {
+            await this.keepAnActiveAdmin(tx, user, 'khóa');
+            // Re-locking keeps the original lock time and is not audited a second time.
+            if (!user.disabledAt) {
+              data.disabledAt = new Date();
+              audits.push({ action: 'user.disable', detail: {} });
+            }
+          } else if (dto.disabled === false) {
+            data.disabledAt = null;
+            audits.push({ action: 'user.enable', detail: {} });
+          }
+          const updated = Object.keys(data).length
+            ? await tx.user.update({ where: { id }, data, select: ROW_SELECT })
+            : user;
+          // Every lock request revokes sessions, a repeated one too.
+          if (dto.disabled === true) await revokeUserSessions(tx, id);
+          for (const a of audits)
+            await tx.audit.create({
+              data: { actorId, action: a.action, targetId: id, detail: a.detail },
+            });
+          return toRow(updated);
+        }, SERIALIZABLE),
+      this.retryWait,
     );
   }
 
   /**
    * New temporary password (length by role), forced change on next login, every session revoked.
+   * An admin resetting their own password keeps the session making the request
+   * (`actorSessionId`), so this response arrives and the forced-change flow starts there.
    * The response is the only place the secret appears: never in Audit, logs or errors.
    */
-  async resetPassword(actorId: string, id: string): Promise<{ temporaryPassword: string }> {
+  async resetPassword(
+    actorId: string,
+    id: string,
+    actorSessionId?: string,
+  ): Promise<{ temporaryPassword: string }> {
     return this.db.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id }, select: { id: true, role: true } });
       if (!user) throw missing();
@@ -171,7 +205,7 @@ export class UsersService {
         where: { id },
         data: { passwordHash: passwordHash(temporaryPassword), mustChangePassword: true },
       });
-      await revokeUserSessions(tx, id);
+      await revokeUserSessions(tx, id, id === actorId ? actorSessionId : undefined);
       await tx.audit.create({
         data: { actorId, action: 'user.reset-password', targetId: id, detail: {} },
       });
@@ -182,25 +216,28 @@ export class UsersService {
   /** Hard delete: sessions first, then the user (attempts and progress cascade). Audit survives. */
   async remove(actorId: string, id: string, confirmUsername: string): Promise<{ deleted: true }> {
     if (id === actorId) throw new BadRequestException('Không thể tự xóa tài khoản của chính mình.');
-    return withSerializableRetry(() =>
-      this.db.$transaction(async (tx) => {
-        const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
-        if (!user) throw missing();
-        if (normalizeUsername(confirmUsername ?? '') !== normalizeUsername(user.username))
-          throw new BadRequestException('Tên đăng nhập xác nhận không khớp.');
-        await this.keepAnActiveAdmin(tx, user, 'xóa');
-        await revokeUserSessions(tx, id);
-        await tx.user.delete({ where: { id } });
-        await tx.audit.create({
-          data: {
-            actorId,
-            action: 'user.delete',
-            targetId: id,
-            detail: { username: user.username, role: user.role },
-          },
-        });
-        return { deleted: true as const };
-      }, SERIALIZABLE),
+    return withSerializableRetry(
+      () =>
+        this.db.$transaction(async (tx) => {
+          await this.requireActiveActor(tx, actorId);
+          const user = await tx.user.findUnique({ where: { id }, select: ROW_SELECT });
+          if (!user) throw missing();
+          if (normalizeUsername(confirmUsername ?? '') !== normalizeUsername(user.username))
+            throw new BadRequestException('Tên đăng nhập xác nhận không khớp.');
+          await this.keepAnActiveAdmin(tx, user, 'xóa');
+          await revokeUserSessions(tx, id);
+          await tx.user.delete({ where: { id } });
+          await tx.audit.create({
+            data: {
+              actorId,
+              action: 'user.delete',
+              targetId: id,
+              detail: { username: user.username, role: user.role },
+            },
+          });
+          return { deleted: true as const };
+        }, SERIALIZABLE),
+      this.retryWait,
     );
   }
 
@@ -312,7 +349,28 @@ export class UsersService {
     }
   }
 
-  /** Refuses a change that would leave no active admin (counted inside the caller's transaction). */
+  /**
+   * The acting admin may have been locked or deleted after its request passed the guards: read its
+   * row inside the same Serializable transaction (so a concurrent lock of the actor conflicts) and
+   * answer like an expired session, exactly as the guards do.
+   */
+  private async requireActiveActor(tx: Tx, actorId: string) {
+    const actor = await tx.user.findUnique({
+      where: { id: actorId },
+      select: { id: true, disabledAt: true },
+    });
+    if (!actor || actor.disabledAt) throw new UnauthorizedException(SESSION_EXPIRED);
+  }
+
+  /**
+   * Refuses a change that would leave no active admin (counted inside the caller's transaction).
+   *
+   * WARNING: the last-admin guarantee holds only because every write that can remove an active
+   * admin runs in a Serializable transaction that calls this check with that same `tx`. Every
+   * future writer of `role` or `disabledAt` (role change, bulk lock, import, maintenance script)
+   * MUST do the same: a plain update, a separate transaction or a weaker isolation level silently
+   * breaks the guarantee under concurrency.
+   */
   private async keepAnActiveAdmin(
     tx: Tx,
     user: { id: string; role: string; disabledAt: Date | null },

@@ -59,11 +59,12 @@ export class ListUsersQuery {
   @IsString()
   @MaxLength(80)
   q?: string;
-  @ApiProperty({ required: false, default: 1, minimum: 1 })
+  @ApiProperty({ required: false, default: 1, minimum: 1, maximum: 1_000_000 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(1_000_000)
   page?: number;
   @ApiProperty({ required: false, default: 50, minimum: 1, maximum: 200 })
   @IsOptional()
@@ -165,7 +166,7 @@ export class AdminUsersController {
   @Post('users/:id/reset-password')
   resetPassword(@Req() req: ActorRequest, @Param('id') id: string) {
     requireRole(req, ['admin']);
-    return this.users.resetPassword(req.actor.userId!, id);
+    return this.users.resetPassword(req.actor.userId!, id, req.actor.id);
   }
   @ApiOkResponse({ type: DeletedUserResponse })
   @Delete('users/:id')

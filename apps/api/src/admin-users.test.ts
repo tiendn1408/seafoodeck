@@ -12,6 +12,7 @@ import {
   MustChangePasswordGuard,
   passwordHash,
   passwordMatches,
+  SESSION_EXPIRED,
   type ActorRequest,
 } from './security';
 import { AuthController } from './auth.controller';
@@ -75,10 +76,7 @@ function matches(row: Row, where: Row | undefined): boolean {
       const ci = c.mode === 'insensitive';
       const norm = (s: unknown) => (ci && typeof s === 'string' ? s.toLowerCase() : s);
       if ('not' in c && (c.not === null ? v == null : v === c.not)) return false;
-      if (
-        'contains' in c &&
-        (typeof v !== 'string' || !String(norm(v)).includes(String(norm(c.contains))))
-      )
+      if ('contains' in c && (typeof v !== 'string' || !like(v, String(c.contains), ci)))
         return false;
       if ('equals' in c && norm(v) !== norm(c.equals)) return false;
       if ('in' in c && !(c.in as unknown[]).includes(v)) return false;
@@ -87,6 +85,22 @@ function matches(row: Row, where: Row | undefined): boolean {
     if (v !== cond) return false;
   }
   return true;
+}
+/**
+ * What Prisma 7 sends to Postgres for `contains` (checked against the compiled query):
+ * `col ILIKE ('%' || $1 || '%')` with $1 unescaped, so `%` and `_` in $1 are wildcards and `\`
+ * escapes the next character. This mirrors those semantics.
+ */
+function like(value: string, contained: string, insensitive: boolean): boolean {
+  let source = '';
+  for (let i = 0; i < contained.length; i++) {
+    const ch = contained[i];
+    if (ch === '\\') source += (contained[++i] ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    else if (ch === '%') source += '.*';
+    else if (ch === '_') source += '.';
+    else source += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^.*${source}.*$`, insensitive ? 'is' : 's').test(value);
 }
 const pick = (row: Row | undefined, select?: Record<string, boolean>) =>
   !row
@@ -118,6 +132,8 @@ const memoryDb = (users: U[]) => {
     /** Lowercased username whose create fails with an unexpected error. */
     breakOn: undefined as string | undefined,
     created: 0,
+    /** The last `where` given to user.findMany. */
+    lastFindManyWhere: undefined as Row | undefined,
   };
   const build = (get: () => State, inTx: boolean) => {
     const write = async (op: string) => {
@@ -148,6 +164,7 @@ const memoryDb = (users: U[]) => {
           orderBy?: unknown;
         }) => {
           await read();
+          mem.lastFindManyWhere = a.where;
           const rows = [...get().users.values()]
             .filter((u) => matches(u, a.where))
             .sort(
@@ -286,7 +303,15 @@ const roleReq = (role: string) =>
   ({
     actor: { id: 'sid', role, userId: role === 'learner' ? null : 'someone' },
   }) as unknown as ActorRequest;
-const ctrl = (mem: Mem) => new AdminUsersController(new UsersService(mem.db));
+const service = (mem: Mem, waits?: number[]) => {
+  const svc = new UsersService(mem.db);
+  if (waits)
+    svc.retryWait = async (ms) => {
+      waits.push(ms);
+    };
+  return svc;
+};
+const ctrl = (mem: Mem, waits?: number[]) => new AdminUsersController(service(mem, waits));
 const outcome = async (p: Promise<unknown>) =>
   p.then(
     (body) => ({ status: 200, body: body as Row, message: '' }),
@@ -449,6 +474,8 @@ test('GET /admin/users query validation: enums, page and limit bounds', async ()
   assert.equal(ok.ok, true);
   assert.equal(ok.ok && ok.value.page, 2);
   assert.equal(ok.ok && ok.value.limit, 200);
+  const top = await validateAs(ListUsersQuery, { page: '1000000', limit: '200' }, 'query');
+  assert.equal(top.ok && top.value.page, 1_000_000);
   for (const role of ['student', 'manager', 'editor', 'reviewer', 'publisher', 'admin'])
     assert.equal((await validateAs(ListUsersQuery, { role }, 'query')).ok, true, role);
   for (const bad of [
@@ -457,6 +484,8 @@ test('GET /admin/users query validation: enums, page and limit bounds', async ()
     { status: 'locked' },
     { page: '0' },
     { page: 'x' },
+    { page: '1000001' },
+    { page: '1e18' },
     { limit: '201' },
     { limit: '0' },
     { q: 'x'.repeat(81) },
@@ -719,12 +748,19 @@ test('the last active admin can be neither locked nor deleted, by anyone', async
   for (const call of [
     () => ctrl(mem).update(adminReq('a1'), 'a1', { disabled: true }),
     () => ctrl(mem).remove(adminReq('a1'), 'a1', { confirmUsername: 'a1' }),
-    () => ctrl(mem).update(adminReq('a2'), 'a1', { disabled: true }),
-    () => ctrl(mem).remove(adminReq('a2'), 'a1', { confirmUsername: 'a1' }),
   ]) {
     const r = await outcome(call());
     assert.equal(r.status, 400);
     assert.ok(isVietnamese(r.message), r.message);
+  }
+  // The locked a2 is stopped even earlier: its own row is re-checked inside the transaction.
+  for (const call of [
+    () => ctrl(mem).update(adminReq('a2'), 'a1', { disabled: true }),
+    () => ctrl(mem).remove(adminReq('a2'), 'a1', { confirmUsername: 'a1' }),
+  ]) {
+    const r = await outcome(call());
+    assert.equal(r.status, 401);
+    assert.equal(r.message, SESSION_EXPIRED);
   }
   assert.equal(mem.state.users.get('a1')!.disabledAt, null);
   assert.ok(mem.state.users.has('a1'));
@@ -771,7 +807,8 @@ test('two admins locking each other at the same time leave exactly one active ad
     const results = await Promise.all([outcome(first), outcome(second)]);
     const active = [...mem.state.users.values()].filter((u) => u.role === 'admin' && !u.disabledAt);
     assert.equal(active.length, 1, kind);
-    assert.deepEqual(results.map((r) => r.status).sort(), [200, 400], kind);
+    // The loser retries, finds itself locked or deleted, and is refused like an expired session.
+    assert.deepEqual(results.map((r) => r.status).sort(), [200, 401], kind);
     assert.ok(mem.conflicts >= 1, `${kind}: the transactions really overlapped`);
   }
 });
@@ -779,11 +816,119 @@ test('two admins locking each other at the same time leave exactly one active ad
 test('serialization conflicts that never clear end as 409 BUSY and change nothing', async () => {
   const mem = memoryDb([admin('a1'), admin('a2')]);
   mem.alwaysConflict = true;
-  const r = await outcome(ctrl(mem).update(adminReq('a1'), 'a2', { disabled: true }));
+  const waits: number[] = [];
+  const started = Date.now();
+  const r = await outcome(ctrl(mem, waits).update(adminReq('a1'), 'a2', { disabled: true }));
   assert.equal(r.status, 409);
   assert.equal(r.message, 'Hệ thống đang bận, vui lòng thử lại.');
   assert.equal(mem.conflicts, 7, 'first try plus 6 retries');
+  assert.equal(waits.length, 6, 'the injected wait replaced every real pause');
+  assert.ok(Date.now() - started < 200, 'no real sleeping');
   assert.equal(mem.state.users.get('a2')!.disabledAt, null);
+});
+
+// ---- Review hardening -----------------------------------------------------------------------
+test('q is literal: _ and % and backslash are escaped before reaching Prisma contains', async () => {
+  const mem = memoryDb([
+    admin('root'),
+    user({ id: 'u1', username: 'An', displayName: '50% off' }),
+    user({ id: 'u2', username: 'chi_anh' }),
+    user({ id: 'u3', username: 'binh', displayName: 'a\\b' }),
+  ]);
+  const list = (q: string) => ctrl(mem).list(adminReq('root'), { q } as ListUsersQuery);
+  assert.deepEqual(
+    (await list('_')).items.map((r) => r.id),
+    ['u2'],
+  );
+  const where = mem.lastFindManyWhere as { OR: { username?: Row; displayName?: Row }[] };
+  assert.deepEqual(where.OR[0].username, { contains: '\\_', mode: 'insensitive' });
+  assert.deepEqual(where.OR[1].displayName, { contains: '\\_', mode: 'insensitive' });
+  assert.deepEqual(
+    (await list('%')).items.map((r) => r.id),
+    ['u1'],
+  );
+  assert.deepEqual(
+    (await list('\\')).items.map((r) => r.id),
+    ['u3'],
+  );
+  assert.equal((await list('a\\b')).total, 1);
+  assert.equal((await list('i_a')).total, 1);
+  assert.equal((await list('h_a')).total, 0);
+});
+
+test('lock and delete re-check the actor inside the transaction: a locked or deleted admin gets the expired-session 401', async () => {
+  const mem = memoryDb([
+    admin('a1'),
+    admin('a2'),
+    admin('gone'),
+    user({ id: 'u1', username: 'An' }),
+  ]);
+  mem.state.users.get('a2')!.disabledAt = new Date();
+  mem.state.users.delete('gone');
+  addSession(mem, 'u1');
+  for (const actor of ['a2', 'gone'])
+    for (const call of [
+      () => ctrl(mem).update(adminReq(actor), 'u1', { disabled: true }),
+      () => ctrl(mem).remove(adminReq(actor), 'u1', { confirmUsername: 'An' }),
+    ]) {
+      const r = await outcome(call());
+      assert.equal(r.status, 401, actor);
+      assert.equal(r.message, SESSION_EXPIRED);
+    }
+  assert.equal(mem.state.users.get('u1')!.disabledAt, null);
+  assert.ok(mem.state.users.has('u1'));
+  assert.equal(sessionsOf(mem, 'u1'), 1);
+  assert.equal(mem.state.audits.length, 0);
+  // The check reads the actor in the same transaction as the write.
+  mem.writes.length = 0;
+  assert.equal((await ctrl(mem).update(adminReq('a1'), 'u1', { disabled: true })).disabled, true);
+});
+
+test('an admin resetting their own password keeps the current session and loses the others', async () => {
+  const mem = memoryDb([admin('root'), admin('a2'), user({ id: 'u1', username: 'An' })]);
+  addSession(mem, 'root', 'sid-root');
+  addSession(mem, 'root', 'root-laptop');
+  addSession(mem, 'a2', 'sid-a2');
+  const own = await ctrl(mem).resetPassword(adminReq('root'), 'root');
+  assert.equal(own.temporaryPassword.length, 20);
+  assert.deepEqual([...mem.state.sessions.keys()].sort(), ['sid-a2', 'sid-root']);
+  assert.equal(mem.state.users.get('root')!.mustChangePassword, true);
+  // Resetting someone else still revokes all of their sessions, including one sharing an id prefix.
+  await ctrl(mem).resetPassword(adminReq('root'), 'a2');
+  assert.deepEqual([...mem.state.sessions.keys()], ['sid-root']);
+});
+
+test('re-locking a locked user keeps the original disabledAt, revokes sessions again, and writes no second Audit', async () => {
+  const lockedAt = new Date('2026-10-01T00:00:00Z');
+  const mem = memoryDb([admin('root'), user({ id: 'u1', username: 'An', disabledAt: lockedAt })]);
+  addSession(mem, 'u1');
+  const row = await ctrl(mem).update(adminReq('root'), 'u1', { disabled: true });
+  assert.equal(row.disabled, true);
+  assert.equal(mem.state.users.get('u1')!.disabledAt!.getTime(), lockedAt.getTime());
+  assert.equal(sessionsOf(mem, 'u1'), 0);
+  assert.equal(mem.state.audits.length, 0);
+  // A rename alongside a re-lock is audited as the rename only.
+  await ctrl(mem).update(adminReq('root'), 'u1', { disabled: true, displayName: 'An' });
+  assert.deepEqual(
+    mem.state.audits.map((a) => a.action),
+    ['user.update'],
+  );
+});
+
+test('PATCH displayName "" is stored as null; DELETE without confirmUsername is a 400 from the pipe', async () => {
+  const mem = memoryDb([admin('root'), user({ id: 'u1', username: 'An', displayName: 'An' })]);
+  const row = await ctrl(mem).update(adminReq('root'), 'u1', { displayName: '' });
+  assert.equal(row.displayName, null);
+  assert.equal(mem.state.users.get('u1')!.displayName, null);
+  const blank = await validateAs(UpdateUserDto, { displayName: '   ' }, 'body');
+  assert.ok(blank.ok);
+  assert.equal((await ctrl(mem).update(adminReq('root'), 'u1', blank.value)).displayName, null);
+  for (const body of [{}, { confirmUsername: 5 }, { confirmUsername: null }]) {
+    const r = await validateAs(DeleteUserDto, body, 'body');
+    assert.equal(r.ok, false, JSON.stringify(body));
+    assert.equal(!r.ok && r.status, 400);
+  }
+  assert.ok(mem.state.users.has('u1'));
 });
 
 // ---- Bulk create (Review Focus 3) -----------------------------------------------------------
