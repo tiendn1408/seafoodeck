@@ -167,3 +167,17 @@ Yêu cầu `manager` hoặc `admin` (`requireManager`); chỉ đọc; chỉ ngư
 - Tên migration; cách báo lỗi khi đã có tên trùng hoa thường trong DB.
 - Cách tách `userId` trong `ProgressService` cho cả `/me/*` và `/manager/*`.
 - Khóa sắp xếp mặc định của bảng (đề xuất: lần học cuối, mới nhất trước).
+
+## 12. Làm rõ sau khi người build đọc thử
+
+Đã có sẵn trong dự án (không phải hỏi lại):
+- **Nhánh gốc là `main`** (bản trên origin, `111a821`). Mốc kiểm thử: E2E 25 đạt, 3 bỏ qua; API 329, web 293, script 23. Công cụ kiểm trên Docker như `DELIVERY_25A.md` và `DELIVERY_25B.md` (compose local, `scripts/wait-pilot.mjs`, `npm run test:e2e`).
+- **`Audit` không có khóa ngoại** (`actorId` và `targetId` là chuỗi): xóa người dùng **không** làm mất các dòng `Audit` có liên quan. Khi xóa, dòng `Audit` `user.delete` ghi thêm `username` và `role` vào `detail` để còn đọc được sau này. Không cần migration thứ hai.
+
+Quyết định của agent (người dùng kiểm khi đọc):
+- **Quản trị và quản lý:** `admin` cũng được vào các route `#manager` (đúng `requireManager`, chỉ đọc) và danh sách Người dùng có nút "Xem tiến độ" mở chi tiết học viên. Route cho phép của `admin`: `home`, `library`, `profile/*`, `study`, `admin`, `admin/users`, `manager`, `manager/learner/*`; `account` thì không. `admin` và `manager` không bao giờ gọi `/me/*`. Chi tiết học viên là một thành phần dùng chung, gắn dưới `#manager/learner/<id>`. `manager` xem được cả học viên đã khóa khi bật công tắc "hiện người đã khóa".
+- **Định nghĩa cột bảng quản lý dùng đúng các hàm đã có, không viết logic mới ngoài phép trung bình:** "đang học" = số loài có `itemStatus` khác `new`; "đã vững" = `solidSpecies`; "mức nhớ trung bình" = trung bình `masteryLevel` của các loài đang học; "quá hạn" = số loài có `itemStatus === 'due'`; "phiên 7 ngày" = số `sessionId` khác nhau trong `LearningAttempt` có câu không bỏ qua trong 7 ngày gần nhất (giờ `Asia/Ho_Chi_Minh`). Chi tiết `/manager/learners/:id/*` dùng cùng `ProgressService` nên bằng `/me/*` của người đó theo cấu trúc.
+- **Chỉ mục tên không phân biệt hoa thường:** tên lưu đúng như đã nhập (để hiển thị); tra cứu khi đăng nhập và kiểm trùng so theo chữ thường; migration viết tay bằng SQL: `CREATE UNIQUE INDEX "User_username_lower_key" ON "User" (lower("username"))` (Prisma không mô hình hóa được chỉ mục hàm, nên ghi chú trong `schema.prisma`). Trước khi tạo chỉ mục, migration kiểm trùng và dừng lại với thông báo rõ nêu các tên trùng để người vận hành đổi tên; VPS hiện chỉ có tài khoản `owner` nên dự kiến không vướng.
+- **Xoay token khi đổi mật khẩu và hàng đợi gửi nền:** phản hồi đổi mật khẩu trả CSRF mới và đặt cookie mới; trình duyệt cập nhật CSRF ngay. Trước khi gửi đổi mật khẩu, trang Tài khoản chờ hàng đợi gửi nền xong (`flushAll`, tối đa 5 giây, như đăng xuất); nếu còn câu chưa lưu thì hỏi xác nhận.
+- **Tạo hàng loạt:** mỗi dòng một giao dịch riêng (một dòng lỗi không làm hỏng cả lô), báo cáo từng dòng. `dryRun` chỉ xem trước (kiểm định dạng và trùng tên), **không** tạo hay trả mật khẩu; mật khẩu tạo ra chỉ có ở lần chạy thật, hiện một lần, CSV kết quả chỉ tạo ở trình duyệt.
+- **Hiện mật khẩu tạm:** không thêm bước xác thực lại cho quản trị; chỉ ghi `Audit` (không có mật khẩu) và giới hạn bằng quyền `admin` hiện có.
