@@ -35,3 +35,15 @@ Nếu lỗi, script phục hồi env và image ứng dụng cũ; schema cộng t
 - Manager chưa có bảng theo dõi; không trình bày luồng đó với khách.
 
 Không đưa mật khẩu vào chat/repo/log, không tự duyệt tài sản để vượt cổng public. Giao diện hiện thông báo nội dung nội bộ nếu bộ đang dùng chưa duyệt.
+
+## Biên bản chạy thực tế trên VPS
+
+Đã merge PR #2 vào main tại `0237035`; [CI đúng đầu PR đạt](https://github.com/tiendn1408/seafoodeck/actions/runs/44714536010). Ngày 20/11/2026 đã nâng `/opt/seafoodeck-pilot` trên `42.96.20.66` bằng script ở trên. API/web/DB/storage đều healthy, HTTPS health trả `learner-demo-20261120-r1`, đúng hai digest trong báo cáo. Không thay container bot trading (đã so ID/image trước và sau).
+
+Backup riêng tư: `.local/deploy-backups/before-learner-20261120T100024Z`, gồm env/IAM/Compose/SQL và **282 object** + manifest hash. Hai migration `202611190001_learner_accounts`, `202611200001_username_ci` hoàn tất. So trước/sau: **96 Item, 96 Revision, 94 MediaAsset**, release nội bộ `a6d156c4-02ac-45a8-83ae-9ad5b9f19599` giữ nguyên. Không seed, không publish lại, không tự duyệt nội dung.
+
+Browser thật qua domain HTTPS ở 390px: đổi mật khẩu lần đầu → Flashcard 3 tự đánh giá → Ghép tên 3 cặp → HS 3 câu → tổng kết, 9 mục ôn. Sau đăng xuất, xóa cookies/storage và đăng nhập lại, server vẫn trả đúng 3 tự đánh giá và 6 câu chấm tự động. Thư viện và trang chủ có ảnh tải thật qua S3; không cuộn ngang. Hai học viên QA tạm và dữ liệu thử riêng của họ đã xóa sau kiểm; audit giữ nguyên.
+
+**Giới hạn dữ liệu VPS:** cả 94 media hiện là `profile`, draft, chưa có media `identification`; Đoán hình trả thông báo chưa đủ ba ảnh gốc hợp lệ, không dùng profile để giả hoàn thành chế độ. Bộ 96 mục đang là dữ liệu tham khảo, có cả tôm, chưa phải danh mục khách đã chốt. Lượt này chỉ nâng flow học viên và giữ nguyên dữ liệu hiện hữu theo phạm vi đã chốt; không coi đây là duyệt public.
+
+Đã tạo tài khoản trống `demo-hoc-vien`, vai trò student, mật khẩu tạm buộc đổi lần đầu. Credential ở **file 600 chỉ trên VPS** `/opt/seafoodeck-pilot/.local/demo-hoc-vien-20261120.json`, không ghi trong Git/chat/log. Chủ dự án đọc file riêng tại Terminal VPS, đăng nhập rồi tự đặt mật khẩu mới. Thông tin quản trị và mã mời cũ được giữ nguyên. Dữ liệu học của học thử không tự chuyển vào tài khoản.

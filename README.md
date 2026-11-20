@@ -1,6 +1,8 @@
 # Seafood Deck
 
-Ứng dụng học tên và nghiệp vụ thủy hải sản cho người mới vào ngành và nhân viên kinh doanh quốc tế. Bản 0.6 online gồm React/Vite trong `apps/web`, NestJS/Prisma trong `apps/api`, PostgreSQL và S3 riêng. Người học vào bằng mã mời; quản trị đăng nhập, biên tập → duyệt → xuất bản revision. Bốn chế độ: Flashcard, Ghép tên, Đoán hình, HS; tổng kết, ôn lỗi và lịch ôn 1/3/7/14 ngày.
+Bản demo học viên đã lên VPS ngày 20/11/2026: tài khoản, đổi mật khẩu lần đầu, học, tổng kết và tiến độ server. Xem [bản phát hành và biên bản VPS](docs/DEPLOY_LEARNER_DEMO_20261120.md). Manager theo dõi nhóm và nội dung public khách còn chờ hoàn thiện.
+
+Ứng dụng học tên và nghiệp vụ thủy hải sản cho người mới vào ngành và nhân viên kinh doanh quốc tế. Bản 0.6 online gồm React/Vite trong `apps/web`, NestJS/Prisma trong `apps/api`, PostgreSQL và S3 riêng. Người học dùng tài khoản hoặc mã mời học thử; quản trị đăng nhập, biên tập → duyệt → xuất bản revision. Bốn chế độ: Flashcard, Ghép tên, Đoán hình, HS; tổng kết, ôn lỗi và lịch ôn 1/3/7/14 ngày.
 
 ## Chạy nội bộ
 
@@ -15,7 +17,7 @@ INTERNAL_SEED_COUNT=1000 docker compose --env-file .local/pilot.env --profile in
 
 Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pilot.env` riêng; không commit/gửi file này. Seed là lệnh chủ động **chỉ cho kiểm thử nội bộ**, không chạy lúc app khởi động. Bộ mẫu có 6 loài không tôm và 994 dòng SKU tổng hợp để kiểm phân trang; không phải danh mục được khách xác nhận. Ảnh thật tham chiếu chưa duyệt nhận diện; không phát hành public. Ảnh AI 2D chỉ trang trí, không tham gia chấm Đoán hình. Chưa có audio chuyên ngành đã duyệt.
 
-Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Chạy VPS/GHCR và nâng cấp](docs/DEPLOY_PILOT.md). Chưa deploy VPS trong lượt này.
+Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Cài VPS/GHCR](docs/DEPLOY_PILOT.md); bản đã nâng trên VPS và cách vận hành hiện tại ở [demo học viên 20/11](docs/DEPLOY_LEARNER_DEMO_20261120.md).
 
 ## Tài khoản học viên (phase 2.5a, chỉ API)
 
