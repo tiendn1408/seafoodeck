@@ -484,6 +484,7 @@ export default function PilotApp() {
             {route === 'progress' && auth.userId !== undefined && <Progress userId={auth.userId} />}
             {route === 'account' && (
               <Account
+                role={auth.role}
                 userId={auth.userId}
                 onLogout={() => void logout()}
                 onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}

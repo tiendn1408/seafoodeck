@@ -26,9 +26,10 @@ const LEARNING = ['home', 'library', 'review', 'progress', 'study'];
 const ALLOWED: Record<Exclude<Kind, 'guest'>, string[]> = {
   student: [...LEARNING, 'account'],
   trial: ['home', 'library', 'study'],
-  // Managers never see the learner Home ("home" redirects to the table), study or /me/* pages;
-  // they read their learners (table and details) and browse the library.
-  manager: ['home', 'manager', 'library'],
+  // Managers never see the learner Home ("home" redirects to the table), study or the learner
+  // /me/* views; they read their learners (table and details), browse the library and keep
+  // their own account (GET/PATCH /me and the password change only).
+  manager: ['home', 'manager', 'library', 'account'],
   // Staff browse and try the deck like a trial (no /me/*: it admits account students only).
   staff: ['home', 'library', 'study', 'admin'],
   // Admins get the staff routes plus account management.

@@ -93,7 +93,7 @@ export function AppShell({
   route: string;
   tone: 'deep' | 'ice';
   kind: Kind;
-  /** Display name for the student's account entry; falls back to "Tài khoản". */
+  /** Display name for the student's or manager's account entry; falls back to "Tài khoản". */
   userName?: string;
   internal: boolean;
   onLogout: () => void;
@@ -109,7 +109,7 @@ export function AppShell({
   const bar = signedIn ? tabsFor[kind] : [];
   const links = staff && signedIn ? [...bar, adminTab] : bar;
   const accountLabel = userName?.trim() || 'Tài khoản';
-  const account = signedIn && kind === 'student' && (
+  const account = signedIn && (kind === 'student' || kind === 'manager') && (
     <a
       className={desktop ? 'shell-account' : 'shell-icon-button'}
       href="#account"

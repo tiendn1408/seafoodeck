@@ -33,7 +33,15 @@ const pack = JSON.parse(
 type QaUser = { username: string; password: string; id?: string };
 // QA accounts are created once per worker (per project) through the admin API and stay in the
 // local DB. Passwords are random, kept in memory only and never printed.
-type QaKey = 'student' | 'second' | 'persist' | 'must' | 'manager' | 'managerMust' | 'editor';
+type QaKey =
+  | 'student'
+  | 'second'
+  | 'persist'
+  | 'must'
+  | 'manager'
+  | 'managerMust'
+  | 'managerAccount'
+  | 'editor';
 const users: Record<QaKey, QaUser> = {} as never;
 /** Role and first-login flag of each QA account (staff roles need 16+ character passwords). */
 const QA_ACCOUNTS: Record<QaKey, { role: string; must?: boolean }> = {
@@ -43,6 +51,8 @@ const QA_ACCOUNTS: Record<QaKey, { role: string; must?: boolean }> = {
   must: { role: 'student', must: true },
   manager: { role: 'manager' },
   managerMust: { role: 'manager', must: true },
+  // Own account: the account test changes its name and password, so no other test uses it.
+  managerAccount: { role: 'manager' },
   editor: { role: 'editor' },
 };
 /** Per-project stamp shared by every QA name of this run (`qa-…-<stamp>`). */
@@ -1182,4 +1192,43 @@ test('manager learner detail never scrolls sideways', async ({ page }) => {
   await expect(page.locator('.manager-detail h1')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Lịch ôn tập' })).toBeVisible();
   expect(await scrollsSideways(page)).toBe(false);
+});
+
+test('manager opens their account, renames, changes password and keeps working', async ({
+  page,
+}) => {
+  const user = users.managerAccount;
+  await page.goto('/');
+  await page.getByLabel('Tên đăng nhập', { exact: true }).fill(user.username);
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(user.password);
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page).toHaveURL(/#manager$/);
+  await page.getByRole('link', { name: /^Tài khoản/ }).click();
+  await expect(page).toHaveURL(/#account$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Tài khoản' })).toBeVisible();
+  // Nothing learner-specific on a manager's account.
+  await expect(page.getByText(/tiến độ/i)).toHaveCount(0);
+  await test.step('display name', async () => {
+    await page.getByLabel('Tên hiển thị').fill('Quản lý QA');
+    await page.getByRole('button', { name: 'Lưu tên', exact: true }).click();
+    await expect(page.getByText('Đã lưu tên hiển thị.')).toBeVisible();
+  });
+  await test.step('password change, then the next request works with the new session', async () => {
+    const next = secret();
+    await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
+    await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill(user.password);
+    await page.getByLabel(/^Mật khẩu mới/).fill(next);
+    await page.getByLabel('Nhập lại mật khẩu mới', { exact: true }).fill(next);
+    await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
+    user.password = next;
+    await expect(page.getByText('Đã đổi mật khẩu.')).toBeVisible();
+    // A mutating request after the change still passes CSRF (the shell adopted the new session).
+    await page.getByLabel('Tên hiển thị').fill('Quản lý QA 2');
+    await page.getByRole('button', { name: 'Lưu tên', exact: true }).click();
+    await expect(page.getByText('Đã lưu tên hiển thị.')).toBeVisible();
+    const me = await (await page.request.get('/api/v1/me')).json();
+    expect(me.displayName).toBe('Quản lý QA 2');
+    await page.goto('/#manager');
+    await expect(page).toHaveURL(/#manager$/);
+  });
 });

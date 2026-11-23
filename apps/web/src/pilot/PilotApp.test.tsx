@@ -342,6 +342,8 @@ describe('PilotApp role-aware routes', () => {
       routes['GET /auth/me'] = () => json(v);
       routes['GET /catalog/items/x'] = () => json(profileItem);
       routes[LEARNERS] = () => json({ items: [], total: 0, page: 1, limit: 20 });
+      routes['GET /me'] = () =>
+        json({ username: 'hà', displayName: null, role: 'manager', mustChangePassword: false });
       routes['GET /manager/learners/x'] = () =>
         json({ id: 'x', username: 'x', displayName: 'Lan', disabled: false });
       for (const hash of [
@@ -372,7 +374,9 @@ describe('PilotApp role-aware routes', () => {
       return p === '/me' || p.startsWith('/me/');
     });
     expect(calls.length).toBeGreaterThan(0);
-    expect(me).toEqual([]);
+    // Only a manager's own account screen reads /me (the account itself, never the learner views).
+    expect(me.every((c) => c === 'GET /me')).toBe(true);
+    expect(me.length).toBe(1);
   });
 
   it('a manager on a species profile has no study start and never opens a session', async () => {
@@ -397,7 +401,6 @@ describe('PilotApp role-aware routes', () => {
       ['learner', '#account'],
       ['manager', '#review'],
       ['manager', '#study'],
-      ['manager', '#account'],
       ['manager', '#manager/other'],
       ['student', '#manager'],
       ['learner', '#manager'],
@@ -651,6 +654,55 @@ describe('PilotApp role-aware routes', () => {
     expect(host.textContent).not.toContain('Trang quản lý sẽ có ở bản sau');
     expect(calls.some((c) => c.includes('/catalog/items?learnable'))).toBe(false);
     expect(host.querySelector('nav a[href="#manager"]')).not.toBeNull();
+  });
+
+  it('manager on #account sees the account screen without learner views', async () => {
+    location.hash = '#account';
+    routes['GET /auth/me'] = () => json(view('manager'));
+    routes['GET /me'] = () =>
+      json({ username: 'ha', displayName: 'Hà', role: 'manager', mustChangePassword: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(location.hash).toBe('#account');
+    expect(host.querySelector('#account-title')?.textContent).toBe('Tài khoản');
+    expect(host.querySelector('.account-stage')).not.toBeNull();
+    expect(calls).toContain('GET /me');
+    expect(calls.filter((c) => /\/me\/(progress|review|mastery|home)/.test(c))).toEqual([]);
+    expect(host.textContent).not.toMatch(/tiến độ|theo dõi/i);
+    expect(host.querySelector('a[href="#account"][aria-current="page"]')).not.toBeNull();
+  });
+
+  it('manager password change from the account page adopts the new csrf (16+ characters)', async () => {
+    location.hash = '#account';
+    routes['GET /auth/me'] = () => json(view('manager'));
+    routes['GET /me'] = () =>
+      json({ username: 'ha', displayName: 'Hà', role: 'manager', mustChangePassword: false });
+    routes['POST /me/password'] = () =>
+      json({ ...view('manager'), csrf: 'c-new-m', displayName: 'Hà', mustChangePassword: false });
+    routes['PATCH /me'] = () =>
+      json({ username: 'ha', displayName: 'Hà Nội', role: 'manager', mustChangePassword: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await click(button(host, 'Đổi mật khẩu'));
+    setValue(field(host, 'Mật khẩu hiện tại'), 'dummy-old-pass-manager');
+    setValue(field(host, 'Mật khẩu mới'), 'short-pass1');
+    setValue(field(host, 'Nhập lại mật khẩu mới'), 'short-pass1');
+    await submit(host);
+    await tick();
+    expect(host.textContent).toContain('ít nhất 16');
+    expect(calls).not.toContain('POST /me/password');
+    setValue(field(host, 'Mật khẩu mới'), 'dummy-new-pass-manager1');
+    setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass-manager1');
+    await submit(host);
+    await tick();
+    expect(host.textContent).toContain('Đã đổi mật khẩu');
+    setValue(field(host, 'Tên hiển thị'), 'Hà Nội');
+    await submit(host);
+    await tick();
+    expect(
+      (inits[calls.lastIndexOf('PATCH /me')]?.headers as Record<string, string>)['X-CSRF-Token'],
+    ).toBe('c-new-m');
   });
 
   it('manager with a forced password change still gets the global password screen', async () => {
