@@ -67,6 +67,15 @@ async function show(data: MeReview, onStart = vi.fn(async () => {}), pending = f
 }
 
 describe('Review from /me/review', () => {
+  it('shows a dash for a malformed due date, never "Invalid Date"', async () => {
+    const { host } = await show({
+      due: [entry(1, { dueAt: 'not-a-date' })],
+      scheduled: [entry(2, { dueAt: '' })],
+    });
+    expect(host.textContent).not.toContain('Invalid Date');
+    expect(host.querySelector('.review-skill-when')!.textContent).toContain('· —');
+  });
+
   it('splits due and scheduled by the server lists and groups skills by species', async () => {
     const { host } = await show({
       due: [entry(1), entry(1, { targetId: 'i1', skill: 'name:ja' }), entry(2)],

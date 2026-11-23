@@ -13,7 +13,10 @@ import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
 
 const STEPS = INTERVAL_DAYS;
-const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
+const day = (iso: string) => {
+  const t = new Date(iso);
+  return Number.isNaN(t.getTime()) ? '—' : t.toLocaleDateString('vi-VN');
+};
 const MAX_BATCH = 30;
 
 /** Entries of one species (or one HS case), in due order. Rows without a catalog item stay apart. */

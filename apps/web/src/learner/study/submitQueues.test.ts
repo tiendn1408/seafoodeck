@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Game, Score } from '../../pilot/api';
 import {
+  adoptingTotal,
   disposeAll,
   flushAll,
   pendingTotal,
@@ -150,6 +151,84 @@ describe('sessionQueue', () => {
     expect(leave()).toBe(false);
     expect(q.pendingCount()).toBe(0);
     expect(sessionQueue('g1', apply)).not.toBe(q);
+  });
+
+  describe('final 409 while the server result is being adopted', () => {
+    const conflict = () => Promise.resolve(json({ message: 'Câu đã nộp.' }, 409));
+    it('is not counted as unsaved while adopt runs, and flushAll waits for adopt', async () => {
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      replies[attempts('q1')] = conflict;
+      replies['GET /learning/sessions/g1'] = () =>
+        gate.then(() =>
+          json({ ...game(), questions: [{ ...game().questions[0], result: score('q1') }] }),
+        );
+      const q = sessionQueue('g1', apply);
+      q.enqueue(job('q1'));
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(q.failures()).toHaveLength(1);
+      expect(pendingTotal()).toBe(0);
+      expect(adoptingTotal()).toBe(1);
+      let done: boolean | null = null;
+      void flushAll(2000).then((v) => (done = v));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(done).toBeNull();
+      release();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(done).toBe(true);
+      expect(q.failures()).toEqual([]);
+      expect(adoptingTotal()).toBe(0);
+    });
+
+    it('counts again when adopt fails', async () => {
+      replies[attempts('q1')] = conflict;
+      replies['GET /learning/sessions/g1'] = () => Promise.resolve(json({ message: 'x' }, 500));
+      const q = sessionQueue('g1', apply);
+      q.enqueue(job('q1'));
+      expect(await flushAll(2000)).toBe(false);
+      expect(pendingTotal()).toBe(1);
+      expect(adoptingTotal()).toBe(0);
+    });
+  });
+
+  describe('one shared online listener', () => {
+    it('adds a single listener for many queues and removes it with the last one', () => {
+      const add = vi.spyOn(window, 'addEventListener');
+      const remove = vi.spyOn(window, 'removeEventListener');
+      const onlineAdds = () => add.mock.calls.filter((c) => c[0] === 'online').length;
+      const onlineRemoves = () => remove.mock.calls.filter((c) => c[0] === 'online').length;
+      sessionQueue('g1', apply);
+      sessionQueue('g2', apply);
+      sessionQueue('g3', apply);
+      expect(onlineAdds()).toBe(1);
+      disposeAll();
+      expect(onlineRemoves()).toBe(1);
+      sessionQueue('g1', apply);
+      expect(onlineAdds()).toBe(2);
+      add.mockRestore();
+      remove.mockRestore();
+    });
+
+    it('the shared listener resends failed network jobs of every queue', async () => {
+      let online = false;
+      replies[attempts('q1')] = () =>
+        online ? Promise.resolve(json(score('q1'))) : Promise.reject(new TypeError('offline'));
+      replies['POST /learning/sessions/g2/questions/q1/attempts'] = () =>
+        online ? Promise.resolve(json(score('q1'))) : Promise.reject(new TypeError('offline'));
+      const a = sessionQueue('g1', apply, { retryMs: [] });
+      const b = sessionQueue('g2', () => {}, { retryMs: [] });
+      a.enqueue(job('q1'));
+      b.enqueue({ ...job('q1'), gameId: 'g2' });
+      await a.flush();
+      await b.flush();
+      online = true;
+      window.dispatchEvent(new Event('online'));
+      await a.flush();
+      await b.flush();
+      expect(a.failures()).toEqual([]);
+      expect(b.failures()).toEqual([]);
+    });
   });
 
   describe('pendingTotal and flushAll', () => {

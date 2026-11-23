@@ -37,8 +37,26 @@ async function sendAnswer(job: Job): Promise<Score> {
   }
 }
 
-type Entry = { queue: SubmitQueue; apply: GameUpdate; stop: () => void };
+type Entry = {
+  queue: SubmitQueue;
+  apply: GameUpdate;
+  stop: () => void;
+  /** Questions whose final 409 is being settled from the server's own result (see `adopt`). */
+  adopting: Map<string, Promise<void>>;
+};
 const queues = new Map<string, Entry>();
+
+// One `online` listener for every queue, added with the first queue and removed with the last.
+const onOnline = () => {
+  for (const { queue } of queues.values())
+    for (const f of queue.failures()) if (isNetworkError(f.error)) queue.enqueue(f.job);
+};
+let listening = false;
+function syncOnlineListener() {
+  if (queues.size && !listening) window.addEventListener('online', onOnline);
+  else if (!queues.size && listening) window.removeEventListener('online', onOnline);
+  listening = queues.size > 0;
+}
 
 /**
  * The background queue of one session, shared by every mount of its study screen so a
@@ -56,7 +74,7 @@ export function sessionQueue(
     return known.queue;
   }
   const queue = createSubmitQueue(sendAnswer, opts);
-  const entry: Entry = { queue, apply: onChange, stop: () => {} };
+  const entry: Entry = { queue, apply: onChange, stop: () => {}, adopting: new Map() };
   queue.subscribe((e) => {
     if (e.kind === 'done') entry.apply((g) => withResult(g, gameId, e.job.questionId, e.score));
     else if (e.kind === 'failed' && (e.error as ApiError).status === 409) adopt(entry, e.job);
@@ -75,17 +93,13 @@ export function sessionQueue(
     if (need) window.addEventListener('beforeunload', warn);
     else window.removeEventListener('beforeunload', warn);
   });
-  // A save that failed for lack of network goes again once the browser is back online.
-  const online = () => {
-    for (const f of queue.failures()) if (isNetworkError(f.error)) queue.enqueue(f.job);
-  };
-  window.addEventListener('online', online);
   entry.stop = () => {
     queue.dispose();
     window.removeEventListener('beforeunload', warn);
-    window.removeEventListener('online', online);
+    entry.adopting.clear();
   };
   queues.set(gameId, entry);
+  syncOnlineListener();
   return queue;
 }
 
@@ -94,7 +108,7 @@ export function sessionQueue(
  * payload): take the server's result instead of leaving the provisional one in place.
  */
 function adopt(entry: Entry, job: Job) {
-  api<Game>(`/learning/sessions/${job.gameId}`)
+  const done = api<Game>(`/learning/sessions/${job.gameId}`)
     .then((fresh) => {
       if (queues.get(job.gameId) !== entry) return;
       const result = fresh.questions.find((q) => q.id === job.questionId)?.result;
@@ -102,31 +116,53 @@ function adopt(entry: Entry, job: Job) {
       entry.apply((g) => withResult(g, job.gameId, job.questionId, result));
       entry.queue.forget(job.questionId);
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => void entry.adopting.delete(job.questionId));
+  entry.adopting.set(job.questionId, done);
 }
 
 /** Stops every session queue (on logout): no more sends, timers or tab-close warnings. */
 export function disposeAll(): void {
   for (const e of queues.values()) e.stop();
   queues.clear();
+  syncOnlineListener();
 }
 
-/** Answers not saved yet across every session: still queued, or failed for good. */
+/**
+ * Answers not saved yet across every session: still queued, or failed for good. A final 409
+ * whose server result is being fetched does not count: the server already holds that answer.
+ */
 export function pendingTotal(): number {
   let n = 0;
-  for (const { queue } of queues.values()) n += queue.pendingCount() + queue.failures().length;
+  for (const e of queues.values())
+    n +=
+      e.queue.pendingCount() +
+      e.queue.failures().filter((f) => !e.adopting.has(f.job.questionId)).length;
+  return n;
+}
+
+/** Server results of final 409s still being fetched. */
+export function adoptingTotal(): number {
+  let n = 0;
+  for (const e of queues.values()) n += e.adopting.size;
   return n;
 }
 
 /**
- * Waits for every session queue to finish sending (before logout). True when every answer
- * reached the server; false when the wait timed out or a save failed for good.
+ * Waits for every session queue to finish sending, and for any server result being adopted
+ * (before logout). True when every answer reached the server; false when the wait timed out
+ * or a save failed for good.
  */
 export async function flushAll(timeoutMs = 5000): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<void>((r) => (timer = setTimeout(r, timeoutMs)));
   try {
-    await Promise.race([Promise.all([...queues.values()].map((e) => e.queue.flush())), timeout]);
+    await Promise.race([
+      Promise.all([...queues.values()].map((e) => e.queue.flush())).then(() =>
+        Promise.all([...queues.values()].flatMap((e) => [...e.adopting.values()])),
+      ),
+      timeout,
+    ]);
   } finally {
     clearTimeout(timer);
   }

@@ -365,6 +365,19 @@ describe('Study session summary after a reload', () => {
     expect(calls.filter((c) => c === 'GET /learning/sessions/g1/summary')).toHaveLength(1);
     expect(host.querySelector('.haul-note')?.textContent).toContain('ôn lại sau 9 ngày');
   });
+  it('a live student session whose results come back with progress [] reads /summary once', async () => {
+    const host = mount(<Host initial={game([card('f1')])} userKind="student" />);
+    await tick();
+    await rate(host, 'Đã nhớ');
+    await click(button(host, 'Xem tổng kết'));
+    await act(async () =>
+      attempts[0].resolve(json(serverScore('f1', 'name:en', { progress: [] }))),
+    );
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c === 'GET /learning/sessions/g1/summary')).toHaveLength(1);
+    expect(host.querySelector('.haul-note')?.textContent).toContain('ôn lại sau 9 ngày');
+  });
   it.each(['trial', 'staff'] as const)('a re-opened %s session never asks for it', async (k) => {
     const host = mount(<Host initial={answered} userKind={k} />);
     await tick();

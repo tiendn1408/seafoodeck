@@ -52,10 +52,18 @@ const caughtNote = (days: number | null) => (days ? `ôn lại sau ${days} ngày
  */
 export function summarizeHaul(game: Game, progress: ProgressEntry[]): HaulSummary {
   // A provisional self-rating has no real target id yet; when another card of the same species
-  // already has one, count it under that target so the species is not listed twice.
-  const realByFront = new Map<string, string>();
+  // already has one, count it under that target so the species is not listed twice. Only when
+  // exactly one real target carries that name: with several it stays a row of its own.
+  const targetsByFront = new Map<string, Set<string>>();
   for (const q of game.questions)
-    if (q.front && q.result && !q.result.provisional) realByFront.set(q.front, q.result.targetId);
+    if (q.front && q.result && !q.result.provisional)
+      targetsByFront.set(
+        q.front,
+        (targetsByFront.get(q.front) ?? new Set<string>()).add(q.result.targetId),
+      );
+  const realByFront = new Map<string, string>();
+  for (const [front, ids] of targetsByFront)
+    if (ids.size === 1) realByFront.set(front, [...ids][0]);
   const rows: Row[] = game.questions.flatMap((q) => {
     const stored = q.result;
     if (!stored) return [];
