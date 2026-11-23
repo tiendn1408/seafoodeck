@@ -33,6 +33,7 @@ const profileItem = {
   media: [],
   taxonomicGroup: 'mollusc',
 };
+const LEARNERS = 'GET /manager/learners?sort=lastStudyAt&dir=desc&page=1&limit=20';
 const MUST = { message: 'Cần đổi mật khẩu trước.', code: 'MUST_CHANGE_PASSWORD' };
 const meHome = (activeSessionId: string | null) => ({
   releaseId: 'rel1',
@@ -340,20 +341,32 @@ describe('PilotApp role-aware routes', () => {
       expect(hashes.length).toBeGreaterThan(1);
       routes['GET /auth/me'] = () => json(v);
       routes['GET /catalog/items/x'] = () => json(profileItem);
-      for (const hash of hashes) {
+      routes[LEARNERS] = () => json({ items: [], total: 0, page: 1, limit: 20 });
+      routes['GET /manager/learners/x'] = () =>
+        json({ id: 'x', username: 'x', displayName: 'Lan', disabled: false });
+      for (const hash of [
+        ...hashes,
+        ...(kind === 'manager' || kind === 'admin' ? ['manager/learner/x'] : []),
+      ]) {
         location.hash = '#' + hash;
         const host = mount(<PilotApp />);
         await tick();
         await tick();
-        expect(location.hash, `${v.role} ${hash}`).toBe('#' + hash);
+        // A manager's home is the learner table.
+        const expected = kind === 'manager' && hash === 'home' ? 'manager' : hash;
+        expect(location.hash, `${v.role} ${hash}`).toBe('#' + expected);
         expect(host.querySelector('.shell')).not.toBeNull();
         visited.push(`${v.role} ${hash}`);
         unmountAll();
       }
     }
     expect(visited).toContain('admin admin/users');
+    expect(visited).toContain('admin manager');
+    expect(visited).toContain('manager manager');
+    expect(visited).toContain('manager manager/learner/x');
     expect(visited).not.toContain('editor admin/users');
     expect(calls).toContain('GET /admin/users?page=1&limit=20');
+    expect(calls).toContain(LEARNERS);
     const me = calls.filter((c) => {
       const p = c.split(' ')[1].split('?')[0];
       return p === '/me' || p.startsWith('/me/');
@@ -384,6 +397,12 @@ describe('PilotApp role-aware routes', () => {
       ['learner', '#account'],
       ['manager', '#review'],
       ['manager', '#study'],
+      ['manager', '#account'],
+      ['manager', '#manager/other'],
+      ['student', '#manager'],
+      ['learner', '#manager'],
+      ['editor', '#manager'],
+      ['student', '#manager/learner/x'],
       ['student', '#admin'],
       ['student', '#admin/users'],
       ['learner', '#admin/users'],
@@ -400,9 +419,11 @@ describe('PilotApp role-aware routes', () => {
       const host = mount(<PilotApp />);
       await tick();
       await tick();
-      expect(location.hash, `${role} ${hash}`).toBe('#home');
-      // The home stage renders; the forbidden page never did.
-      expect(host.querySelector('.home-stage')).not.toBeNull();
+      // Home for everyone but a manager, whose home is the learner table.
+      expect(location.hash, `${role} ${hash}`).toBe(role === 'manager' ? '#manager' : '#home');
+      expect(host.querySelector('.home-stage') !== null, `${role} ${hash}`).toBe(
+        role !== 'manager',
+      );
       expect(host.querySelector('#account-title, .ice-stage')).toBeNull();
       unmountAll();
     }
@@ -421,6 +442,7 @@ describe('PilotApp role-aware routes', () => {
     expect([...tabs!.querySelectorAll('a')].map((a) => a.textContent)).toEqual([
       'Nội dung',
       'Người dùng',
+      'Học viên',
     ]);
     expect(tabs!.querySelector('[aria-current="page"]')?.textContent).toBe('Người dùng');
     expect(host.querySelector('h1')?.textContent).toBe('Người dùng');
@@ -597,12 +619,68 @@ describe('PilotApp role-aware routes', () => {
     expect(sessionStorage.getItem(TRIAL_SESSION_KEY)).toBeNull();
   });
 
-  it('manager on home sees the notice, not the learner home', async () => {
+  it('manager on home goes straight to the learner table (no notice, no learner home)', async () => {
     routes['GET /auth/me'] = () => json(view('manager'));
+    routes[LEARNERS] = () =>
+      json({
+        items: [
+          {
+            id: 'a1',
+            username: 'lan',
+            displayName: 'Lan',
+            disabled: false,
+            learning: 1,
+            solid: 0,
+            avgLevel: 1,
+            lastStudyAt: null,
+            overdue: 0,
+            sessions7d: 0,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      });
     const host = mount(<PilotApp />);
     await tick();
-    expect(host.textContent).toContain('Trang quản lý sẽ có ở bản sau');
+    await tick();
+    expect(location.hash).toBe('#manager');
+    expect(host.querySelector('h1')?.textContent).toBe('Học viên');
+    expect(host.textContent).toContain('Lan');
+    expect(tone(host)).toBe('ice');
+    expect(host.textContent).not.toContain('Trang quản lý sẽ có ở bản sau');
     expect(calls.some((c) => c.includes('/catalog/items?learnable'))).toBe(false);
+    expect(host.querySelector('nav a[href="#manager"]')).not.toBeNull();
+  });
+
+  it('manager with a forced password change still gets the global password screen', async () => {
+    location.hash = '#manager';
+    routes['GET /auth/me'] = () => json(view('manager', { mustChangePassword: true }));
+    const host = mount(<PilotApp />);
+    await tick();
+    expect(host.querySelector('form')).not.toBeNull();
+    expect(host.textContent).toContain('mật khẩu');
+    expect(host.querySelector('nav')).toBeNull();
+    expect(calls.some((c) => c.startsWith('GET /manager/'))).toBe(false);
+  });
+
+  it('a manager opening a learner sees the stub with the name and a way back', async () => {
+    location.hash = '#manager/learner/a1';
+    routes['GET /auth/me'] = () => json(view('manager'));
+    routes['GET /manager/learners/a1'] = () =>
+      json({ id: 'a1', username: 'lan', displayName: 'Lan Nguyễn', disabled: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(host.querySelector('h1')?.textContent).toBe('Lan Nguyễn');
+    expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
+  });
+
+  it('an admin on home keeps the learner home (only managers are redirected)', async () => {
+    routes['GET /auth/me'] = () => json(view('admin'));
+    mount(<PilotApp />);
+    await tick();
+    expect(location.hash).toBe('#home');
   });
 
   it('student reaches the account page; shell gets the display name', async () => {

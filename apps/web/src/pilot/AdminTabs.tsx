@@ -1,19 +1,20 @@
 import './users.css';
 
 /**
- * "Nội dung | Người dùng" switch at the top of the admin area (admins only). `disabled` while an
+ * "Nội dung | Người dùng | Học viên" switch at the top of the admin area (admins only). `disabled` while an
  * admin's own temporary password is on screen: leaving would lose it.
  */
 export function AdminTabs({
   current,
   disabled = false,
 }: {
-  current: 'content' | 'users';
+  current: 'content' | 'users' | 'learners';
   disabled?: boolean;
 }) {
   const tabs = [
     { id: 'content', href: '#admin', label: 'Nội dung' },
     { id: 'users', href: '#admin/users', label: 'Người dùng' },
+    { id: 'learners', href: '#manager', label: 'Học viên' },
   ] as const;
   return (
     <nav className="admin-tabs" aria-label="Khu quản trị">

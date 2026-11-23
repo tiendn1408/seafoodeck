@@ -486,7 +486,7 @@ describe('UsersAdmin row actions', () => {
       0,
     );
     const tabs = host.querySelectorAll('nav[aria-label="Khu quản trị"] > *');
-    expect(tabs).toHaveLength(2);
+    expect(tabs).toHaveLength(3);
     for (const a of tabs) {
       expect(a.tagName, a.textContent!).toBe('SPAN');
       expect(a.getAttribute('aria-disabled'), a.textContent!).toBe('true');
@@ -525,7 +525,7 @@ describe('UsersAdmin row actions', () => {
     ]);
     expect(removed.mock.calls.some(([t, f]) => t === 'beforeunload' && f === unload)).toBe(true);
     expect(host.querySelector('nav[aria-label="Khu quản trị"] [aria-disabled]')).toBeNull();
-    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a')).toHaveLength(2);
+    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a')).toHaveLength(3);
   });
 
   it('the reset confirm waits while the list is loading', async () => {

@@ -19,7 +19,8 @@ import { Login, StaffLogin } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
-import { ManagerNotice } from '../learner/ManagerNotice';
+import { ManagerLearners } from '../manager/ManagerLearners';
+import { ManagerLearnerDetail } from '../manager/ManagerLearnerDetail';
 import { kindOf, routeAllowed } from '../learner/role';
 import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
@@ -122,14 +123,17 @@ export default function PilotApp() {
   const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
   const kind = kindOf(auth);
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
-  const permitted = !auth || forced || routeAllowed(kind, route);
+  // A manager's home is the learner table: its own rule, ahead of the general redirect.
+  const managerHome = !!auth && !forced && kind === 'manager' && route === 'home';
+  const permitted = !auth || forced || managerHome || routeAllowed(kind, route);
   // Stage wrappers follow the route only once it is signed in, permitted for this kind and not
   // forced: the forced password screen uses the plain content wrapper, like the login screens.
-  const staged = signedIn && permitted && !forced;
+  const staged = signedIn && permitted && !forced && !managerHome;
   const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
-    if (!permitted) location.replace('#home');
-  }, [permitted]);
+    if (managerHome) location.replace('#manager');
+    else if (!permitted) location.replace('#home');
+  }, [permitted, managerHome]);
   // Only students have server-side progress; trial and staff keep the tab's session id.
   const student = kind === 'student';
   function opened(g: Game) {
@@ -384,9 +388,12 @@ export default function PilotApp() {
               <Login onLogin={onLogin} />
             );
           })()
-        ) : !permitted ? null : (
+        ) : !permitted || managerHome ? null : (
           <>
-            {route === 'home' && kind === 'manager' && <ManagerNotice />}
+            {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
+            {route.startsWith('manager/learner/') && (
+              <ManagerLearnerDetail key={route} id={route.split('/')[2]} />
+            )}
             {route === 'home' && kind !== 'manager' && (
               <Home
                 kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}

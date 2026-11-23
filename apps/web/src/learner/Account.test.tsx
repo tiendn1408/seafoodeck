@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { Account } from './Account';
 import { TrialNudge } from './TrialNudge';
-import { ManagerNotice } from './ManagerNotice';
 import { clearMe } from './meStore';
 import PilotApp from '../pilot/PilotApp';
 import { setAuthRequiredHandler } from '../pilot/api';
@@ -234,13 +233,5 @@ describe('TrialNudge', () => {
     expect(host.textContent).toContain('Đăng nhập để lưu tiến độ');
     await click(button(host, 'Đăng nhập'));
     expect(onSignIn).toHaveBeenCalledOnce();
-  });
-});
-
-describe('ManagerNotice', () => {
-  it('says the manager page comes later and points to the library', () => {
-    const host = mount(<ManagerNotice />);
-    expect(host.textContent).toContain('Trang quản lý sẽ có ở bản sau. Bạn có thể xem Thư viện.');
-    expect(host.querySelector('a[href="#library"]')).not.toBeNull();
   });
 });

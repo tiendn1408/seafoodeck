@@ -7,6 +7,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Sun,
+  Users,
   Target,
   UserRound,
 } from 'lucide-react';
@@ -20,8 +21,9 @@ const tabs = [
   { id: 'review', label: 'Ôn tập', Icon: RotateCcw },
   { id: 'progress', label: 'Tiến độ', Icon: Target },
 ] as const;
+const learnersTab = { id: 'manager', label: 'Học viên', Icon: Users } as const;
 const adminTab = { id: 'admin', label: 'Quản trị', Icon: ShieldCheck } as const;
-type Tab = (typeof tabs)[number] | typeof adminTab;
+type Tab = (typeof tabs)[number] | typeof learnersTab | typeof adminTab;
 /** Tabs per kind; staff and admins also get "Quản trị" (a top tab on desktop, a header icon on phones). */
 const tabsFor: Record<Kind, readonly Tab[]> = {
   student: tabs,
@@ -29,19 +31,20 @@ const tabsFor: Record<Kind, readonly Tab[]> = {
   staff: tabs.slice(0, 2),
   admin: tabs.slice(0, 2),
   trial: tabs.slice(0, 2),
-  manager: tabs.slice(1, 2),
+  manager: [learnersTab, tabs[1]],
   guest: [],
 };
 /** Honest label for an internal release; phones show a shorter one, never a second line. */
 const internalLabel = 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt';
 
 /** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện",
- * admin sub-pages (admin/users) to "Quản trị".
+ * admin sub-pages (admin/users) to "Quản trị", learner details to "Học viên".
  * "account" is owned by no tab: the header's account entry is marked current instead. */
 export function tabFor(route: string): string {
   if (route === 'study') return 'home';
   if (route.startsWith('profile/')) return 'library';
   if (route.startsWith('admin/')) return 'admin';
+  if (route.startsWith('manager/')) return 'manager';
   return route;
 }
 

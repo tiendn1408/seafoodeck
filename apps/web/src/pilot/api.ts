@@ -206,6 +206,32 @@ export interface AdminUserPage {
   page: number;
   limit: number;
 }
+/** One row of GET /manager/learners. */
+export interface LearnerRow {
+  id: string;
+  username: string;
+  displayName: string | null;
+  disabled: boolean;
+  learning: number;
+  solid: number;
+  avgLevel: number | null;
+  lastStudyAt: string | null;
+  overdue: number;
+  sessions7d: number;
+}
+export interface LearnerPage {
+  items: LearnerRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+/** GET /manager/learners/:id. */
+export interface LearnerSummary {
+  id: string;
+  username: string;
+  displayName: string | null;
+  disabled: boolean;
+}
 export class ApiError extends Error {
   constructor(
     message: string,

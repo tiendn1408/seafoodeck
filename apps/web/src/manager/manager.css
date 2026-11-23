@@ -1,0 +1,176 @@
+/*
+ * Manager area: the learner table. A reading surface on ice; it reuses the admin users
+ * vocabulary (users.css) and adds only what the table needs. Salmon stays the one primary action.
+ */
+.manager-learners .manager-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+.manager-learners .manager-tools .users-search {
+  flex: 1 1 16rem;
+}
+.manager-learners .manager-sortfield {
+  flex: 0 1 14rem;
+}
+.manager-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+.manager-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--ice-muted);
+  border-radius: var(--radius-pill);
+  background: var(--ice-surface);
+  color: var(--ice-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.manager-chip:hover {
+  border-color: var(--ice-focus);
+}
+/* On state is a filled chip with a check mark, not colour alone. */
+.manager-chip[aria-pressed='true'] {
+  border-color: var(--ice-ink);
+  background: var(--ice-ink);
+  color: var(--ice-bg);
+}
+.manager-chip[aria-pressed='true']::before {
+  content: '✓';
+}
+.manager-switch {
+  margin-left: auto;
+}
+.manager-csv {
+  text-decoration: none;
+}
+
+.manager-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+.manager-table th,
+.manager-table td {
+  white-space: nowrap;
+}
+.manager-table th.manager-num,
+.manager-table td.manager-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.manager-table .manager-person {
+  white-space: normal;
+  min-width: 11rem;
+}
+.manager-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.manager-sort:hover {
+  color: var(--ice-ink);
+}
+.manager-sort::after {
+  content: '↕';
+  opacity: 0.5;
+}
+th[aria-sort='ascending'] .manager-sort::after {
+  content: '↑';
+  opacity: 1;
+}
+th[aria-sort='descending'] .manager-sort::after {
+  content: '↓';
+  opacity: 1;
+}
+th[aria-sort='ascending'],
+th[aria-sort='descending'] {
+  color: var(--ice-ink);
+}
+.manager-open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ice-ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: var(--ice-line);
+  text-underline-offset: 4px;
+}
+.manager-open:hover {
+  text-decoration-color: var(--ice-focus);
+}
+.manager-user {
+  display: block;
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+}
+
+/* Narrow screens: stacked cards. */
+.manager-cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.manager-card {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--ice-line);
+  border-radius: var(--radius-md);
+  background: var(--ice-surface);
+  box-shadow: var(--shadow-raise);
+}
+.manager-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+.manager-card dt {
+  color: var(--ice-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.manager-card dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.manager-card dd.manager-wide {
+  grid-column: 1 / -1;
+}
+
+.manager-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-3);
+  color: var(--ice-ink);
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .manager-switch {
+    margin-left: 0;
+  }
+  .manager-learners .manager-sortfield {
+    flex: 1 1 100%;
+  }
+}

@@ -69,9 +69,11 @@ describe('AppShell navigation by kind (phone)', () => {
     expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
     expect(host.querySelector('a[href="#account"]')).toBeNull();
   });
-  it('manager: Thư viện only', () => {
-    const host = shell('deep', 'manager');
-    expect(navLabels(host)).toEqual(['Thư viện']);
+  it('manager: Học viên and Thư viện in one bottom bar', () => {
+    const host = shell('ice', 'manager', 'manager');
+    expect(host.querySelectorAll('nav')).toHaveLength(1);
+    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
+    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
     expect(host.querySelector('a[href="#account"]')).toBeNull();
     expect(host.querySelector('a[href="#admin"]')).toBeNull();
   });
@@ -118,8 +120,13 @@ describe('AppShell navigation by kind (desktop)', () => {
   it('trial: Học and Thư viện', () => {
     expect(navLabels(desktop('trial'))).toEqual(['Học', 'Thư viện']);
   });
-  it('manager: Thư viện only', () => {
-    expect(navLabels(desktop('manager'))).toEqual(['Thư viện']);
+  it('manager: Học viên and Thư viện in one top nav; learner details keep Học viên current', () => {
+    const host = desktop('manager', 'manager/learner/x');
+    expect(host.querySelectorAll('nav')).toHaveLength(1);
+    expect(host.querySelector('.shell-tabbar')).toBeNull();
+    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
+    expect(tabFor('manager/learner/x')).toBe('manager');
+    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
   });
   it('staff: Học, Thư viện plus Quản trị', () => {
     expect(navLabels(desktop('staff'))).toEqual(['Học', 'Thư viện', 'Quản trị']);

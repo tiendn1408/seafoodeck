@@ -30,10 +30,19 @@ describe('routeAllowed', () => {
     for (const r of ['review', 'progress', 'account', 'admin'])
       expect(routeAllowed('trial', r)).toBe(false);
   });
-  it('managers get the notice on home and the library only', () => {
-    for (const r of ['home', 'library', 'profile/x']) expect(routeAllowed('manager', r)).toBe(true);
-    for (const r of ['study', 'review', 'progress', 'account', 'admin'])
-      expect(routeAllowed('manager', r)).toBe(false);
+  it('managers get the learner table, learner details and the library; no study, /me pages or account', () => {
+    for (const r of ['home', 'manager', 'manager/learner/x', 'library', 'profile/x'])
+      expect(routeAllowed('manager', r), r).toBe(true);
+    for (const r of ['study', 'review', 'progress', 'account', 'admin', 'admin/users', 'manager/x'])
+      expect(routeAllowed('manager', r), r).toBe(false);
+  });
+  it('only managers and admins may open the manager routes', () => {
+    for (const kind of ['student', 'trial', 'staff'] as Kind[])
+      for (const r of ['manager', 'manager/learner/x'])
+        expect(routeAllowed(kind, r), `${kind} ${r}`).toBe(false);
+    for (const kind of ['manager', 'admin'] as Kind[])
+      for (const r of ['manager', 'manager/learner/x'])
+        expect(routeAllowed(kind, r), `${kind} ${r}`).toBe(true);
   });
   it('staff get Học, Thư viện (with study and profiles) and admin; no /me-backed pages', () => {
     for (const r of ['home', 'library', 'study', 'profile/x', 'admin'])
@@ -42,10 +51,9 @@ describe('routeAllowed', () => {
     for (const r of ['review', 'progress', 'account']) expect(routeAllowed('staff', r)).toBe(false);
   });
   it('admins get what staff get plus the users screen; still no /me-backed pages', () => {
-    for (const r of ['home', 'library', 'study', 'profile/x', 'admin', 'admin/users'])
+    for (const r of ['home', 'library', 'study', 'profile/x', 'admin', 'admin/users', 'manager'])
       expect(routeAllowed('admin', r)).toBe(true);
-    for (const r of ['review', 'progress', 'account', 'manager', 'manager/learner/x'])
-      expect(routeAllowed('admin', r)).toBe(false);
+    for (const r of ['review', 'progress', 'account']) expect(routeAllowed('admin', r)).toBe(false);
   });
   it('only admins may open admin/users', () => {
     const table: [Kind, boolean][] = [
@@ -61,7 +69,15 @@ describe('routeAllowed', () => {
     }
   });
   it('routesFor lists the fixed routes per kind', () => {
-    expect(routesFor('admin')).toEqual(['home', 'library', 'study', 'admin', 'admin/users']);
+    expect(routesFor('admin')).toEqual([
+      'home',
+      'library',
+      'study',
+      'admin',
+      'admin/users',
+      'manager',
+    ]);
+    expect(routesFor('manager')).toEqual(['home', 'manager', 'library']);
     expect(routesFor('staff')).toEqual(['home', 'library', 'study', 'admin']);
     expect(routesFor('guest')).toEqual([]);
   });
