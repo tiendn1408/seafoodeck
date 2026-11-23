@@ -159,3 +159,45 @@ describe('Review from /me/review', () => {
     expect(button(host, 'Thử lại')).toBeTruthy();
   });
 });
+
+describe('Review with a custom source, read-only', () => {
+  it('reads the given source, has no start button or learning prompts', async () => {
+    routes['GET /m/review'] = () =>
+      json({
+        due: [entry(1)],
+        scheduled: [entry(2, { dueAt: '2026-12-01T00:00:00.000Z' })],
+      });
+    routes['GET /m/mastery'] = () => json({});
+    const onStart = vi.fn(async () => {});
+    const host = mount(
+      <Review
+        userId="m1"
+        readOnly
+        source={{ progress: '/m/progress', mastery: '/m/mastery', review: '/m/review' }}
+        pending={false}
+        onStart={onStart}
+      />,
+    );
+    await tick();
+    await tick();
+    expect(calls.map((c) => c.key).filter((k) => !k.includes('catalog'))).toEqual(
+      expect.arrayContaining(['GET /m/review', 'GET /m/mastery']),
+    );
+    expect(calls.some((c) => c.key.includes('/me/'))).toBe(false);
+    expect(host.querySelector('.review-action button')).toBeNull();
+    expect(host.textContent).not.toMatch(/Ôn \d+ mục/);
+    expect(host.textContent).not.toContain('Thả lưới');
+    expect(host.textContent).not.toContain('của bạn');
+    expect(host.querySelector('h1')).toBeNull();
+    expect(host.textContent).toContain('Đến hạn');
+    expect(onStart).not.toHaveBeenCalled();
+  });
+  it('read-only empty state has no link to the learner home', async () => {
+    routes['GET /me/review'] = () => json({ due: [], scheduled: [] });
+    const host = mount(<Review userId="m1" readOnly pending={false} onStart={async () => {}} />);
+    await tick();
+    await tick();
+    expect(host.textContent).toContain('Chưa có mục ôn tập');
+    expect(host.querySelector('a[href="#home"]')).toBeNull();
+  });
+});

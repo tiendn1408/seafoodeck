@@ -391,8 +391,8 @@ export default function PilotApp() {
         ) : !permitted || managerHome ? null : (
           <>
             {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
-            {route.startsWith('manager/learner/') && (
-              <ManagerLearnerDetail key={route} id={route.split('/')[2]} />
+            {route.startsWith('manager/learner/') && auth.userId !== undefined && (
+              <ManagerLearnerDetail key={route} id={route.split('/')[2]} userId={auth.userId} />
             )}
             {route === 'home' && kind !== 'manager' && (
               <Home

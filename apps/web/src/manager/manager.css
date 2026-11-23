@@ -174,3 +174,23 @@ th[aria-sort='descending'] {
     flex: 1 1 100%;
   }
 }
+
+/* Learner detail header: account facts under the name. */
+.manager-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-3) 0 0;
+}
+.manager-meta dt {
+  color: var(--ice-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.manager-meta dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.manager-detail h1:focus {
+  outline: none;
+}

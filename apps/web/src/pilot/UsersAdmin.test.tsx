@@ -91,6 +91,15 @@ describe('UsersAdmin list', () => {
     expect(lan.querySelector('td > div.users-actions')?.querySelectorAll('button')).toHaveLength(3);
   });
 
+  it('student rows link to the learner progress screen; other roles do not', async () => {
+    const host = await screen();
+    const link = rowOf(host, 'u2').querySelector('a');
+    expect(link?.getAttribute('href')).toBe('#manager/learner/u2');
+    expect(link?.textContent).toContain('Xem tiến độ');
+    expect(rowOf(host, 'u3').querySelector('a')).toBeNull();
+    expect(rowOf(host, 'me').querySelector('a')).toBeNull();
+  });
+
   it('ignores a slower, older list response that arrives after a newer one', async () => {
     let releaseOld: () => void = () => {};
     routes['GET /admin/users?role=manager&page=1&limit=20'] = () =>

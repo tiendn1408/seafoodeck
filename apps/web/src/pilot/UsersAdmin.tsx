@@ -388,6 +388,14 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                       </td>
                       <td>
                         <div className="users-actions">
+                          {u.role === 'student' && (
+                            <a
+                              className="users-secondary"
+                              href={`#manager/learner/${encodeURIComponent(u.id)}`}
+                            >
+                              Xem tiến độ<span className="users-sr"> {u.username}</span>
+                            </a>
+                          )}
                           {u.disabled ? (
                             <button
                               type="button"

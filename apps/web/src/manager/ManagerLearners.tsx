@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { api, type LearnerPage, type LearnerRow } from '../pilot/api';
 import { AdminTabs } from '../pilot/AdminTabs';
 import { ErrorNote } from '../learner/ErrorNote';
@@ -58,6 +58,7 @@ export function relativeDay(iso: string, now = Date.now()): string {
 }
 
 function Last({ at }: { at: string | null }) {
+  if (at && Number.isNaN(new Date(at).getTime())) return <span className="users-muted">—</span>;
   return at ? (
     <time dateTime={at} title={fullTime.format(new Date(at))}>
       {relativeDay(at)}
@@ -107,7 +108,6 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
     [settled, setSettled] = useState<{ key: string; error: string } | null>(null);
   const narrow = useMedia('(max-width: 599.98px)');
   const ids = useId();
-  const head = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -176,9 +176,7 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
       {admin && <AdminTabs current="learners" />}
       <header className="users-head">
         <div>
-          <h1 ref={head} tabIndex={-1}>
-            Học viên
-          </h1>
+          <h1>Học viên</h1>
           <p>Theo dõi ai đang học, ai lâu chưa học và ai còn mục quá hạn.</p>
         </div>
         <a className="users-secondary manager-csv" href={csvHref}>
@@ -284,6 +282,20 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
                     <div>
                       <dt>Đang học</dt>
                       <dd>{r.learning}</dd>
+                    </div>
+                    <div>
+                      <dt>Đã vững</dt>
+                      <dd>{r.solid}</dd>
+                    </div>
+                    <div>
+                      <dt>Mức nhớ TB</dt>
+                      <dd>
+                        <Avg v={r.avgLevel} />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Phiên 7 ngày</dt>
+                      <dd>{r.sessions7d}</dd>
                     </div>
                     <div>
                       <dt>Quá hạn</dt>

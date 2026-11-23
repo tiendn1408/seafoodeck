@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { ManagerLearners } from './ManagerLearners';
-import { ManagerLearnerDetail } from './ManagerLearnerDetail';
 import { button, click, mount, setValue, unmountAll } from '../learner/testDom';
 
 const json = (body: unknown, status = 200) =>
@@ -237,19 +236,28 @@ describe('ManagerLearners on a narrow screen', () => {
     });
     expect(last()).toContain('sort=name&dir=asc');
   });
+
+  it('shows solid, average level and sessions of 7 days compactly on each card', async () => {
+    media(true);
+    const host = await open();
+    const lan = host.querySelector<HTMLElement>('li[data-learner="lan"]')!;
+    for (const label of ['Đã vững', 'Mức nhớ TB', 'Phiên 7 ngày']) {
+      expect(lan.textContent).toContain(label);
+    }
+    expect(lan.textContent).toContain('2,5');
+    expect(host.querySelector('[data-learner="binh"]')?.textContent).toContain('Chưa có');
+  });
 });
 
-describe('ManagerLearnerDetail (stub until the detail screen)', () => {
-  it('shows the learner name and a link back to #manager', async () => {
-    const host = mount(<ManagerLearnerDetail id="lan" />);
-    await tick();
-    expect(host.querySelector('h1')?.textContent).toBe('Lan Nguyễn');
-    expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
-  });
-  it('an unknown learner shows the error with a way back', async () => {
-    const host = mount(<ManagerLearnerDetail id="nope" />);
-    await tick();
-    expect(host.querySelector('[role="alert"]')).not.toBeNull();
-    expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
+describe('ManagerLearners bad dates', () => {
+  it('a malformed last-study date shows a dash instead of crashing', async () => {
+    list = () => page([learner('lan', { lastStudyAt: 'not-a-date' })]);
+    const host = await open();
+    const row = host.querySelector<HTMLElement>('tr[data-learner="lan"]')!;
+    expect(row.textContent).toContain('—');
+    expect(row.textContent).not.toContain('Invalid');
+    media(true);
+    const narrow = await open();
+    expect(narrow.querySelector('li[data-learner="lan"]')?.textContent).toContain('—');
   });
 });

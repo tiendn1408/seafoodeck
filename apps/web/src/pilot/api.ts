@@ -231,6 +231,8 @@ export interface LearnerSummary {
   username: string;
   displayName: string | null;
   disabled: boolean;
+  createdAt?: string;
+  lastLoginAt?: string | null;
 }
 export class ApiError extends Error {
   constructor(

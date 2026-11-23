@@ -664,7 +664,7 @@ describe('PilotApp role-aware routes', () => {
     expect(calls.some((c) => c.startsWith('GET /manager/'))).toBe(false);
   });
 
-  it('a manager opening a learner sees the stub with the name and a way back', async () => {
+  it('a manager opening a learner sees the detail with the name and a way back', async () => {
     location.hash = '#manager/learner/a1';
     routes['GET /auth/me'] = () => json(view('manager'));
     routes['GET /manager/learners/a1'] = () =>
@@ -672,7 +672,7 @@ describe('PilotApp role-aware routes', () => {
     const host = mount(<PilotApp />);
     await tick();
     await tick();
-    expect(host.querySelector('h1')?.textContent).toBe('Lan Nguyễn');
+    expect(host.querySelector('h1')?.textContent).toBe('Học viên: Lan Nguyễn');
     expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
   });
 

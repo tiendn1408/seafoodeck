@@ -23,6 +23,18 @@ export function refreshMe(path?: string): void {
   for (const r of [...refetchers]) if (path === undefined || r.path === path) r.run();
 }
 
+/** Where a progress/review screen reads from: the signed-in learner (`/me/...`) or, for a manager, one learner. */
+export interface LearnerSource {
+  progress: string;
+  mastery: string;
+  review: string;
+}
+export const ME_SOURCE: LearnerSource = {
+  progress: '/me/progress',
+  mastery: '/me/mastery',
+  review: '/me/review',
+};
+
 export function useMe<T>(path: string, userId: string | undefined) {
   const key = userId === undefined ? null : `${userId}:${path}`;
   const [, bump] = useReducer((n: number) => n + 1, 0);

@@ -189,3 +189,28 @@ describe('Progress from /me/progress', () => {
     expect(host.textContent).toContain('Chưa có phiên nào');
   });
 });
+
+describe('Progress with a custom source, read-only', () => {
+  const source = {
+    progress: '/manager/learners/x/progress',
+    mastery: '/manager/learners/x/mastery',
+    review: '/manager/learners/x/review',
+  };
+  it('reads from the given source (not /me), keeps achievements, hides the library link', async () => {
+    routes['GET /manager/learners/x/progress'] = () => json(progress);
+    routes['GET /manager/learners/x/mastery'] = () => json(mastery);
+    const host = mount(<Progress userId="m1" source={source} readOnly />);
+    await tick();
+    await tick();
+    expect([...new Set(calls)].sort()).toEqual([
+      'GET /catalog/overview',
+      'GET /manager/learners/x/mastery',
+      'GET /manager/learners/x/progress',
+    ]);
+    expect(host.textContent).toContain('Thành tích');
+    expect(host.textContent).toContain('10 phiên ôn');
+    expect(host.querySelector('h1')).toBeNull();
+    expect(host.textContent).not.toContain('của bạn');
+    expect(host.querySelector('a[href="#library"]')).toBeNull();
+  });
+});
