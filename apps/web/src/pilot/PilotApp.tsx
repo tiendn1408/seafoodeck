@@ -10,26 +10,30 @@ import {
 } from './api';
 import { confirmLeave, leaveGuarded, setLeaveGuard } from './leaveGuard';
 import { stopAudio } from './Media';
-import { Admin } from './Admin';
-import { UsersAdmin } from './UsersAdmin';
-import { AppShell } from '../learner/AppShell';
+import { lazyScreen } from './lazyScreen';
+import { roleChunks } from './roleChunks';
+// The admin and manager styles stay in the main stylesheet, at the place they had before those
+// screens became lazy chunks, so the cascade (and every screen's look) is unchanged. They hold
+// class rules only, no admin code or endpoints. Progress and Review are imported where the
+// manager detail used to pull them in, for the same reason (the built CSS is byte-identical).
+import './users.css';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
+import { AppShell } from '../learner/AppShell';
 import { Login, StaffLogin } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
-import { ManagerLearners } from '../manager/ManagerLearners';
-import { ManagerLearnerDetail } from '../manager/ManagerLearnerDetail';
+import '../manager/manager.css';
+import { Progress } from '../learner/Progress';
+import { Review } from '../learner/Review';
 import { kindOf, routeAllowed } from '../learner/role';
 import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
-import { Review } from '../learner/Review';
 import { useMe } from '../learner/meStore';
 import type { MeMastery } from './api';
-import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
 import { adoptingTotal, disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
@@ -58,6 +62,12 @@ function rememberedSession(): string | null {
 function refreshProgress() {
   for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
 }
+// Staff and manager screens: separate chunks, downloaded only when the route below renders them,
+// which happens after the login, forced-password and `permitted` checks for the signed-in kind.
+const Admin = lazyScreen(() => roleChunks.admin());
+const UsersAdmin = lazyScreen(() => roleChunks.users());
+const ManagerLearners = lazyScreen(() => roleChunks.learners());
+const ManagerLearnerDetail = lazyScreen(() => roleChunks.learner());
 /** Library with server mastery for students; other kinds pass an idle id, so no /me request is made. */
 function LibraryRoute({
   userId,
