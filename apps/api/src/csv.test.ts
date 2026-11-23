@@ -1,12 +1,30 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { csvCell, toCsv } from './csv';
+import { csvCell, localMinute, toCsv } from './csv';
 
 test('csvCell: formula starters get a leading quote', () => {
   for (const v of ['=SUM(A1)', '+1', '-1', '@x', '\tx', '\rx', '\nx'])
     assert.ok(csvCell(v).replace(/^"/, '').startsWith("'"), JSON.stringify(v));
   assert.equal(csvCell('=SUM(A1)'), "'=SUM(A1)");
   assert.equal(csvCell('\tx'), "'\tx");
+});
+test('csvCell: every C0 control character at the start is neutralised', () => {
+  for (let c = 0; c < 0x20; c++) {
+    const v = String.fromCharCode(c) + 'x';
+    assert.ok(csvCell(v).replace(/^"/, '').startsWith("'"), `U+${c.toString(16)}`);
+  }
+  assert.equal(csvCell('\u0000=1'), "'\u0000=1");
+  assert.equal(csvCell('\u001fx'), "'\u001fx");
+  // A control character later in the cell is left alone; a space or letter start is plain.
+  assert.equal(csvCell('a\u0001'), 'a\u0001');
+  assert.equal(csvCell(' =1'), ' =1');
+});
+test('localMinute: Ho Chi Minh wall time to the minute, null stays empty', () => {
+  assert.equal(localMinute('2026-06-09T03:01:00.000Z'), '2026-06-09 10:01');
+  assert.equal(localMinute('2026-12-31T17:30:59.999Z'), '2027-01-01 00:30');
+  assert.equal(localMinute('2026-01-05T00:00:00.000Z'), '2026-01-05 07:00');
+  assert.equal(localMinute(null), null);
+  assert.equal(localMinute('not-a-date'), null);
 });
 test('csvCell: quoting, nulls, numbers, unicode', () => {
   assert.equal(csvCell('a,b'), '"a,b"');

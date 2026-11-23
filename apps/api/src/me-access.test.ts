@@ -765,7 +765,7 @@ const an = (extra: Record<string, unknown> = {}): Row => ({
   mustChangePassword: false,
   ...extra,
 });
-const expiredMessage = 'Phiên hết hạn. Vui lòng nhập lại mã mời.';
+const expiredMessage = 'Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.';
 
 test('locked user: GET /catalog/overview is 401 with the expired-session message and the session row is deleted', async () => {
   const mem = memoryDb([an({ disabledAt: new Date() })]);

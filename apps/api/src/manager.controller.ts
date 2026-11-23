@@ -20,7 +20,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { Db } from './db';
-import { toCsv } from './csv';
+import { localMinute, toCsv } from './csv';
 import {
   LearnerPageResponse,
   ManagerLearnerResponse,
@@ -225,7 +225,7 @@ export class ManagerController {
         r.learning,
         r.solid,
         r.avgLevel,
-        r.lastStudyAt,
+        localMinute(r.lastStudyAt),
         r.overdue,
         r.sessions7d,
         r.disabled ? 'Đã khóa' : 'Đang hoạt động',
@@ -255,12 +255,12 @@ export class ManagerController {
   @ApiOkResponse({ type: MeReviewResponse })
   @Get('learners/:id/review')
   async review(@Req() req: ActorRequest, @Param('id') id: string) {
-    return this.svc.review(req.actor, Date.now(), (await this.student(req, id)).id);
+    return this.svc.review(req.actor, this.now(), (await this.student(req, id)).id);
   }
   @ApiOkResponse({ type: MeProgressResponse })
   @Get('learners/:id/progress')
   async progress(@Req() req: ActorRequest, @Param('id') id: string) {
-    return this.svc.progress(req.actor, Date.now(), (await this.student(req, id)).id);
+    return this.svc.progress(req.actor, this.now(), (await this.student(req, id)).id);
   }
   @ApiOkResponse({
     description: 'Status and mastery level per itemId of the current catalog.',
@@ -271,6 +271,6 @@ export class ManagerController {
   })
   @Get('learners/:id/mastery')
   async mastery(@Req() req: ActorRequest, @Param('id') id: string) {
-    return this.svc.mastery(req.actor, Date.now(), (await this.student(req, id)).id);
+    return this.svc.mastery(req.actor, this.now(), (await this.student(req, id)).id);
   }
 }

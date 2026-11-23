@@ -55,7 +55,7 @@ export function revokeUserSessions(
 export type ActorRequest = Request & { actor: AuthSession };
 const cookie = 'seafoodeck_session';
 /** One wording for expired, missing and locked sessions alike, so a lock is never revealed. */
-export const SESSION_EXPIRED = 'Phiên hết hạn. Vui lòng nhập lại mã mời.';
+export const SESSION_EXPIRED = 'Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.';
 const ttlMs = () => Number(process.env.AUTH_TTL_HOURS ?? 24) * 3600000;
 type AccountState = { disabledAt: Date | null; mustChangePassword: boolean } | null;
 const accountCache = Symbol('seafoodeck.account');

@@ -211,12 +211,13 @@ test('learner without answers: empty screens, no error', async () => {
   assert.ok(Object.values(m).every((e) => e.status === 'new' && e.level === 0));
 });
 
-test('per-learner progress equals /me for that learner, differs between learners, no leaks', async () => {
+test('per-learner progress equals /me for that learner, differs between learners, no leaks', async (t) => {
   const me = new MeProgressController(svc);
   const own = (id: string) =>
     ({ actor: { ...asManager.actor, role: 'student', userId: id } }) as ActorRequest;
-  // /me uses the learner's own session; the manager view must match exactly. Time is whatever
-  // Date.now() is for both, so compare with a pinned clock via the service for determinism.
+  // /me uses the learner's own session and Date.now(); the manager view uses its injected clock.
+  // Pin both to NOW so the comparison never straddles a day or a due date.
+  t.mock.timers.enable({ apis: ['Date'], now: NOW });
   const meP = await me.progress(own('s1'));
   const mgP = await controller.progress(asManager, 's1');
   assert.deepEqual(mgP, meP);
@@ -233,6 +234,34 @@ test('per-learner progress equals /me for that learner, differs between learners
     await controller.mastery(asManager, 's1'),
   ]);
   assert.ok(!/rarity|marketPrice|hsHints|provenance|tradeRestriction|passwordHash/.test(all));
+});
+
+test('learner detail views read the injected clock, not the wall clock', async () => {
+  // s1 has one entry due at NOW-2d and one at NOW+5d; five days before NOW neither is due.
+  controller.now = () => NOW - 5 * DAY;
+  try {
+    const r = await controller.review(asManager, 's1');
+    assert.equal(r.due.length, 0);
+    assert.equal(r.scheduled.length, 2);
+    assert.deepEqual(
+      await controller.progress(asManager, 's1'),
+      await svc.progress(asManager.actor, NOW - 5 * DAY, 's1'),
+    );
+    assert.deepEqual(
+      await controller.mastery(asManager, 's1'),
+      await svc.mastery(asManager.actor, NOW - 5 * DAY, 's1'),
+    );
+  } finally {
+    controller.now = () => NOW;
+  }
+});
+
+test('a locked learner: progress and mastery stay viewable', async () => {
+  const p = await controller.progress(asManager, 's3');
+  assert.deepEqual(p, await svc.progress(asManager.actor, NOW, 's3'));
+  const m = await controller.mastery(asManager, 's3');
+  assert.notEqual(m['item-C'].status, 'new');
+  assert.equal(await status(() => controller.review(asManager, 's3')), 200);
 });
 
 test('ProgressService: explicit userId reads that learner; default stays the actor', async () => {
@@ -413,7 +442,8 @@ test('learner CSV: headers, Vietnamese status, matches table, no ids or hashes',
   const table = await list({ includeDisabled: true, limit: 200 });
   assert.equal(lines.length, table.items.length + 2); // header, rows, trailing newline
   assert.equal(lines[lines.length - 1], '');
-  assert.equal(lines[1], 'name-s1,Học viên 1,2,1,2,2026-06-09T03:01:00.000Z,1,1,Đang hoạt động');
+  // Last study in Ho Chi Minh time (03:01 UTC is 10:01 there), to the minute.
+  assert.equal(lines[1], 'name-s1,Học viên 1,2,1,2,2026-06-09 10:01,1,1,Đang hoạt động');
   assert.ok(csv.includes('name-s3,,1,0,1,,1,0,Đã khóa')); // its only answer was skipped
   assert.ok(!/passwordHash|secret-hash|(^|,)(s1|s3)(,|\r)/m.test(csv));
   // same sort params apply, no pagination
