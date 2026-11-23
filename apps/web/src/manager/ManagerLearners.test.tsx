@@ -136,6 +136,19 @@ describe('ManagerLearners table', () => {
     expect(last()).not.toContain('filter=');
   });
 
+  it('says the filters are single-choice and the empty text does not suggest combining', async () => {
+    list = () => page([], 0);
+    const host = await open();
+    const group = host.querySelector('.manager-filters')!;
+    const label = group.getAttribute('aria-labelledby')!;
+    expect(document.getElementById(label)!.textContent).toBe('Lọc (chọn một)');
+    await click(button(host, 'Chưa học 7 ngày'));
+    expect(host.querySelector('.users-empty')!.textContent).toBe(
+      'Không có học viên nào khớp tìm kiếm hoặc bộ lọc đang chọn.',
+    );
+    expect(host.querySelector('.users-empty')!.textContent).not.toMatch(/các bộ lọc|kết hợp/);
+  });
+
   it('search is debounced, trimmed, and resets to page 1', async () => {
     const host = await open();
     const input = host.querySelector<HTMLInputElement>('input[type="search"]')!;

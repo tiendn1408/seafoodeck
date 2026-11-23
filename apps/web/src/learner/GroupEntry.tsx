@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { groupTone, type GroupKey } from './groups';
 
-/** A chip that opens the library filtered to one taxonomic group. */
+/** A chip that opens the library filtered to one taxonomic group; a group with no species is dimmed and inert (its label and "0 loài" stay readable). */
 export function GroupEntry({
   group,
   count,
@@ -18,6 +18,7 @@ export function GroupEntry({
       type="button"
       className="group-entry"
       data-empty={count === 0 ? '' : undefined}
+      disabled={count === 0}
       style={{ '--tone': tone.css } as CSSProperties}
       onClick={() => onOpen(group)}
     >

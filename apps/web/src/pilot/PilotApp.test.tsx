@@ -676,6 +676,19 @@ describe('PilotApp role-aware routes', () => {
     expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
   });
 
+  it('decodes the learner id from the hash once, so reserved characters survive', async () => {
+    location.hash = '#manager/learner/a%2Fb%20c';
+    routes['GET /auth/me'] = () => json(view('manager'));
+    routes['GET /manager/learners/a%2Fb%20c'] = () =>
+      json({ id: 'a/b c', username: 'lan', displayName: 'Lan Nguyễn', disabled: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(calls).toContain('GET /manager/learners/a%2Fb%20c');
+    expect(calls.some((c) => c.includes('%25'))).toBe(false);
+    expect(host.querySelector('h1')?.textContent).toBe('Học viên: Lan Nguyễn');
+  });
+
   it('an admin on home keeps the learner home (only managers are redirected)', async () => {
     routes['GET /auth/me'] = () => json(view('admin'));
     mount(<PilotApp />);

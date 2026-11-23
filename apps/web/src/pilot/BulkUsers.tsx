@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { api } from './api';
+import { api, ApiError } from './api';
 import { Dialog } from './Dialog';
 import { setLeaveGuard } from './leaveGuard';
 import { ErrorNote } from '../learner/ErrorNote';
@@ -25,7 +25,15 @@ export interface BulkParsed {
   /** Source line number (1-based) of each row. */
   lines: number[];
   error: string;
+  /** Cells of the first non-blank row, which is always dropped as the header. */
+  header: string[];
+  /** True when that row looks like data (a valid username and no header words). */
+  headerSuspect: boolean;
 }
+const USERNAME = /^[a-zA-Z0-9_-]{3,50}$/;
+const HEADER_WORDS = /tên|username|user name|mật khẩu|password|pass\b|\bpw\b|hiển thị|display/i;
+const UNKNOWN_OUTCOME =
+  ' Tài khoản có thể đã được tạo: kiểm tra danh sách và đặt lại mật khẩu cho tài khoản chưa có mật khẩu.';
 
 /** Minimal RFC 4180 reader: BOM, quoted commas/quotes/newlines, CRLF. Returns [line, cells]. */
 function readCells(text: string): [number, string[]][] {
@@ -73,12 +81,24 @@ function readCells(text: string): [number, string[]][] {
 export function parseBulkCsv(text: string): BulkParsed {
   const data = readCells(text).filter(([, c]) => c.some((x) => x.trim() !== ''));
   const body = data.slice(1);
+  const head = (data[0]?.[1] ?? []).map((x) => x.trim());
+  const header = head.some(Boolean) ? head : [];
+  const headerSuspect =
+    header.length > 0 && USERNAME.test(header[0]) && !header.some((x) => HEADER_WORDS.test(x));
   if (!body.length)
-    return { rows: [], lines: [], error: 'Chưa có dòng dữ liệu nào (dòng đầu là tiêu đề).' };
+    return {
+      rows: [],
+      lines: [],
+      error: 'Chưa có dòng dữ liệu nào (dòng đầu là tiêu đề).',
+      header,
+      headerSuspect,
+    };
   if (body.length > BULK_MAX)
     return {
       rows: [],
       lines: [],
+      header,
+      headerSuspect,
       error: `Tối đa ${BULK_MAX} dòng mỗi lần; file có ${body.length} dòng. Hãy chia nhỏ file.`,
     };
   const rows = body.map(([, c]): BulkInput => {
@@ -90,7 +110,7 @@ export function parseBulkCsv(text: string): BulkParsed {
       ...(password ? { password } : {}),
     };
   });
-  return { rows, lines: body.map(([l]) => l), error: '' };
+  return { rows, lines: body.map(([l]) => l), error: '', header, headerSuspect };
 }
 
 /** Cells starting with = + - @ (or control whitespace) would run as formulas in a spreadsheet. */
@@ -178,7 +198,8 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
         onDone();
       }
     } catch (e) {
-      setError((e as Error).message);
+      const unknown = !dryRun && (!(e instanceof ApiError) || e.status === 0 || e.status >= 500);
+      setError((e as Error).message + (unknown ? UNKNOWN_OUTCOME : ''));
     } finally {
       setBusy(false);
     }
@@ -205,7 +226,7 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     setDownloaded(true);
   }
   function close() {
@@ -277,6 +298,13 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
             )}
             {error && <ErrorNote message={error} />}
           </>
+        )}
+        {!final && parsed.header.length > 0 && (
+          <p className={parsed.headerSuspect ? 'users-warning' : 'users-hint'} data-header-dropped>
+            Dòng đầu đã bị bỏ qua vì được coi là tiêu đề: {parsed.header.join(', ')}
+            {parsed.headerSuspect &&
+              '. Nếu đó là tài khoản thật, hãy thêm một dòng tiêu đề lên trên.'}
+          </p>
         )}
         {busy && (
           <p role="status" className="users-warning">

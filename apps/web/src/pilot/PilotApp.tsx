@@ -66,6 +66,15 @@ function LibraryRoute({
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
 }
+/** The learner id in `manager/learner/<id>`: the hash carries it percent-encoded, decode it once. */
+function routeId(route: string) {
+  const raw = route.split('/')[2] ?? '';
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -392,7 +401,7 @@ export default function PilotApp() {
           <>
             {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
             {route.startsWith('manager/learner/') && auth.userId !== undefined && (
-              <ManagerLearnerDetail key={route} id={route.split('/')[2]} userId={auth.userId} />
+              <ManagerLearnerDetail key={route} id={routeId(route)} userId={auth.userId} />
             )}
             {route === 'home' && kind !== 'manager' && (
               <Home

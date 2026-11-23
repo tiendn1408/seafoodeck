@@ -200,4 +200,18 @@ describe('Review with a custom source, read-only', () => {
     expect(host.textContent).toContain('Chưa có mục ôn tập');
     expect(host.querySelector('a[href="#home"]')).toBeNull();
   });
+  it('read-only fresh list has no empty note when there is nothing to say', async () => {
+    routes['GET /m/review'] = () => json({ due: [entry(1)], scheduled: [] });
+    routes['GET /m/mastery'] = () => json({});
+    const source = { progress: '/m/progress', mastery: '/m/mastery', review: '/m/review' };
+    const host = mount(
+      <Review userId="m1" readOnly source={source} pending={false} onStart={async () => {}} />,
+    );
+    await tick();
+    await tick();
+    expect(host.querySelector('#review-fresh')).not.toBeNull();
+    expect(
+      host.querySelector('#review-fresh')!.parentElement!.querySelector('.ice-note'),
+    ).toBeNull();
+  });
 });

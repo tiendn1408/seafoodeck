@@ -223,7 +223,10 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
         )}
       </div>
 
-      <div className="manager-filters" role="group" aria-label="Bộ lọc">
+      <div className="manager-filters" role="group" aria-labelledby={ids + 'filters'}>
+        <span className="manager-filters-label" id={ids + 'filters'}>
+          Lọc (chọn một)
+        </span>
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -265,7 +268,9 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
           </p>
           {data.items.length === 0 ? (
             <p className="users-empty">
-              {plain ? 'Chưa có học viên nào.' : 'Không có học viên nào khớp bộ lọc.'}
+              {plain
+                ? 'Chưa có học viên nào.'
+                : 'Không có học viên nào khớp tìm kiếm hoặc bộ lọc đang chọn.'}
             </p>
           ) : narrow ? (
             <ul className="manager-cards" aria-describedby={ids + 'count'}>

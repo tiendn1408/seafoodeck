@@ -111,7 +111,7 @@ describe('Progress from /me/progress', () => {
     expect(skills[0].textContent).toContain('2 / 3 loài');
     expect(skills[3].textContent).toContain('1 / 4 hồ sơ');
     expect(host.querySelector('.progress-skills-note')?.textContent).toBe(
-      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã qua mốc 3 ngày.',
+      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã lên mốc 3 ngày.',
     );
     const levels = host.querySelectorAll('.progress-mastery li');
     expect([...levels].map((l) => l.querySelector('.progress-count')!.textContent)).toEqual([

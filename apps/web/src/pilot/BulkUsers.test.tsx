@@ -24,6 +24,16 @@ describe('parseBulkCsv', () => {
       '',
     );
   });
+  it('always reports the dropped header row and flags one that looks like data', () => {
+    const ok = parseBulkCsv('tên đăng nhập,tên hiển thị,mật khẩu\nlan\n');
+    expect(ok.header).toEqual(['tên đăng nhập', 'tên hiển thị', 'mật khẩu']);
+    expect(ok.headerSuspect).toBe(false);
+    expect(parseBulkCsv('username,name,pw\nlan\n').headerSuspect).toBe(false);
+    const bad = parseBulkCsv('\n hoa01 ,Hoa,\nlan\n');
+    expect(bad.header).toEqual(['hoa01', 'Hoa', '']);
+    expect(bad.headerSuspect).toBe(true);
+    expect(bad.rows).toEqual([{ username: 'lan' }]);
+  });
   it('reports empty input', () => {
     expect(parseBulkCsv('username,name,pw\n\n').error).toMatch(/Chưa có dòng/);
   });
@@ -151,5 +161,45 @@ describe('BulkDialog', () => {
     await click(button(host, 'Đóng'));
     expect(confirm).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows which row was dropped as header, with a warning when it looks like an account', () => {
+    const host = mount(<BulkDialog onClose={() => {}} onDone={() => {}} />);
+    type(host, CSV);
+    let note = host.ownerDocument.querySelector('[data-header-dropped]')!;
+    expect(note.textContent).toContain(
+      'Dòng đầu đã bị bỏ qua vì được coi là tiêu đề: username, name, pw',
+    );
+    expect(note.className).toBe('users-hint');
+    type(host, 'hoa01,Hoa,\nbinh,Bình,\n');
+    note = host.ownerDocument.querySelector('[data-header-dropped]')!;
+    expect(note.className).toBe('users-warning');
+    expect(note.textContent).toContain('tiêu đề: hoa01, Hoa,');
+  });
+
+  it('a network failure in the real run says accounts may already exist; a dry run does not', async () => {
+    const host = mount(<BulkDialog onClose={() => {}} onDone={() => {}} />);
+    type(host, CSV);
+    await click(button(host, 'Xem trước'));
+    const f = vi.fn(() => Promise.reject(new TypeError('fail')));
+    vi.stubGlobal('fetch', f);
+    await click(button(host, 'Xem trước'));
+    expect(document.body.textContent).toContain('Không kết nối được máy chủ');
+    expect(document.body.textContent).not.toContain('có thể đã được tạo');
+    await click(button(host, 'Tạo hàng loạt'));
+    expect(document.body.textContent).toContain(
+      'Tài khoản có thể đã được tạo: kiểm tra danh sách và đặt lại mật khẩu cho tài khoản chưa có mật khẩu.',
+    );
+  });
+
+  it('keeps the object URL alive for about a second after the download click', async () => {
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    const host = mount(<BulkDialog onClose={() => {}} onDone={() => {}} />);
+    type(host, CSV);
+    await click(button(host, 'Xem trước'));
+    await click(button(host, 'Tạo hàng loạt'));
+    await click(button(host, 'Tải CSV mật khẩu'));
+    expect(timers.mock.calls.some((c) => c[1] === 1000)).toBe(true);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
   });
 });

@@ -107,10 +107,12 @@ function Fresh({
           </li>
         ))}
       </ul>
-      <p className="ice-note">
-        {fresh.length > 6 ? `Và ${fresh.length - 6} loài khác trong thư viện. ` : ''}
-        {!readOnly && 'Thả lưới ở trang Học để đưa loài mới vào lịch ôn.'}
-      </p>
+      {(fresh.length > 6 || !readOnly) && (
+        <p className="ice-note">
+          {fresh.length > 6 ? `Và ${fresh.length - 6} loài khác trong thư viện. ` : ''}
+          {!readOnly && 'Thả lưới ở trang Học để đưa loài mới vào lịch ôn.'}
+        </p>
+      )}
     </section>
   );
 }

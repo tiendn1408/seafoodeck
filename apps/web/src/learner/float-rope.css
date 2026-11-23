@@ -92,7 +92,7 @@
 .float.caught {
   background: linear-gradient(
     180deg,
-    #f4f8f9 0 40%,
+    var(--ice-cap) 0 40%,
     rgb(11 34 48 / 0.35) 40% 46%,
     var(--float-fill, var(--group-none)) 46% 100%
   );

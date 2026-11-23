@@ -193,6 +193,7 @@ export function Home({
     mode === 'hs' ? null : mode === 'image' ? otherPhoto : chosenItem?.imageId;
   const minutes = plan?.kind === 'review' ? Math.max(2, Math.ceil(plan.targets.length / 2)) : 2;
 
+  const grouped = !!overview && taxa.some((t) => overview.groups[t] > 0);
   return (
     <div className={`home${hidden ? ' paused' : ''}`}>
       <div className="home-rays" aria-hidden="true">
@@ -467,13 +468,18 @@ export function Home({
       {overview && overview.items.length > 0 && (
         <section className="home-band home-groups" aria-labelledby="groups-title">
           <h2 id="groups-title">Thư viện theo nhóm</h2>
-          <div className="home-group-chips">
-            {taxa.map((t) => (
-              <GroupEntry key={t} group={t} count={overview.groups[t]} onOpen={onOpenLibrary} />
-            ))}
-          </div>
+          {grouped && (
+            <div className="home-group-chips">
+              {taxa.map((t) => (
+                <GroupEntry key={t} group={t} count={overview.groups[t]} onOpen={onOpenLibrary} />
+              ))}
+            </div>
+          )}
           <p className="home-muted">
-            {overview.groups.none > 0 && `${overview.groups.none} loài học được chưa gắn nhóm. `}
+            {overview.groups.none > 0 &&
+              (grouped
+                ? `${overview.groups.none} loài học được chưa gắn nhóm. `
+                : `Loài chưa gắn nhóm: ${overview.groups.none}. `)}
             <a href="#library" onClick={() => onOpenLibrary('')}>
               Xem cả thư viện
             </a>
