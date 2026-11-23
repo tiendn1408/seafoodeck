@@ -135,18 +135,23 @@ function handwritten(): Vector[] {
   return cases.map(([name, steps]) => ({ name, steps, expected: run(steps) }));
 }
 
+/** One compact JSON vector per line. */
+const serialize = (vs: Vector[]): string =>
+  '[\n' + vs.map((v) => JSON.stringify(v)).join(',\n') + '\n]\n';
+
 const all = (): Vector[] => [...handwritten(), ...randomSteps()];
 
 describe('review parity vectors', () => {
   if (process.env.WRITE_REVIEW_VECTORS === '1') {
     it('writes vectors', () => {
-      writeFileSync(VECTORS, JSON.stringify(all(), null, 1) + '\n');
+      writeFileSync(VECTORS, serialize(all()));
     });
   }
   const file = (): Vector[] => JSON.parse(readFileSync(VECTORS, 'utf8')) as Vector[];
 
   it('committed vector file matches regenerated sequences (seeded)', () => {
     expect(file()).toEqual(all());
+    expect(readFileSync(VECTORS, 'utf8')).toBe(serialize(all()));
   });
   it('contains the 200 seeded random sequences', () => {
     expect(file().filter((v) => v.name.startsWith(`random seed=${SEED}`))).toHaveLength(200);

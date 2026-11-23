@@ -267,6 +267,36 @@ describe('summarizeHaul', () => {
     expect(s.caught[0]).toMatchObject({ targetId: 'cod', skills: ['name:en', 'name:ja'] });
   });
 
+  it('keeps a provisional row apart when the same name maps to several real targets', () => {
+    const real = (id: string, targetId: string) =>
+      question(
+        id,
+        { targetId, targetLabel: 'Cá tuyết', skill: 'name:en', selfRated: true },
+        { type: 'flashcard', front: 'Cá tuyết' },
+      );
+    const g = game(
+      [
+        real('f0', 'cod-a'),
+        real('f1', 'cod-b'),
+        question(
+          'f2',
+          {
+            targetId: 'front:Cá tuyết',
+            targetLabel: 'Cá tuyết',
+            skill: 'name:ja',
+            selfRated: true,
+            provisional: true,
+          },
+          { type: 'flashcard', front: 'Cá tuyết' },
+        ),
+      ],
+      'flashcard',
+    );
+    const s = summarizeHaul(g, []);
+    expect(s.caught.map((c) => c.targetId).sort()).toEqual(['cod-a', 'cod-b', 'front:Cá tuyết']);
+    expect(s.total).toBe(3);
+  });
+
   it('ignores questions without a result', () => {
     const g = game([question('q1', { targetId: 'a', targetLabel: 'Tôm sú' }), question('q2')]);
     expect(summarizeHaul(g, []).title).toBe('1 / 1 loài vào lưới');

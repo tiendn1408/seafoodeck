@@ -69,9 +69,11 @@ describe('AppShell navigation by kind (phone)', () => {
     expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
     expect(host.querySelector('a[href="#account"]')).toBeNull();
   });
-  it('manager: Thư viện only', () => {
-    const host = shell('deep', 'manager');
-    expect(navLabels(host)).toEqual(['Thư viện']);
+  it('manager: Học viên and Thư viện in one bottom bar', () => {
+    const host = shell('ice', 'manager', 'manager');
+    expect(host.querySelectorAll('nav')).toHaveLength(1);
+    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
+    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
     expect(host.querySelector('a[href="#account"]')).toBeNull();
     expect(host.querySelector('a[href="#admin"]')).toBeNull();
   });
@@ -118,8 +120,13 @@ describe('AppShell navigation by kind (desktop)', () => {
   it('trial: Học and Thư viện', () => {
     expect(navLabels(desktop('trial'))).toEqual(['Học', 'Thư viện']);
   });
-  it('manager: Thư viện only', () => {
-    expect(navLabels(desktop('manager'))).toEqual(['Thư viện']);
+  it('manager: Học viên and Thư viện in one top nav; learner details keep Học viên current', () => {
+    const host = desktop('manager', 'manager/learner/x');
+    expect(host.querySelectorAll('nav')).toHaveLength(1);
+    expect(host.querySelector('.shell-tabbar')).toBeNull();
+    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
+    expect(tabFor('manager/learner/x')).toBe('manager');
+    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
   });
   it('staff: Học, Thư viện plus Quản trị', () => {
     expect(navLabels(desktop('staff'))).toEqual(['Học', 'Thư viện', 'Quản trị']);
@@ -135,5 +142,19 @@ describe('AppShell navigation by kind (desktop)', () => {
     const host = desktop('student', 'account', 'Lan');
     expect(host.querySelectorAll('nav [aria-current]')).toHaveLength(0);
     expect(host.querySelector('a[href="#account"]')?.getAttribute('aria-current')).toBe('page');
+  });
+});
+
+describe('AppShell saving status on phones', () => {
+  it('the status is capped and truncated at phone widths so the header does not crowd', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const css = readFileSync(resolve(__dirname, 'shell.css'), 'utf8');
+    const rule = css.match(/\.shell\[data-layout='phone'\] \.shell-saving \{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).toMatch(/max-width:\s*[\d.]+rem/);
+    expect(rule).toMatch(/text-overflow:\s*ellipsis/);
+    expect(rule).toMatch(/overflow:\s*hidden/);
+    // 360px minus gutters, mark, theme/account/logout buttons: well under the 7.5rem cap needs.
+    expect(parseFloat(rule.match(/max-width:\s*([\d.]+)rem/)![1])).toBeLessThanOrEqual(8);
   });
 });

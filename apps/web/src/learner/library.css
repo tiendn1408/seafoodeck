@@ -184,8 +184,11 @@
   font-size: var(--text-xs);
   font-weight: 600;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .ice-porthole-more {
   align-content: center;
@@ -807,11 +810,8 @@
   height: 24px;
   border-radius: 50%;
   translate: -50% -50%;
-  background: linear-gradient(180deg, #f4f8f9 0 42%, var(--bar) 42% 100%);
-  box-shadow:
-    inset 0 0 0 1px rgb(11 34 48 / 0.18),
-    inset 0 -3px 0 rgb(0 0 0 / 0.16),
-    0 3px 7px rgb(11 34 48 / 0.25);
+  background: linear-gradient(180deg, var(--ice-cap) 0 42%, var(--bar) 42% 100%);
+  box-shadow: var(--shadow-buoy);
 }
 
 /* Milestone floats: one small buoy per species, hull in its group colour. */
@@ -829,11 +829,12 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #f4f8f9 0 40%, var(--float-fill, var(--group-none)) 40% 100%);
-  box-shadow:
-    inset 0 0 0 1px rgb(11 34 48 / 0.18),
-    inset 0 -3px 0 rgb(0 0 0 / 0.16),
-    0 3px 6px rgb(11 34 48 / 0.22);
+  background: linear-gradient(
+    180deg,
+    var(--ice-cap) 0 40%,
+    var(--float-fill, var(--group-none)) 40% 100%
+  );
+  box-shadow: var(--shadow-buoy);
 }
 .progress-floats em {
   color: var(--ice-muted);

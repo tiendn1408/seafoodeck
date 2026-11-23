@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeUsername, generateTempPassword, findUserByUsername } from './users';
+import { normalizeUsername, generateTempPassword, findUserByUsername, ensureAdmin } from './users';
 import type { Db } from './db';
 
 test('normalizeUsername trims and lowercases', () => {
@@ -39,4 +39,43 @@ test('findUserByUsername asks for a case-insensitive match', async () => {
   } as unknown as Db;
   await findUserByUsername(db, 'aN');
   assert.deepEqual(args, { where: { username: { equals: 'aN', mode: 'insensitive' } } });
+});
+
+test('ensureAdmin does not create when a differently-cased user exists', async () => {
+  let created = 0;
+  const db = {
+    user: {
+      findFirst: async () => ({ id: 'u1', username: 'Owner' }),
+      create: async () => (created++, {}),
+    },
+  } as unknown as Db;
+  assert.equal(await ensureAdmin(db, 'owner', 'h'), 'exists');
+  assert.equal(created, 0);
+});
+
+test('ensureAdmin creates an admin, and treats a P2002 race as already existing', async () => {
+  let data: unknown;
+  const ok = {
+    user: { findFirst: async () => null, create: async (a: unknown) => ((data = a), {}) },
+  } as unknown as Db;
+  assert.equal(await ensureAdmin(ok, 'owner', 'h'), 'created');
+  assert.deepEqual(data, { data: { username: 'owner', passwordHash: 'h', role: 'admin' } });
+  const race = {
+    user: {
+      findFirst: async () => null,
+      create: async () => {
+        throw Object.assign(new Error('dup'), { code: 'P2002' });
+      },
+    },
+  } as unknown as Db;
+  assert.equal(await ensureAdmin(race, 'Owner', 'h'), 'exists');
+  const boom = {
+    user: {
+      findFirst: async () => null,
+      create: async () => {
+        throw new Error('down');
+      },
+    },
+  } as unknown as Db;
+  await assert.rejects(() => ensureAdmin(boom, 'owner', 'h'), /down/);
 });

@@ -234,6 +234,17 @@
   color: var(--deep-ink);
 }
 
+/* Forced password screen: sign-out is waiting for answers still being saved. */
+.login-saving {
+  margin: 12px 0 0;
+  color: var(--deep-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.login-switch:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
 /* Small text-style switch under the login forms; 44px touch target. */
 .login-switch {
   display: inline-flex;

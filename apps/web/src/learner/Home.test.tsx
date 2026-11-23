@@ -129,7 +129,7 @@ describe('Home for students (/me/home)', () => {
     expect(host.textContent).toContain('1 / 4 loài');
     // A species counts once it passed its first review (stage >= 1): say so by the gauges.
     expect(host.querySelector('.home-skills-note')?.textContent).toBe(
-      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã qua mốc 3 ngày.',
+      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã lên mốc 3 ngày.',
     );
     // The student hero keeps its full layout (catch, rope, action).
     expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(false);
@@ -303,5 +303,70 @@ describe('Home for trial (invite-code) learners', () => {
     await tick();
     await click(button(host, 'Flashcard tên loài'));
     expect(onStart).toHaveBeenCalledWith('flashcard', 'r1', 'en');
+  });
+
+  it('a group chip with no species is disabled but keeps its label; others open the library', async () => {
+    const onOpenLibrary = vi.fn();
+    const host = await student(meHome(), { onOpenLibrary });
+    const chips = [...host.querySelectorAll<HTMLButtonElement>('.group-entry')];
+    const empty = chips.filter((c) => c.hasAttribute('data-empty'));
+    expect(chips.length).toBe(4);
+    expect(empty.length).toBe(3);
+    for (const c of empty) {
+      expect(c.disabled).toBe(true);
+      expect(c.textContent).toContain('0 loài');
+      c.click();
+    }
+    expect(onOpenLibrary).not.toHaveBeenCalled();
+    const live = chips.find((c) => !c.hasAttribute('data-empty'))!;
+    expect(live.disabled).toBe(false);
+    await click(live);
+    expect(onOpenLibrary).toHaveBeenCalledWith('fish');
+  });
+
+  it('when every group is empty only the ungrouped line is shown', async () => {
+    routes['GET /catalog/overview'] = () =>
+      json({
+        ...overview,
+        groups: { fish: 0, crustacean: 0, mollusc: 0, other: 0, none: 4 },
+        items: overview.items.map((i) => ({ ...i, taxonomicGroup: 'none' })),
+      });
+    const host = await student(meHome());
+    expect(host.querySelector('.group-entry')).toBeNull();
+    expect(host.querySelector('.home-groups .home-muted')!.textContent).toContain(
+      'Loài chưa gắn nhóm: 4',
+    );
+  });
+});
+
+describe('learner CSS polish (tokens, clamp, status pill)', () => {
+  const read = (f: string) =>
+    readFileSync(resolve(__dirname, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  it('uses the --ice-cap and --shadow-buoy tokens, not hard-coded values', () => {
+    for (const f of ['library.css', 'home.css', 'float-rope.css'])
+      expect(read(f), f).not.toMatch(/#f4f8f9/i);
+    const lib = read('library.css');
+    expect(lib).toMatch(/var\(--ice-cap\)/);
+    expect(lib).toMatch(/box-shadow:\s*var\(--shadow-buoy\)/);
+    expect(lib).not.toMatch(/rgb\(11 34 48 \/ 0\.18\)/);
+  });
+  it('clamps porthole names to two lines instead of one cut line', () => {
+    const rule = read('library.css').match(/\.ice-porthole-name \{[^}]*\}/)![0];
+    expect(rule).toMatch(/-webkit-line-clamp:\s*2/);
+    expect(rule).not.toMatch(/white-space:\s*nowrap/);
+  });
+  it('saved self-rating status has no border or button background', () => {
+    const rule = read('study/study.css').match(
+      /\.study-feedback\[data-tone='self'\] \{[^}]*\}/,
+    )![0];
+    expect(rule).toMatch(/border:\s*0/);
+    expect(rule).toMatch(/background:\s*none/);
+  });
+  it('dims an empty group chip by its outline and mark, never the label text', () => {
+    const css = read('home.css');
+    // No whole-button opacity: the label must keep full contrast.
+    expect(css).not.toMatch(/\.group-entry\[data-empty\] \{[^}]*opacity/);
+    expect(css).toMatch(/\.group-entry\[data-empty\] \{[^}]*border-style:\s*dashed/);
+    expect(css).toMatch(/\.group-entry\[data-empty\] \.group-entry-mark[^{]*\{[^}]*opacity/);
   });
 });

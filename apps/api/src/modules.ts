@@ -23,6 +23,7 @@ import {
 } from './controllers';
 import { AdminExtraController } from './admin-extra.controller';
 import { AdminUsersController } from './admin-users.controller';
+import { ManagerController } from './manager.controller';
 import { UsersService } from './users.service';
 @Global()
 @Module({ providers: [Db], exports: [Db] })
@@ -58,7 +59,7 @@ export class CatalogModule {}
 export class MediaModule {}
 @Module({
   imports: [DatabaseModule, AuthModule, CatalogModule, MediaModule],
-  controllers: [LearningController, MeProgressController],
+  controllers: [LearningController, MeProgressController, ManagerController],
   providers: [Learning, ProgressService],
   exports: [ProgressService],
 })

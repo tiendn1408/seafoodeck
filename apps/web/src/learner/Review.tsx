@@ -8,12 +8,15 @@ import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { MissingPhoto } from './MissingPhoto';
 import { SpeciesCard } from './SpeciesCard';
 import { skillLabel } from './skillLabel';
-import { useMe } from './meStore';
+import { ME_SOURCE, useMe, type LearnerSource } from './meStore';
 import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
 
 const STEPS = INTERVAL_DAYS;
-const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
+const day = (iso: string) => {
+  const t = new Date(iso);
+  return Number.isNaN(t.getTime()) ? '—' : t.toLocaleDateString('vi-VN');
+};
 const MAX_BATCH = 30;
 
 /** Entries of one species (or one HS case), in due order. Rows without a catalog item stay apart. */
@@ -83,9 +86,11 @@ function Rows({
 function Fresh({
   entries,
   overview,
+  readOnly,
 }: {
   entries: MeReviewEntry[];
   overview: CatalogOverview | null;
+  readOnly: boolean;
 }) {
   const scheduled = new Set(entries.map((r) => r.itemId));
   const fresh = overview?.items.filter((i) => !scheduled.has(i.itemId)) ?? [];
@@ -102,10 +107,12 @@ function Fresh({
           </li>
         ))}
       </ul>
-      <p className="ice-note">
-        {fresh.length > 6 ? `Và ${fresh.length - 6} loài khác trong thư viện. ` : ''}
-        Thả lưới ở trang Học để đưa loài mới vào lịch ôn.
-      </p>
+      {(fresh.length > 6 || !readOnly) && (
+        <p className="ice-note">
+          {fresh.length > 6 ? `Và ${fresh.length - 6} loài khác trong thư viện. ` : ''}
+          {!readOnly && 'Thả lưới ở trang Học để đưa loài mới vào lịch ôn.'}
+        </p>
+      )}
     </section>
   );
 }
@@ -159,23 +166,33 @@ function Portholes({
  */
 export function Review({
   userId,
-  pending,
+  pending = false,
   onStart,
+  source = ME_SOURCE,
+  readOnly = false,
 }: {
   userId: string;
-  pending: boolean;
-  onStart: StartSession;
+  pending?: boolean;
+  onStart?: StartSession;
+  source?: LearnerSource;
+  /** A manager looking at someone else: no heading of its own, no way to start a review. */
+  readOnly?: boolean;
 }) {
   const { overview } = useOverview(ignoreVersion);
-  const review = useMe<MeReview>('/me/review', userId);
-  const mastery = useMe<MeMastery>('/me/mastery', userId).data;
+  const review = useMe<MeReview>(source.review, userId);
+  const mastery = useMe<MeMastery>(source.mastery, userId).data;
   const data = review.data;
+  const title = readOnly ? (
+    <h2 id="review-title">Lịch ôn tập</h2>
+  ) : (
+    <h1 id="review-title">Góc ôn tập của bạn.</h1>
+  );
   if (!data)
     return (
       <section className="ice-page review" aria-labelledby="review-title">
         <header className="ice-hero">
           <div className="ice-hero-copy">
-            <h1 id="review-title">Góc ôn tập của bạn.</h1>
+            {title}
             <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
           </div>
         </header>
@@ -198,7 +215,7 @@ export function Review({
     <section className="ice-page review" aria-labelledby="review-title">
       <header className="ice-hero">
         <div className="ice-hero-copy">
-          <h1 id="review-title">Góc ôn tập của bạn.</h1>
+          {title}
           <p className="ice-lede">Mỗi kỹ năng một lịch riêng: 1 → 3 → 7 → 14 ngày.</p>
           <Portholes due={due} later={later} overview={overview} />
         </div>
@@ -214,33 +231,37 @@ export function Review({
                 <dd>{laterSpecies}</dd>
               </div>
             </dl>
-            <button
-              type="button"
-              className="ice-primary"
-              disabled={!due.length || pending}
-              onClick={() =>
-                void onStart(
-                  'review',
-                  undefined,
-                  'en',
-                  undefined,
-                  undefined,
-                  Math.min(due.length, MAX_BATCH),
-                )
-              }
-            >
-              <RotateCcw size={18} aria-hidden="true" />
-              {due.length ? `Ôn ${due.length} mục đến hạn` : 'Chưa có mục đến hạn'}
-            </button>
-            <p className="ice-note">
-              {due.length > MAX_BATCH
-                ? 'Mỗi lượt ôn tối đa 30 mục; phần còn lại chờ lượt sau.'
-                : due.length
-                  ? 'Mục đến hạn sớm nhất được ôn trước.'
-                  : next
-                    ? `Mục kế tiếp: ${day(next.dueAt)}.`
-                    : ''}
-            </p>
+            {!readOnly && (
+              <>
+                <button
+                  type="button"
+                  className="ice-primary"
+                  disabled={!due.length || pending}
+                  onClick={() =>
+                    void onStart?.(
+                      'review',
+                      undefined,
+                      'en',
+                      undefined,
+                      undefined,
+                      Math.min(due.length, MAX_BATCH),
+                    )
+                  }
+                >
+                  <RotateCcw size={18} aria-hidden="true" />
+                  {due.length ? `Ôn ${due.length} mục đến hạn` : 'Chưa có mục đến hạn'}
+                </button>
+                <p className="ice-note">
+                  {due.length > MAX_BATCH
+                    ? 'Mỗi lượt ôn tối đa 30 mục; phần còn lại chờ lượt sau.'
+                    : due.length
+                      ? 'Mục đến hạn sớm nhất được ôn trước.'
+                      : next
+                        ? `Mục kế tiếp: ${day(next.dueAt)}.`
+                        : ''}
+                </p>
+              </>
+            )}
           </div>
         )}
       </header>
@@ -265,15 +286,21 @@ export function Review({
               </section>
             )}
           </div>
-          <Fresh entries={all} overview={overview} />
+          <Fresh entries={all} overview={overview} readOnly={readOnly} />
         </div>
       ) : (
         <div className="ice-empty ice-empty--scales">
           <h2>Chưa có mục ôn tập</h2>
-          <p>Hoàn thành một lượt để lên lịch theo từng kỹ năng.</p>
-          <a className="ice-primary" href="#home">
-            Mở bộ học
-          </a>
+          <p>
+            {readOnly
+              ? 'Học viên chưa hoàn thành lượt nào.'
+              : 'Hoàn thành một lượt để lên lịch theo từng kỹ năng.'}
+          </p>
+          {!readOnly && (
+            <a className="ice-primary" href="#home">
+              Mở bộ học
+            </a>
+          )}
         </div>
       )}
     </section>

@@ -459,6 +459,12 @@
 .study-feedback[data-tone='wrong'] {
   --fb: var(--s-wrong);
 }
+/* Saved self-rating is a confirmation line, not a control: no border or pill height. */
+.study-feedback[data-tone='self'] {
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+}
 .study-feedback > * + * {
   margin-top: var(--space-1);
 }

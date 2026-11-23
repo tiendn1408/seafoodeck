@@ -5,7 +5,7 @@ import { ErrorNote } from './ErrorNote';
 import { MasteryScales, type MasteryLevel } from './MasteryScales';
 import { SpeciesCard } from './SpeciesCard';
 import { groupTone, type GroupKey } from './groups';
-import { useMe } from './meStore';
+import { ME_SOURCE, useMe, type LearnerSource } from './meStore';
 import { SKILL_COUNT_NOTE } from './skillLabel';
 import { ignoreVersion, useOverview } from './useOverview';
 import './library.css';
@@ -40,7 +40,7 @@ function Gauge({ value, color }: { value: number; color: string }) {
 }
 
 /** The last few sessions: one line each, the first-try share as a short rope. */
-function History({ rows }: { rows: MeSessionRow[] }) {
+function History({ rows, readOnly }: { rows: MeSessionRow[]; readOnly: boolean }) {
   return (
     <section className="progress-sessions" aria-labelledby="progress-sessions">
       <h2 id="progress-sessions" className="ice-h2">
@@ -71,7 +71,11 @@ function History({ rows }: { rows: MeSessionRow[] }) {
           ))}
         </ol>
       ) : (
-        <p className="ice-note">Chưa có phiên nào. Thả lưới ở trang Học để kéo mẻ đầu tiên.</p>
+        <p className="ice-note">
+          {readOnly
+            ? 'Chưa có phiên nào.'
+            : 'Chưa có phiên nào. Thả lưới ở trang Học để kéo mẻ đầu tiên.'}
+        </p>
       )}
     </section>
   );
@@ -107,15 +111,28 @@ function Floats({ entries }: { entries: Entry[] }) {
  * each memory milestone (`/me/progress`), each species' own level (`/me/mastery`, names from
  * the catalogue overview), achievements and the latest sessions.
  */
-export function Progress({ userId }: { userId: string }) {
+export function Progress({
+  userId,
+  source = ME_SOURCE,
+  readOnly = false,
+}: {
+  userId: string;
+  source?: LearnerSource;
+  /** A manager looking at someone else: no heading of its own, no links into learning. */
+  readOnly?: boolean;
+}) {
   const { overview } = useOverview(ignoreVersion);
-  const progress = useMe<MeProgress>('/me/progress', userId);
-  const levels = useMe<MeMastery>('/me/mastery', userId).data;
+  const progress = useMe<MeProgress>(source.progress, userId);
+  const levels = useMe<MeMastery>(source.mastery, userId).data;
   const data = progress.data;
   const hero = (figures: ReactNode) => (
     <header className="ice-hero">
       <div className="ice-hero-copy">
-        <h1 id="progress-title">Tiến độ học của bạn</h1>
+        {readOnly ? (
+          <h2 id="progress-title">Tiến độ học</h2>
+        ) : (
+          <h1 id="progress-title">Tiến độ học của bạn</h1>
+        )}
         <p className="ice-lede">
           Mức nhớ tính trên bộ nội dung đang xuất bản, theo lịch ôn của từng kỹ năng.
         </p>
@@ -227,7 +244,7 @@ export function Progress({ userId }: { userId: string }) {
         </section>
       </div>
       <Achievements streak={data.achievements.streak} badges={data.achievements.badges} />
-      <History rows={data.sessions.slice(0, 5)} />
+      <History rows={data.sessions.slice(0, 5)} readOnly={readOnly} />
       {overview && ranked.length > 0 && (
         <section className="progress-species" aria-labelledby="progress-species">
           <h2 id="progress-species" className="ice-h2">
@@ -247,7 +264,7 @@ export function Progress({ userId }: { userId: string }) {
               );
             })}
           </ul>
-          {overview.items.length > ranked.length && (
+          {!readOnly && overview.items.length > ranked.length && (
             <p className="ice-note">
               <a href="#library">Xem cả {overview.items.length} loài trong thư viện</a>
             </p>

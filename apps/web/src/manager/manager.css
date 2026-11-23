@@ -1,0 +1,305 @@
+/*
+ * Manager area: the learner table. A reading surface on ice; it reuses the admin users
+ * vocabulary (users.css) and adds only what the table needs. Salmon stays the one primary action.
+ */
+.manager-learners .manager-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+.manager-learners .manager-tools .users-search {
+  flex: 1 1 16rem;
+}
+.manager-learners .manager-sortfield {
+  flex: 0 1 14rem;
+}
+.manager-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+.manager-filters-label {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.manager-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--ice-muted);
+  border-radius: var(--radius-pill);
+  background: var(--ice-surface);
+  color: var(--ice-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.manager-chip:hover {
+  border-color: var(--ice-focus);
+}
+/* On state is a filled chip with a check mark, not colour alone. */
+.manager-chip[aria-pressed='true'] {
+  border-color: var(--ice-ink);
+  background: var(--ice-ink);
+  color: var(--ice-bg);
+}
+.manager-chip[aria-pressed='true']::before {
+  content: '✓';
+}
+.manager-switch {
+  margin-left: auto;
+}
+.manager-csv {
+  text-decoration: none;
+}
+
+/*
+ * The table scrolls sideways inside its box on tablets. A soft shade on the edge that still hides
+ * columns says there is more; it follows the scroll position (data-more-* from the component).
+ */
+.manager-scrollbox {
+  position: relative;
+}
+.manager-scrollbox::before,
+.manager-scrollbox::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--space-7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.manager-scrollbox::before {
+  left: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ice-ink) 18%, transparent),
+    transparent
+  );
+}
+.manager-scrollbox::after {
+  right: 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--ice-ink) 18%, transparent),
+    transparent
+  );
+}
+.manager-scrollbox[data-more-start]::before,
+.manager-scrollbox[data-more-end]::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .manager-scrollbox::before,
+  .manager-scrollbox::after {
+    transition: none;
+  }
+}
+.manager-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+.manager-table th,
+.manager-table td {
+  white-space: nowrap;
+}
+.manager-table th.manager-num,
+.manager-table td.manager-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.manager-table .manager-person {
+  white-space: normal;
+  overflow-wrap: normal;
+  min-width: 11rem;
+}
+/* A username is one token: never broken mid-word (the table scrolls instead). */
+.manager-table .manager-user {
+  white-space: nowrap;
+}
+.manager-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.manager-sort:hover {
+  color: var(--ice-ink);
+}
+.manager-sort::after {
+  content: '↕';
+  opacity: 0.5;
+}
+th[aria-sort='ascending'] .manager-sort::after {
+  content: '↑';
+  opacity: 1;
+}
+th[aria-sort='descending'] .manager-sort::after {
+  content: '↓';
+  opacity: 1;
+}
+th[aria-sort='ascending'],
+th[aria-sort='descending'] {
+  color: var(--ice-ink);
+}
+.manager-open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ice-ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: var(--ice-line);
+  text-underline-offset: 4px;
+}
+.manager-open:hover {
+  text-decoration-color: var(--ice-focus);
+}
+.manager-user {
+  display: block;
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+}
+
+/* Narrow screens: stacked cards. */
+.manager-cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.manager-card {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--ice-line);
+  border-radius: var(--radius-md);
+  background: var(--ice-surface);
+  box-shadow: var(--shadow-raise);
+}
+.manager-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+.manager-card dt {
+  color: var(--ice-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.manager-card dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.manager-card dd.manager-wide {
+  grid-column: 1 / -1;
+}
+
+.manager-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-3);
+  color: var(--ice-ink);
+  font-weight: 700;
+}
+/* Phones: sort and filters behind one disclosure; the summary keeps what is applied in view. */
+.manager-more {
+  margin: 0 0 var(--space-4);
+  border: 1px solid var(--ice-line);
+  border-radius: var(--radius-md);
+  background: var(--ice-surface);
+}
+.manager-more > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+}
+.manager-more > summary::-webkit-details-marker {
+  display: none;
+}
+.manager-more > summary::before {
+  content: '▸';
+  color: var(--ice-muted);
+}
+.manager-more[open] > summary::before {
+  content: '▾';
+}
+.manager-more-title {
+  font-weight: 700;
+}
+.manager-more-state {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+}
+.manager-more > .manager-tools,
+.manager-more > .manager-filters {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+}
+@media (max-width: 600px) {
+  .manager-switch {
+    margin-left: 0;
+  }
+  .manager-learners .manager-sortfield {
+    flex: 1 1 100%;
+  }
+}
+
+/* Learner detail header: account facts under the name. */
+.manager-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-3) 0 0;
+}
+.manager-meta dt {
+  color: var(--ice-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.manager-meta dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.manager-detail h1:focus {
+  outline: none;
+}
+
+/*
+ * The learner detail sits on the ice stage, like the learner's own Tiến độ / Ôn tập: their deep
+ * heroes bleed to the viewport edges and only the stage clips that bleed. Everything above the
+ * heroes takes the `.ice-page` gutter, so it lines up with the sections below.
+ */
+.ice-stage > .manager-learners {
+  padding-top: var(--space-6);
+}
+.ice-stage > .manager-learners > :not(.ice-page) {
+  margin-inline: max(clamp(16px, 4vw, 56px), calc((100% - 1240px) / 2));
+}

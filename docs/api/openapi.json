@@ -601,6 +601,371 @@
         ]
       }
     },
+    "/api/v1/manager/learners": {
+      "get": {
+        "operationId": "ManagerController_learners",
+        "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "lastStudyAt",
+              "type": "string",
+              "enum": [
+                "name",
+                "lastStudyAt",
+                "learning",
+                "solid",
+                "avgLevel",
+                "overdue",
+                "sessions7d"
+              ]
+            }
+          },
+          {
+            "name": "dir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "idle7d: no answer in 7 days (never-studied included); overdue; disabled.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "idle7d",
+                "overdue",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeDisabled",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerPageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
+    "/api/v1/manager/learners.csv": {
+      "get": {
+        "operationId": "ManagerController_learnersCsv",
+        "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "lastStudyAt",
+              "type": "string",
+              "enum": [
+                "name",
+                "lastStudyAt",
+                "learning",
+                "solid",
+                "avgLevel",
+                "overdue",
+                "sessions7d"
+              ]
+            }
+          },
+          {
+            "name": "dir",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "idle7d: no answer in 7 days (never-studied included); overdue; disabled.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "idle7d",
+                "overdue",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeDisabled",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Same filters and sort as the table, without pagination (UTF-8 CSV with BOM).",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
+    "/api/v1/manager/learners/{id}": {
+      "get": {
+        "operationId": "ManagerController_learner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerLearnerResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
+    "/api/v1/manager/learners/{id}/review": {
+      "get": {
+        "operationId": "ManagerController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
+    "/api/v1/manager/learners/{id}/progress": {
+      "get": {
+        "operationId": "ManagerController_progress",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeProgressResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
+    "/api/v1/manager/learners/{id}/mastery": {
+      "get": {
+        "operationId": "ManagerController_mastery",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status and mastery level per itemId of the current catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/MeMasteryEntryResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "seafoodeck_session": []
+          }
+        ],
+        "tags": [
+          "Manager"
+        ]
+      }
+    },
     "/api/v1/admin/overview": {
       "get": {
         "operationId": "AdminController_overview",
@@ -2608,6 +2973,115 @@
           "sessions",
           "achievements",
           "figures"
+        ]
+      },
+      "LearnerRowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "learning": {
+            "type": "number"
+          },
+          "solid": {
+            "type": "number"
+          },
+          "avgLevel": {
+            "type": "number",
+            "nullable": true
+          },
+          "lastStudyAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "overdue": {
+            "type": "number"
+          },
+          "sessions7d": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "disabled",
+          "learning",
+          "solid",
+          "avgLevel",
+          "lastStudyAt",
+          "overdue",
+          "sessions7d"
+        ]
+      },
+      "LearnerPageResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerRowResponse"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ManagerLearnerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "disabled",
+          "createdAt",
+          "lastLoginAt"
         ]
       },
       "ImportDto": {

@@ -64,10 +64,11 @@ export function Study({
   );
   const { index: speciesIndex, settled } = useSpeciesIndex(game.releaseId);
   const progress = progressOf(game);
-  // Confirmed answers without progress were restored from the server (a reload or a resume);
-  // a student's summary then asks the server for the review days.
+  // Confirmed answers without progress rows (restored from the server after a reload or a
+  // resume, or answered with `progress: []`) leave the review days unknown; a student's summary
+  // then asks the server for them once.
   const restored = game.questions.some(
-    (q) => q.result && !q.result.provisional && !q.result.progress,
+    (q) => q.result && !q.result.provisional && !q.result.progress?.length,
   );
   // One queue per session, owned outside this screen: pausing and coming back shows the same
   // pending saves and failures, and results land in the parent's game either way.

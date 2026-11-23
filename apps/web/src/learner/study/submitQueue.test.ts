@@ -65,6 +65,17 @@ describe('createSubmitQueue', () => {
     ]);
   });
 
+  it('treats 401 as final: sent once, never retried', async () => {
+    const send = vi.fn(async () => {
+      throw new ApiError('Cần đăng nhập.', 401);
+    });
+    const q = createSubmitQueue(send, { retryMs: [10, 10] });
+    q.enqueue(job('q1'));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(q.failures()).toHaveLength(1);
+  });
+
   it('retries 409 and 5xx, but stops on another 4xx and reports the error', async () => {
     const replies: (Error | null)[] = [
       new ApiError('Hệ thống đang bận, vui lòng thử lại.', 409),

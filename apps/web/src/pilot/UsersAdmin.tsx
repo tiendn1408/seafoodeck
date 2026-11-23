@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { api, type AdminUserPage, type AdminUserRow } from './api';
 import { AdminTabs } from './AdminTabs';
+import { setLeaveGuard } from './leaveGuard';
 import { Dialog } from './Dialog';
+import { BulkDialog } from './BulkUsers';
 import { ErrorNote } from '../learner/ErrorNote';
 import { minPasswordLength } from '../learner/ChangePassword';
 import './users.css';
@@ -65,7 +67,10 @@ function relative(iso: string, now = Date.now()): string {
 }
 
 type Pending =
-  { kind: 'create' } | { kind: 'lock' | 'reset' | 'delete'; user: AdminUserRow } | null;
+  | { kind: 'create' }
+  | { kind: 'bulk' }
+  | { kind: 'lock' | 'reset' | 'delete'; user: AdminUserRow }
+  | null;
 interface Secret {
   /** Per-reveal counter, so a new password remounts the panel (never the password itself). */
   seq: number;
@@ -79,6 +84,8 @@ interface Secret {
   self: boolean;
 }
 let secretSeq = 0;
+const LEAVE_QUESTION =
+  'Mật khẩu tạm của bạn chỉ hiện một lần. Rời trang sẽ mất mật khẩu này. Vẫn rời đi?';
 
 export function UsersAdmin({ selfId }: { selfId?: string }) {
   const [role, setRole] = useState(''),
@@ -121,7 +128,12 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       e.returnValue = '';
     };
     window.addEventListener('beforeunload', ask);
-    return () => window.removeEventListener('beforeunload', ask);
+    // The shell asks before sign-out and in-app navigation (hash changes) discard it.
+    const release = setLeaveGuard(LEAVE_QUESTION);
+    return () => {
+      window.removeEventListener('beforeunload', ask);
+      release();
+    };
   }, [paused]);
 
   const params = new URLSearchParams();
@@ -206,7 +218,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
   }
 
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
-  const user = pending && pending.kind !== 'create' ? pending.user : null;
+  const user =
+    pending && pending.kind !== 'create' && pending.kind !== 'bulk' ? pending.user : null;
 
   return (
     <div className="users-admin">
@@ -218,15 +231,26 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           </h1>
           <p>Tạo tài khoản, khóa, đặt lại mật khẩu hoặc xóa người dùng.</p>
         </div>
-        <button
-          type="button"
-          className="users-primary"
-          disabled={paused}
-          title={paused ? PAUSED_REASON : undefined}
-          onClick={() => open({ kind: 'create' })}
-        >
-          Tạo người dùng
-        </button>
+        <div className="users-head-actions">
+          <button
+            type="button"
+            className="users-secondary"
+            disabled={paused}
+            title={paused ? PAUSED_REASON : undefined}
+            onClick={() => open({ kind: 'bulk' })}
+          >
+            Tạo hàng loạt
+          </button>
+          <button
+            type="button"
+            className="users-primary"
+            disabled={paused}
+            title={paused ? PAUSED_REASON : undefined}
+            onClick={() => open({ kind: 'create' })}
+          >
+            Tạo người dùng
+          </button>
+        </div>
       </header>
 
       <p className="users-live" role="status" aria-live="polite">
@@ -364,10 +388,18 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                       </td>
                       <td>
                         <div className="users-actions">
+                          {u.role === 'student' && (
+                            <a
+                              className="users-secondary users-act-view"
+                              href={`#manager/learner/${encodeURIComponent(u.id)}`}
+                            >
+                              Xem tiến độ<span className="users-sr"> {u.username}</span>
+                            </a>
+                          )}
                           {u.disabled ? (
                             <button
                               type="button"
-                              className="users-secondary"
+                              className="users-secondary users-act-lock"
                               disabled={busy || paused}
                               title={paused ? PAUSED_REASON : undefined}
                               onClick={() => void unlock(u)}
@@ -377,7 +409,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           ) : (
                             <button
                               type="button"
-                              className="users-secondary"
+                              className="users-secondary users-act-lock"
                               disabled={self || paused}
                               title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                               onClick={() => open({ kind: 'lock', user: u })}
@@ -387,7 +419,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           )}
                           <button
                             type="button"
-                            className="users-secondary"
+                            className="users-secondary users-act-reset"
                             disabled={paused}
                             title={paused ? PAUSED_REASON : undefined}
                             onClick={() => open({ kind: 'reset', user: u })}
@@ -396,7 +428,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           </button>
                           <button
                             type="button"
-                            className="users-secondary"
+                            className="users-secondary users-act-delete"
                             disabled={self || paused}
                             title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                             onClick={() => open({ kind: 'delete', user: u })}
@@ -456,6 +488,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           }
         />
       )}
+      {pending?.kind === 'bulk' && <BulkDialog onClose={() => setPending(null)} onDone={refresh} />}
       {pending?.kind === 'lock' && user && (
         <Dialog title={`Khóa ${user.username}?`} onClose={() => setPending(null)}>
           <p>Khóa sẽ đăng xuất người này ngay. Có thể mở khóa lại bất cứ lúc nào.</p>

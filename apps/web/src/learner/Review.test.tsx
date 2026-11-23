@@ -67,6 +67,15 @@ async function show(data: MeReview, onStart = vi.fn(async () => {}), pending = f
 }
 
 describe('Review from /me/review', () => {
+  it('shows a dash for a malformed due date, never "Invalid Date"', async () => {
+    const { host } = await show({
+      due: [entry(1, { dueAt: 'not-a-date' })],
+      scheduled: [entry(2, { dueAt: '' })],
+    });
+    expect(host.textContent).not.toContain('Invalid Date');
+    expect(host.querySelector('.review-skill-when')!.textContent).toContain('· —');
+  });
+
   it('splits due and scheduled by the server lists and groups skills by species', async () => {
     const { host } = await show({
       due: [entry(1), entry(1, { targetId: 'i1', skill: 'name:ja' }), entry(2)],
@@ -148,5 +157,61 @@ describe('Review from /me/review', () => {
     await tick();
     expect(host.querySelector('[role="alert"]')!.textContent).toContain('hỏng');
     expect(button(host, 'Thử lại')).toBeTruthy();
+  });
+});
+
+describe('Review with a custom source, read-only', () => {
+  it('reads the given source, has no start button or learning prompts', async () => {
+    routes['GET /m/review'] = () =>
+      json({
+        due: [entry(1)],
+        scheduled: [entry(2, { dueAt: '2026-12-01T00:00:00.000Z' })],
+      });
+    routes['GET /m/mastery'] = () => json({});
+    const onStart = vi.fn(async () => {});
+    const host = mount(
+      <Review
+        userId="m1"
+        readOnly
+        source={{ progress: '/m/progress', mastery: '/m/mastery', review: '/m/review' }}
+        pending={false}
+        onStart={onStart}
+      />,
+    );
+    await tick();
+    await tick();
+    expect(calls.map((c) => c.key).filter((k) => !k.includes('catalog'))).toEqual(
+      expect.arrayContaining(['GET /m/review', 'GET /m/mastery']),
+    );
+    expect(calls.some((c) => c.key.includes('/me/'))).toBe(false);
+    expect(host.querySelector('.review-action button')).toBeNull();
+    expect(host.textContent).not.toMatch(/Ôn \d+ mục/);
+    expect(host.textContent).not.toContain('Thả lưới');
+    expect(host.textContent).not.toContain('của bạn');
+    expect(host.querySelector('h1')).toBeNull();
+    expect(host.textContent).toContain('Đến hạn');
+    expect(onStart).not.toHaveBeenCalled();
+  });
+  it('read-only empty state has no link to the learner home', async () => {
+    routes['GET /me/review'] = () => json({ due: [], scheduled: [] });
+    const host = mount(<Review userId="m1" readOnly pending={false} onStart={async () => {}} />);
+    await tick();
+    await tick();
+    expect(host.textContent).toContain('Chưa có mục ôn tập');
+    expect(host.querySelector('a[href="#home"]')).toBeNull();
+  });
+  it('read-only fresh list has no empty note when there is nothing to say', async () => {
+    routes['GET /m/review'] = () => json({ due: [entry(1)], scheduled: [] });
+    routes['GET /m/mastery'] = () => json({});
+    const source = { progress: '/m/progress', mastery: '/m/mastery', review: '/m/review' };
+    const host = mount(
+      <Review userId="m1" readOnly source={source} pending={false} onStart={async () => {}} />,
+    );
+    await tick();
+    await tick();
+    expect(host.querySelector('#review-fresh')).not.toBeNull();
+    expect(
+      host.querySelector('#review-fresh')!.parentElement!.querySelector('.ice-note'),
+    ).toBeNull();
   });
 });

@@ -16,6 +16,8 @@ import {
 import type { OverviewData, VersionOf } from './progress-derive';
 import { badges, figures, recentSessions, streakDays } from './progress-achievements';
 import type { LogRow } from './progress-achievements';
+import { learnerMetrics } from './progress-manager';
+import type { LearnerMetrics } from './progress-manager';
 import { DAY, effectiveDueAt } from './progress-review';
 import type { ReviewRow } from './progress-review';
 
@@ -175,17 +177,23 @@ export class ProgressService {
     return { release, versionOf, scenarioRevision };
   }
 
-  /** The student's ReviewProgress rows scoped to the current release (empty for non-students). */
-  async active(actor: AuthSession) {
+  /**
+   * The student's ReviewProgress rows scoped to the current release (empty for non-students).
+   * `forUser` reads another learner (manager views); the catalog scope still follows `actor`.
+   */
+  async active(actor: AuthSession, forUser?: string) {
     const { release, versionOf, scenarioRevision } = await this.versions(actor);
-    const userId = studentId(actor);
+    const userId = forUser ?? studentId(actor);
     const all = userId
       ? (await this.db.reviewProgress.findMany({ where: { userId } })).map(toRow)
       : [];
     return { release, versionOf, scenarioRevision, all, rows: activeRows(all, versionOf) };
   }
 
-  async context(actor: AuthSession): Promise<{
+  async context(
+    actor: AuthSession,
+    userId?: string,
+  ): Promise<{
     overview: OverviewData;
     rows: ReviewRow[];
     versionOf: VersionOf;
@@ -194,7 +202,7 @@ export class ProgressService {
     internal: boolean;
   }> {
     const o = await this.catalog.overview(actor);
-    const { rows, versionOf, scenarioRevision } = await this.active(actor);
+    const { rows, versionOf, scenarioRevision } = await this.active(actor, userId);
     return {
       overview: {
         items: o.items.map((i) => ({
@@ -295,11 +303,12 @@ export class ProgressService {
   async review(
     actor: AuthSession,
     now = Date.now(),
+    userId?: string,
   ): Promise<{
     due: ReviewEntry[];
     scheduled: ReviewEntry[];
   }> {
-    const c = await this.context(actor);
+    const c = await this.context(actor, userId);
     const byItem = new Map(c.overview.items.map((i) => [i.itemId, i]));
     const byRevision = new Map(c.overview.items.map((i) => [i.revisionId, i]));
     const entries = c.rows
@@ -325,8 +334,8 @@ export class ProgressService {
   }
 
   /** The student's whole attempt log, oldest first. */
-  private async log(actor: AuthSession): Promise<LogRow[]> {
-    const userId = studentId(actor);
+  private async log(actor: AuthSession, forUser?: string): Promise<LogRow[]> {
+    const userId = forUser ?? studentId(actor);
     if (!userId) return [];
     const rows = await this.db.learningAttempt.findMany({
       where: { userId },
@@ -347,9 +356,68 @@ export class ProgressService {
     }));
   }
 
-  async progress(actor: AuthSession, now = Date.now()) {
-    const c = await this.context(actor);
-    const log = await this.log(actor);
+  /**
+   * Manager table figures for many learners in a fixed number of queries: one ReviewProgress read,
+   * one non-skipped attempt read (thin projection), plus the catalog scope, all `userId IN (...)`.
+   * Rows are scoped to the actor's current release and computed per learner in memory (no stored
+   * aggregates). Read-only, so no transaction.
+   */
+  async learnerMetricsBatch(
+    actor: AuthSession,
+    userIds: string[],
+    now = Date.now(),
+  ): Promise<Map<string, LearnerMetrics>> {
+    const out = new Map<string, LearnerMetrics>();
+    if (!userIds.length) return out;
+    const o = await this.catalog.overview(actor);
+    const { versionOf } = await this.versions(actor);
+    const overview: OverviewData = {
+      items: o.items.map((i) => ({
+        revisionId: i.revisionId,
+        itemId: i.itemId,
+        vi: i.vi,
+        scientific: i.scientific,
+        taxonomicGroup: i.taxonomicGroup,
+        imageId: i.imageId,
+      })),
+      learnable: o.learnable,
+      hsCases: o.hsCases,
+    };
+    const [progress, attempts] = await Promise.all([
+      this.db.reviewProgress.findMany({ where: { userId: { in: userIds } } }),
+      this.db.learningAttempt.findMany({
+        where: { userId: { in: userIds }, skipped: false },
+        select: { userId: true, sessionId: true, skipped: true, at: true },
+      }),
+    ]);
+    const rowsBy = new Map<string, ReviewRow[]>();
+    for (const p of progress) {
+      const list = rowsBy.get(p.userId) ?? [];
+      list.push(toRow(p));
+      rowsBy.set(p.userId, list);
+    }
+    const logBy = new Map<string, { sessionId: string; skipped: boolean; at: string }[]>();
+    for (const a of attempts) {
+      const list = logBy.get(a.userId) ?? [];
+      list.push({ sessionId: a.sessionId, skipped: a.skipped, at: a.at.toISOString() });
+      logBy.set(a.userId, list);
+    }
+    for (const id of userIds)
+      out.set(
+        id,
+        learnerMetrics(
+          overview,
+          activeRows(rowsBy.get(id) ?? [], versionOf),
+          logBy.get(id) ?? [],
+          now,
+        ),
+      );
+    return out;
+  }
+
+  async progress(actor: AuthSession, now = Date.now(), userId?: string) {
+    const c = await this.context(actor, userId);
+    const log = await this.log(actor, userId);
     const mastery = masteryCounts(c.overview, c.rows);
     const streak = streakDays(log, now);
     return {
@@ -374,8 +442,9 @@ export class ProgressService {
   async mastery(
     actor: AuthSession,
     now = Date.now(),
+    userId?: string,
   ): Promise<Record<string, { status: 'new' | 'due' | 'learning'; level: 0 | 1 | 2 | 3 | 4 }>> {
-    const c = await this.context(actor);
+    const c = await this.context(actor, userId);
     return Object.fromEntries(
       c.overview.items.map((i) => [
         i.itemId,

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, setAuthRequiredHandler, setCsrf, type AuthView, type Game, type MeHome } from './api';
+import {
+  api,
+  setAuthRequiredHandler,
+  setCsrf,
+  setUnauthorizedHandler,
+  type AuthView,
+  type Game,
+  type MeHome,
+} from './api';
+import { confirmLeave, leaveGuarded, setLeaveGuard } from './leaveGuard';
 import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { UsersAdmin } from './UsersAdmin';
@@ -10,7 +19,8 @@ import { Login, StaffLogin } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
-import { ManagerNotice } from '../learner/ManagerNotice';
+import { ManagerLearners } from '../manager/ManagerLearners';
+import { ManagerLearnerDetail } from '../manager/ManagerLearnerDetail';
 import { kindOf, routeAllowed } from '../learner/role';
 import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
@@ -22,7 +32,7 @@ import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
-import { disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
+import { adoptingTotal, disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
 /**
  * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
@@ -56,6 +66,15 @@ function LibraryRoute({
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
 }
+/** The learner id in `manager/learner/<id>`: the hash carries it percent-encoded, decode it once. */
+function routeId(route: string) {
+  const raw = route.split('/')[2] ?? '';
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
 }
@@ -67,9 +86,25 @@ export default function PilotApp() {
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
     [libraryView, setLibraryView] = useState<LibraryView>(LIBRARY_START);
+  // The route on screen, and a hash change we undo ourselves (it must not count as navigation).
+  const shown = useRef(route);
+  useEffect(() => {
+    shown.current = route;
+  }, [route]);
+  const undoing = useRef(false);
   useEffect(() => {
     const f = () => {
       const next = currentRoute();
+      if (undoing.current) {
+        undoing.current = false;
+        return;
+      }
+      // Something that cannot be shown again (an admin's own temporary password) is on screen.
+      if (next !== shown.current && leaveGuarded() && !confirmLeave()) {
+        undoing.current = true;
+        location.replace('#' + shown.current);
+        return;
+      }
       setRoute(next);
       window.scrollTo(0, 0);
       setError('');
@@ -87,20 +122,27 @@ export default function PilotApp() {
       .catch((e) => setError(e.message));
   }, []);
   useEffect(() => setAuthRequiredHandler(() => setMustChange(true)), []);
+  // The session is gone (for example the account was locked and the server deleted it): back to
+  // the sign-in as a guest, quietly. Set below, once the helpers it resets exist.
+  const sessionLost = useRef<() => void>(() => {});
+  useEffect(() => setUnauthorizedHandler(() => sessionLost.current()), []);
   const signedIn = !!auth && auth.role !== 'guest';
   // Only an authenticated session can be forced; a flag raised while a guest never sticks.
   const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
   const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
   const kind = kindOf(auth);
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
-  const permitted = !auth || forced || routeAllowed(kind, route);
+  // A manager's home is the learner table: its own rule, ahead of the general redirect.
+  const managerHome = !!auth && !forced && kind === 'manager' && route === 'home';
+  const permitted = !auth || forced || managerHome || routeAllowed(kind, route);
   // Stage wrappers follow the route only once it is signed in, permitted for this kind and not
   // forced: the forced password screen uses the plain content wrapper, like the login screens.
-  const staged = signedIn && permitted && !forced;
+  const staged = signedIn && permitted && !forced && !managerHome;
   const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
-    if (!permitted) location.replace('#home');
-  }, [permitted]);
+    if (managerHome) location.replace('#manager');
+    else if (!permitted) location.replace('#home');
+  }, [permitted, managerHome]);
   // Only students have server-side progress; trial and staff keep the tab's session id.
   const student = kind === 'student';
   function opened(g: Game) {
@@ -223,37 +265,91 @@ export default function PilotApp() {
   // True while logout waits for self-ratings still being saved in the background.
   const [saving, setSaving] = useState(false);
   const leaving = useRef(false);
+  function reset(a: AuthView) {
+    clearMe();
+    setMustChange(false);
+    setAuth(a);
+    setCsrf(a.csrf);
+    signIns.current++;
+    disposeAll();
+    restoreTried.current = null;
+    setGame(null);
+    rememberSession(null);
+  }
+  const recovering = useRef(false);
+  // The signed-in view as of the latest render, read when /auth/me answers after a 401.
+  const authNow = useRef(auth);
+  useEffect(() => {
+    authNow.current = auth;
+    sessionLost.current = () => {
+      if (recovering.current) return;
+      recovering.current = true;
+      void api<AuthView>('/auth/me')
+        .then((a) => {
+          const was = authNow.current;
+          // A stray 401 (for example a request sent with a session that has since rotated)
+          // while the same user is still signed in: keep their queues and screen, adopt the
+          // fresh view only.
+          if (
+            a.role !== 'guest' &&
+            a.userId !== undefined &&
+            a.role === was?.role &&
+            a.userId === was.userId
+          ) {
+            setCsrf(a.csrf);
+            setAuth(a);
+            return;
+          }
+          // Whatever the failed request reports is moot now: the login screen replaces it.
+          reset(a);
+          setError('');
+        })
+        .catch(() => {})
+        .finally(() => void (recovering.current = false));
+    };
+  });
+  /** The session view a password change answered with (ChangePassword already holds its csrf). */
+  function adoptSession(s: AuthView) {
+    setAuth(
+      (a) =>
+        a && {
+          ...a,
+          csrf: s.csrf ?? a.csrf,
+          expiresAt: s.expiresAt ?? a.expiresAt,
+          displayName: s.displayName !== undefined ? s.displayName : a.displayName,
+          mustChangePassword: false,
+        },
+    );
+  }
   async function logout() {
+    // Held until the logout request is over, so a second click never sends a second one.
     if (leaving.current) return;
+    if (!confirmLeave()) return;
     leaving.current = true;
     try {
-      if (pendingTotal() > 0) {
+      if (pendingTotal() > 0 || adoptingTotal() > 0) {
         setSaving(true);
-        const saved = await flushAll(5000);
-        setSaving(false);
+        let saved: boolean;
+        try {
+          saved = await flushAll(5000);
+        } finally {
+          setSaving(false);
+        }
         if (
           !saved &&
           !window.confirm('Còn câu chưa lưu được. Đăng xuất sẽ mất các câu này. Vẫn đăng xuất?')
         )
           return;
       }
+      const a = await api<AuthView>('/auth/logout', {});
+      setLeaveGuard(null);
+      reset(a);
+      location.hash = 'home';
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       leaving.current = false;
     }
-    void api<AuthView>('/auth/logout', {})
-      .then((a) => {
-        clearMe();
-        setMustChange(false);
-        setAuth(a);
-        setCsrf(a.csrf);
-        signIns.current++;
-        disposeAll();
-        restoreTried.current = null;
-        setGame(null);
-        rememberSession(null);
-        location.hash = 'home';
-      })
-      .catch((e) => setError(e.message));
   }
   return (
     <AppShell
@@ -285,7 +381,9 @@ export default function PilotApp() {
                 ? 'study-stage'
                 : staged && route === 'account'
                   ? 'account-stage'
-                  : staged && ['library', 'review', 'progress'].includes(route)
+                  : staged &&
+                      (['library', 'review', 'progress'].includes(route) ||
+                        route.startsWith('manager/learner/'))
                     ? 'ice-stage'
                     : 'content home-content'
         }
@@ -298,15 +396,11 @@ export default function PilotApp() {
             forced
             role={auth.role}
             onLogout={() => void logout()}
-            onDone={() => {
+            saving={saving}
+            onDone={(session) => {
               clearMe();
-              void api<AuthView>('/auth/me')
-                .then((a) => {
-                  setCsrf(a.csrf);
-                  setAuth(a);
-                  setMustChange(false);
-                })
-                .catch((e) => setError(e.message));
+              adoptSession(session);
+              setMustChange(false);
             }}
           />
         ) : loginKind(route, auth.role) ? (
@@ -322,9 +416,12 @@ export default function PilotApp() {
               <Login onLogin={onLogin} />
             );
           })()
-        ) : !permitted ? null : (
+        ) : !permitted || managerHome ? null : (
           <>
-            {route === 'home' && kind === 'manager' && <ManagerNotice />}
+            {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
+            {route.startsWith('manager/learner/') && auth.userId !== undefined && (
+              <ManagerLearnerDetail key={route} id={routeId(route)} userId={auth.userId} />
+            )}
             {route === 'home' && kind !== 'manager' && (
               <Home
                 kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}
@@ -380,6 +477,7 @@ export default function PilotApp() {
                 userId={auth.userId}
                 onLogout={() => void logout()}
                 onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}
+                onPasswordChanged={adoptSession}
               />
             )}
             {route === 'admin' && staff && <Admin usersTab={kind === 'admin'} />}

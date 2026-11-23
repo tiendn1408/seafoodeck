@@ -111,7 +111,7 @@ describe('Progress from /me/progress', () => {
     expect(skills[0].textContent).toContain('2 / 3 loài');
     expect(skills[3].textContent).toContain('1 / 4 hồ sơ');
     expect(host.querySelector('.progress-skills-note')?.textContent).toBe(
-      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã qua mốc 3 ngày.',
+      'Mỗi thanh đếm loài (hoặc hồ sơ HS) đã lên mốc 3 ngày.',
     );
     const levels = host.querySelectorAll('.progress-mastery li');
     expect([...levels].map((l) => l.querySelector('.progress-count')!.textContent)).toEqual([
@@ -187,5 +187,30 @@ describe('Progress from /me/progress', () => {
     await tick();
     expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(host.textContent).toContain('Chưa có phiên nào');
+  });
+});
+
+describe('Progress with a custom source, read-only', () => {
+  const source = {
+    progress: '/manager/learners/x/progress',
+    mastery: '/manager/learners/x/mastery',
+    review: '/manager/learners/x/review',
+  };
+  it('reads from the given source (not /me), keeps achievements, hides the library link', async () => {
+    routes['GET /manager/learners/x/progress'] = () => json(progress);
+    routes['GET /manager/learners/x/mastery'] = () => json(mastery);
+    const host = mount(<Progress userId="m1" source={source} readOnly />);
+    await tick();
+    await tick();
+    expect([...new Set(calls)].sort()).toEqual([
+      'GET /catalog/overview',
+      'GET /manager/learners/x/mastery',
+      'GET /manager/learners/x/progress',
+    ]);
+    expect(host.textContent).toContain('Thành tích');
+    expect(host.textContent).toContain('10 phiên ôn');
+    expect(host.querySelector('h1')).toBeNull();
+    expect(host.textContent).not.toContain('của bạn');
+    expect(host.querySelector('a[href="#library"]')).toBeNull();
   });
 });

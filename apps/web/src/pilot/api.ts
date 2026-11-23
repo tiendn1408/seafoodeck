@@ -206,6 +206,34 @@ export interface AdminUserPage {
   page: number;
   limit: number;
 }
+/** One row of GET /manager/learners. */
+export interface LearnerRow {
+  id: string;
+  username: string;
+  displayName: string | null;
+  disabled: boolean;
+  learning: number;
+  solid: number;
+  avgLevel: number | null;
+  lastStudyAt: string | null;
+  overdue: number;
+  sessions7d: number;
+}
+export interface LearnerPage {
+  items: LearnerRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+/** GET /manager/learners/:id. */
+export interface LearnerSummary {
+  id: string;
+  username: string;
+  displayName: string | null;
+  disabled: boolean;
+  createdAt?: string;
+  lastLoginAt?: string | null;
+}
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -226,6 +254,17 @@ export function setAuthRequiredHandler(fn: AuthRequiredHandler | null): () => vo
   authRequired = fn;
   return () => {
     if (fn && authRequired === fn) authRequired = null;
+  };
+}
+let unauthorized: (() => void) | null = null;
+/**
+ * Called for a 401 on any route behind the sign-in (the session is gone: expired, revoked or the
+ * account was locked). Login and logout answer 401 for their own reasons and never call it.
+ */
+export function setUnauthorizedHandler(fn: (() => void) | null): () => void {
+  unauthorized = fn;
+  return () => {
+    if (fn && unauthorized === fn) unauthorized = null;
   };
 }
 export async function api<T>(
@@ -265,6 +304,7 @@ export async function api<T>(
   if (!response.ok) {
     const code = typeof data?.code === 'string' ? data.code : undefined;
     if (code === 'MUST_CHANGE_PASSWORD') authRequired?.(code);
+    if (response.status === 401 && !path.startsWith('/auth/')) unauthorized?.();
     throw new ApiError(
       Array.isArray(data.message)
         ? data.message.join('; ')

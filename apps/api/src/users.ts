@@ -18,3 +18,22 @@ export function generateTempPassword(role: string): string {
 /** Case-insensitive username lookup (backed by the lower("username") unique index). */
 export const findUserByUsername = (db: Pick<Db, 'user'>, name: string) =>
   db.user.findFirst({ where: { username: { equals: name, mode: 'insensitive' } } });
+
+/**
+ * Idempotent administrator creation for bootstrap/seed: matches the username case-insensitively
+ * and treats a unique-index race (P2002) as "already exists". Never overwrites credentials.
+ */
+export async function ensureAdmin(
+  db: Pick<Db, 'user'>,
+  username: string,
+  passwordHash: string,
+): Promise<'created' | 'exists'> {
+  if (await findUserByUsername(db, username)) return 'exists';
+  try {
+    await db.user.create({ data: { username, passwordHash, role: 'admin' } });
+    return 'created';
+  } catch (e) {
+    if ((e as { code?: string } | null)?.code === 'P2002') return 'exists';
+    throw e;
+  }
+}

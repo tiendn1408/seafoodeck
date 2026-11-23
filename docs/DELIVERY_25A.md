@@ -66,3 +66,5 @@ Unit test dùng DB giả; lần chạy đầu trên Postgres thật (nộp đồ
 - Chưa nhập tiến độ cũ từ trình duyệt lên server.
 - Chưa kiểm mục Nghe với bản thu thật; chưa chạy trên VPS.
 - Lưu ý vận hành: nếu tự khóa người dùng bằng SQL, hãy xóa luôn phiên của họ (`DELETE FROM "AuthSession" WHERE "userId" = '<id>'`), vì 2.5a chưa thu hồi phiên khi khóa; thu hồi đúng cách khi khóa sẽ có ở 2.5c.
+- `PILOT_ORIGIN` mặc định là `http://127.0.0.1:18089` và **không** lấy từ `PUBLIC_ORIGIN`; khi stack local dùng cổng khác, hãy đặt `PILOT_ORIGIN` khớp.
+- Vận hành (chỉ để hoàn tác migration `202611200001_username_ci`): index tên đăng nhập không phân biệt hoa/thường được gỡ thủ công bằng `DROP INDEX "User_username_lower_key";`. Không chạy lệnh này trong vận hành thường ngày; sau khi gỡ, tên đăng nhập chỉ còn duy nhất theo chữ hoa/thường như trước.

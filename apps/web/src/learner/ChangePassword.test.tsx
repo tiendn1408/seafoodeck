@@ -89,12 +89,42 @@ describe('ChangePassword', () => {
     expect(onLogout).toHaveBeenCalled();
   });
   it('not forced: has a cancel action and no forced explanation', async () => {
-    const onDone = vi.fn();
+    const onCancel = vi.fn();
     const host = mount(
-      <ChangePassword forced={false} role="student" onDone={onDone} onLogout={() => {}} />,
+      <ChangePassword
+        forced={false}
+        role="student"
+        onDone={() => {}}
+        onCancel={onCancel}
+        onLogout={() => {}}
+      />,
     );
     expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
     await click(button(host, 'Hủy'));
-    expect(onDone).toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalled();
+  });
+  it('not forced: "Hủy" is disabled while the change is being saved', async () => {
+    let answer: (r: Response) => void = () => {};
+    fetchMock.mockImplementation(() => new Promise<Response>((r) => (answer = r)));
+    const onCancel = vi.fn();
+    const host = mount(
+      <ChangePassword
+        forced={false}
+        role="student"
+        onDone={() => {}}
+        onCancel={onCancel}
+        onLogout={() => {}}
+      />,
+    );
+    fill(host, 'old-secret', 'new-secret-1');
+    await submit(host);
+    const cancel = button(host, 'Hủy') as HTMLButtonElement;
+    expect(cancel.disabled).toBe(true);
+    await click(cancel);
+    expect(onCancel).not.toHaveBeenCalled();
+    answer(new Response(JSON.stringify({ message: 'Sai.' }), { status: 400 }));
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+    expect((button(host, 'Hủy') as HTMLButtonElement).disabled).toBe(false);
   });
 });

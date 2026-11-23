@@ -91,6 +91,33 @@ describe('UsersAdmin list', () => {
     expect(lan.querySelector('td > div.users-actions')?.querySelectorAll('button')).toHaveLength(3);
   });
 
+  it('student rows link to the learner progress screen; other roles do not', async () => {
+    const host = await screen();
+    const link = rowOf(host, 'u2').querySelector('a');
+    expect(link?.getAttribute('href')).toBe('#manager/learner/u2');
+    expect(link?.textContent).toContain('Xem tiến độ');
+    expect(rowOf(host, 'u3').querySelector('a')).toBeNull();
+    expect(rowOf(host, 'me').querySelector('a')).toBeNull();
+  });
+
+  it('every action sits in its own named slot, so rows line up whatever is missing', async () => {
+    const host = await screen();
+    const slots = (id: string) =>
+      [...rowOf(host, id).querySelectorAll('.users-actions > *')].map((el) => el.className);
+    expect(slots('u2')).toEqual([
+      'users-secondary users-act-view',
+      'users-secondary users-act-lock',
+      'users-secondary users-act-reset',
+      'users-secondary users-act-delete',
+    ]);
+    // A locked manager: no "Xem tiến độ", "Mở khóa" in the lock slot.
+    expect(slots('u3')).toEqual([
+      'users-secondary users-act-lock',
+      'users-secondary users-act-reset',
+      'users-secondary users-act-delete',
+    ]);
+  });
+
   it('ignores a slower, older list response that arrives after a newer one', async () => {
     let releaseOld: () => void = () => {};
     routes['GET /admin/users?role=manager&page=1&limit=20'] = () =>
@@ -481,9 +508,15 @@ describe('UsersAdmin row actions', () => {
     const ev = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
-    for (const a of host.querySelectorAll('nav[aria-label="Khu quản trị"] a')) {
+    // Disabled tabs are inert spans, not anchors without an href.
+    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toHaveLength(
+      0,
+    );
+    const tabs = host.querySelectorAll('nav[aria-label="Khu quản trị"] > *');
+    expect(tabs).toHaveLength(3);
+    for (const a of tabs) {
+      expect(a.tagName, a.textContent!).toBe('SPAN');
       expect(a.getAttribute('aria-disabled'), a.textContent!).toBe('true');
-      expect(a.hasAttribute('href'), a.textContent!).toBe(false);
     }
     // Typing, filtering and paging are off.
     const search = field(host, 'Tìm');
@@ -497,9 +530,10 @@ describe('UsersAdmin row actions', () => {
     // Every mutation is off too, on every row (each would hit MUST_CHANGE_PASSWORD).
     const mutations = [
       button(host, 'Tạo người dùng'),
+      button(host, 'Tạo hàng loạt'),
       ...host.querySelectorAll<HTMLButtonElement>('.users-actions button'),
     ];
-    expect(mutations.length).toBe(1 + 3 * rows.length);
+    expect(mutations.length).toBe(2 + 3 * rows.length);
     for (const b of mutations) {
       expect(b.disabled, b.textContent!).toBe(true);
       await click(b);
@@ -517,7 +551,8 @@ describe('UsersAdmin row actions', () => {
       'GET /admin/users?page=1&limit=20',
     ]);
     expect(removed.mock.calls.some(([t, f]) => t === 'beforeunload' && f === unload)).toBe(true);
-    expect(host.querySelector('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toBeNull();
+    expect(host.querySelector('nav[aria-label="Khu quản trị"] [aria-disabled]')).toBeNull();
+    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a')).toHaveLength(3);
   });
 
   it('the reset confirm waits while the list is loading', async () => {
@@ -573,5 +608,20 @@ describe('UsersAdmin row actions', () => {
     }
     expect(button(rowOf(host, 'me'), 'Đặt lại mật khẩu').disabled).toBe(false);
     expect(button(rowOf(host, 'u2'), 'Khóa').disabled).toBe(false);
+  });
+});
+
+describe('bulk entry point', () => {
+  it('opens the bulk dialog and is disabled while the own secret is shown', async () => {
+    const host = await screen();
+    await click(button(host, 'Tạo hàng loạt'));
+    expect(dialog()?.textContent).toContain('Dán hoặc chọn file CSV');
+    await click(button(dialog()!, 'Hủy'));
+    expect(dialog()).toBeNull();
+    routes['POST /admin/users/me/reset-password'] = () =>
+      json({ temporaryPassword: 'SelfTemp123' });
+    await click(button(rowOf(host, 'me'), 'Đặt lại mật khẩu'));
+    await click(button(dialog()!, 'Đặt lại mật khẩu'));
+    expect(button(host, 'Tạo hàng loạt').disabled).toBe(true);
   });
 });
