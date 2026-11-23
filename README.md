@@ -19,15 +19,15 @@ Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pi
 
 Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Cài VPS/GHCR](docs/DEPLOY_PILOT.md); bản đã nâng trên VPS và cách vận hành hiện tại ở [demo học viên 20/11](docs/DEPLOY_LEARNER_DEMO_20261120.md).
 
-## Tài khoản học viên (phase 2.5a, chỉ API)
+## Tài khoản học viên (phase 2.5a, API; giao diện từ 2.5b/2.5c)
 
-Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
+Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` ở màn Người dùng (`#admin/users`, có nhập CSV hàng loạt) hoặc qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Tên đăng nhập không phân biệt hoa/thường. Manager xem bảng học viên ở `#manager`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
 
 ```sh
 docker compose --env-file .local/pilot.env run --rm --no-deps api node dist/rebuild-progress.js
 ```
 
-Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; không in bí mật). Không chạy script này trên VPS/production (nó tạo người dùng QA và đăng/rollback release nội bộ); script từ chối host không phải loopback. Mỗi lần chạy để lại người dùng `qa-*`, thêm một release nội bộ vào lịch sử (release nền phải nằm trong 20 release gần nhất) và đăng nhập khoảng 11 lần, nên thường cần `docker compose --env-file .local/pilot.env restart api` giữa các lần chạy. Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
+Script local đọc `PILOT_ORIGIN`, mặc định `http://127.0.0.1:18089` (không lấy từ `PUBLIC_ORIGIN`; đặt `PILOT_ORIGIN` khớp khi dùng cổng khác). Kiểm đầu cuối trên stack local: `node scripts/learner-accounts-check.mjs` (thêm `--stress` để kiểm nộp đồng thời; không in bí mật). Không chạy script này trên VPS/production (nó tạo người dùng QA và đăng/rollback release nội bộ); script từ chối host không phải loopback. Mỗi lần chạy để lại người dùng `qa-*`, thêm một release nội bộ vào lịch sử (release nền phải nằm trong 20 release gần nhất) và đăng nhập khoảng 11 lần, nên thường cần `docker compose --env-file .local/pilot.env restart api` giữa các lần chạy. Chi tiết: [DELIVERY_25A.md](docs/DELIVERY_25A.md). Bản này có migration mới: sao lưu DB trước khi nâng cấp VPS.
 
 ## Web học viên trên tài khoản (phase 2.5b)
 

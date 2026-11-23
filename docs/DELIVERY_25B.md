@@ -71,8 +71,7 @@ npm run test:e2e
 
 ## Chưa làm
 
-- Chưa có màn cho manager (xem tiến độ nhóm). Manager đăng nhập chỉ thấy thông báo và Thư viện.
-- Chưa có màn "Người dùng" trong trang quản trị (tạo, khóa, đặt lại mật khẩu). Tạo tài khoản vẫn chỉ qua `POST /api/v1/admin/users`.
+- Chưa có màn quản lý (tiến độ nhóm cho manager, quản lý người dùng trong trang quản trị) ở bản này; manager đăng nhập chỉ thấy thông báo và Thư viện, tạo tài khoản qua `POST /api/v1/admin/users`.
 - Chưa tạo tài khoản demo An.
 - Chưa nhập tiến độ cũ từ trình duyệt lên server. Tiến độ cũ trong `localStorage` của người dùng mã mời không được chuyển.
 - Chưa nâng cấp VPS, chưa build hay push image.

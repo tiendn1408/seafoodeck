@@ -5,6 +5,7 @@ import { Db } from './db';
 import { Catalog, ItemData, Kind } from './catalog';
 import { Media } from './media';
 import { passwordHash } from './security';
+import { ensureAdmin } from './users';
 interface Pack {
   species: {
     id: string;
@@ -63,15 +64,11 @@ async function main() {
   try {
     if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 16)
       throw Error('Set a strong ADMIN_PASSWORD before bootstrapping.');
-    await db.user.upsert({
-      where: { username: process.env.ADMIN_USERNAME ?? 'owner' },
-      create: {
-        username: process.env.ADMIN_USERNAME ?? 'owner',
-        passwordHash: passwordHash(process.env.ADMIN_PASSWORD),
-        role: 'admin',
-      },
-      update: {},
-    });
+    await ensureAdmin(
+      db,
+      process.env.ADMIN_USERNAME ?? 'owner',
+      passwordHash(process.env.ADMIN_PASSWORD),
+    );
     const existing = await db.setting.findUnique({ where: { id: 'current:internal' } });
     if (existing) {
       console.log('Internal release already exists; seed is idempotent, no content overwritten.');

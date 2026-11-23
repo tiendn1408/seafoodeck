@@ -24,7 +24,7 @@ import {
   UpdateUserDto,
 } from './admin-users.controller';
 import { UsersService } from './users.service';
-import { errorBody, errorStatus } from './main';
+import { errorBody, errorStatus } from './errors';
 import type { Db } from './db';
 
 // ---- In-memory database with snapshot transactions -------------------------------------------
