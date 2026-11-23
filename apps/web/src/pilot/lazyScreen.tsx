@@ -2,6 +2,8 @@ import {
   Component,
   lazy,
   Suspense,
+  useEffect,
+  useRef,
   useState,
   type ComponentType,
   type LazyExoticComponent,
@@ -55,6 +57,23 @@ class ChunkBoundary extends Component<
 }
 
 /**
+ * Rendered after a successful retry only: the Thử lại button that had focus is gone, so focus
+ * moves to the loaded screen's heading (or, while it has none yet, the screen itself).
+ */
+function FocusLoaded() {
+  const marker = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const at = marker.current;
+    const screen = at?.previousElementSibling as HTMLElement | null;
+    const target = screen?.querySelector<HTMLElement>('h1') ?? screen;
+    if (!target) return;
+    if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+    target.focus();
+  }, []);
+  return <span hidden ref={marker} />;
+}
+
+/**
  * A screen whose code is a separate chunk, downloaded the first time it renders (never before:
  * the caller decides whether it renders at all). While it downloads a status line shows; a failed
  * download shows an error note with a retry, and the next render tries the download again.
@@ -74,12 +93,13 @@ export function lazyScreen<P extends object>(load: () => Promise<ComponentType<P
     );
   }
   function Screen(props: P) {
-    const [, retried] = useState(0);
+    const [retries, retried] = useState(0);
     const Loaded = slot.current;
     return (
       <ChunkBoundary onRetry={() => retried((n) => n + 1)}>
         <Suspense fallback={<p role="status">Đang tải…</p>}>
           <Loaded {...props} />
+          {retries > 0 && <FocusLoaded />}
         </Suspense>
       </ChunkBoundary>
     );

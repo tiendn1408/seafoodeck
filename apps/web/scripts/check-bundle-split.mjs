@@ -11,8 +11,10 @@ import process from 'node:process';
 const dist = resolve(process.argv[2] ?? join(import.meta.dirname, '..', 'dist'));
 const MARKERS = [
   '/admin/users',
-  '/admin/users/bulk',
   '/admin/overview',
+  '/admin/csv-template',
+  '/admin/items',
+  '/admin/media',
   '/admin/import',
   '/admin/releases',
   '/admin/revisions',

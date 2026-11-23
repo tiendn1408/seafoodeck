@@ -58,6 +58,31 @@ describe('lazyScreen', () => {
     expect(load).toHaveBeenCalledTimes(2);
     expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(host.querySelector('h1')?.textContent).toBe('Xin chào Lan');
+    expect(document.activeElement).toBe(host.querySelector('h1'));
+  });
+
+  it('after a retry, a screen without a heading yet gets the focus itself', async () => {
+    function Busy() {
+      return <section className="busy">Đang tải…</section>;
+    }
+    const load = vi
+      .fn<() => Promise<typeof Busy>>()
+      .mockRejectedValueOnce(offline())
+      .mockResolvedValue(Busy);
+    const Screen = lazyScreen(load);
+    const host = mount(<Screen />);
+    await tick();
+    await click(button(host, 'Thử lại'));
+    await tick();
+    expect(document.activeElement).toBe(host.querySelector('.busy'));
+  });
+
+  it('the first load moves no focus and adds nothing to the screen', async () => {
+    const Screen = lazyScreen(() => Promise.resolve(Hello));
+    const host = mount(<Screen name="Lan" />);
+    await tick();
+    expect(document.activeElement).toBe(document.body);
+    expect(host.firstElementChild?.children).toHaveLength(1);
   });
 
   it('a screen that failed earlier is tried again when opened again', async () => {
