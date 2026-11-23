@@ -27,11 +27,12 @@ Ngày 23/11/2026. Branch `feat/manager-admin-25c-part2` (gốc `main` tại `973
 - "Xuất CSV" có cùng bộ lọc với bảng. File UTF-8 có BOM, tiêu đề tiếng Việt, chống chèn công thức.
 - Chi tiết học viên chỉ đọc: Tiến độ, Thành tích, Lịch ôn tập của đúng người đó, không có nút học hay ôn. Hiện "Không tìm thấy học viên." với id không phải học viên.
 - Manager có hai tab "Học viên | Thư viện". Manager không gọi `/me/*`, không có route học hay tài khoản. Trang hồ sơ loài không hiện nút học cho manager (đã kiểm trong e2e).
+- Trên điện thoại, sắp xếp và bộ lọc gom vào một mục "Sắp xếp và lọc" có thể mở ra; dòng tóm tắt luôn ghi cách sắp xếp và bộ lọc đang áp dụng. Ở 720 px bảng cuộn ngang trong khung, mép còn cột ẩn có bóng mờ.
 
 **Giao diện học viên và hạ tầng (các việc còn tồn)**
-- Phiên bị khóa hoặc hết hạn (401) đưa về màn đăng nhập.
+- Phiên bị khóa hoặc hết hạn (401) đưa về màn đăng nhập, thông báo chung "Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.". Nếu `/auth/me` cho thấy vẫn là đúng người đó đang đăng nhập (401 lạc, ví dụ yêu cầu gửi bằng phiên vừa xoay), web chỉ nhận CSRF mới, không xóa hàng đợi hay phiên học.
 - Đăng xuất khi còn câu đang lưu: hỏi xác nhận đúng, chống bấm đúp. Header điện thoại hiện "Đang lưu tiến độ…".
-- Một bộ lắng nghe `online` chung. Tên loài ở Ôn tập hiện được hai dòng. Chip nhóm 0 loài bị làm mờ và không bấm được. Ô trạng thái tự đánh giá không còn hình nút. Màu và bóng gõ cứng gom về token (trừ bóng trên nền nước sâu ở `home.css` và `float-rope.css`, chủ ý giữ).
+- Một bộ lắng nghe `online` chung. Tên loài ở Ôn tập hiện được hai dòng. Chip nhóm 0 loài có viền nét đứt, biểu tượng mờ, chữ vẫn đủ tương phản, và không bấm được. Ô trạng thái tự đánh giá không còn hình nút. Màu và bóng gõ cứng gom về token (trừ bóng trên nền nước sâu ở `home.css` và `float-rope.css`, chủ ý giữ).
 - `errors.ts` tách khỏi `main.ts`. `progress-review.vectors.json` thu gọn mỗi vector một dòng. Thêm ca cho `local-origin`.
 - Runbook nâng cấp VPS ([DEPLOY_UPGRADE_25C.md](DEPLOY_UPGRADE_25C.md)).
 - Công cụ tùy chọn `scripts/demo-learner-play.mjs`: chơi vài phiên flashcard bằng một tài khoản học viên để bảng manager có số liệu. Mật khẩu nhập qua prompt ẩn. Mặc định từ chối địa chỉ không phải local.
@@ -70,15 +71,14 @@ Quyết định thêm trong task 15:
 
 ## Kiểm tra
 
-Số liệu thực tế ngày 23/11/2026, commit `5c3b9ae` cộng commit tài liệu này:
+Số liệu thực tế ngày 23/11/2026, sau lượt sửa sau review cuối (commit `a48bed0` cộng commit tài liệu này):
 - `npm test`:
-  - web 407/407 (38 file)
-  - API 398/398
+  - web 421/421 (38 file)
+  - API 402/402
   - scripts 29/29
 - `typecheck`, `lint` (0 lỗi, 1 cảnh báo cũ ở `Admin.tsx`), `format:check`, `build` đều đạt.
 - `contract:generate` chạy lại không làm đổi `docs/api/openapi.json`.
-- `npm run test:e2e` chạy **hai lần liên tiếp** trên stack local `seafoodeck-pilot-acceptance` (cổng 18089, release `manager-admin-25c-local`). Cả hai lần đều ra **37 đạt, 3 bỏ qua, 0 lỗi** trên 40 ca (khoảng 56 giây mỗi lần).
-  - Trong 37 ca đạt có 2 ca "lỗi đã biết" (`test.fail`, xem mục dưới).
+- `npm run test:e2e` chạy **hai lần liên tiếp** trên stack local `seafoodeck-pilot-acceptance` (cổng 18089, release `manager-admin-25c-local`, dựng lại từ mã hiện tại). Cả hai lần đều ra **37 đạt, 3 bỏ qua, 0 lỗi** trên 40 ca (khoảng 56 giây mỗi lần). Không còn ca "lỗi đã biết" (`test.fail`) nào: 37 ca đạt là đạt thật.
   - 3 ca bỏ qua là ba ca khung hình điện thoại, chỉ chạy ở project mobile, như trước.
   - So với mốc 25/3: thêm 6 ca × 2 project = 12 ca.
     - (1) Quản trị tạo "An" trong giao diện, An đăng nhập và học; manager thấy An (học hôm nay, đang học > 0), sắp xếp, xuất CSV (BOM, có An), mở chi tiết chỉ đọc. Học viên không vào được `#manager` hay `#admin/users`; manager không vào được `#admin/users`; hồ sơ loài không có nút học cho manager. Khóa An khi tab An đang mở: yêu cầu kế tiếp đưa An về màn đăng nhập, đăng nhập lại bị từ chối; mở khóa thì tiến độ vẫn còn. Đặt lại mật khẩu: mật khẩu tạm, buộc đổi, rồi dùng bình thường.
@@ -91,21 +91,27 @@ Số liệu thực tế ngày 23/11/2026, commit `5c3b9ae` cộng commit tài li
       - Header CSV đúng.
       - Manager nhận 403 ở `/admin/users`.
     - (4) `q=_` và `q=%` ở `GET /admin/users` (Postgres thật) và `/manager/learners` khớp đúng nghĩa đen.
-    - (5) `#admin/users`, hộp tạo, hộp tạo hàng loạt, `#manager`: không cuộn ngang, mục chạm ≥ 44 px. Ngoại lệ đã ghi nhận: nút sắp xếp cột "Tên".
-    - (6) Chi tiết học viên không cuộn ngang: **lỗi đã biết**, xem mục dưới.
-- Hai quản trị khóa nhau cùng lúc trên Postgres thật: `node scripts/admin-lock-race-check.mjs --rounds 5` đạt 5/5 vòng.
+    - (5) `#admin/users`, hộp tạo, hộp tạo hàng loạt, `#manager`: không cuộn ngang, mọi mục chạm ≥ 44 px (không còn ngoại lệ; nút "Tên" nay 44×44).
+    - (6) Chi tiết học viên không cuộn ngang (1280 và điện thoại).
+- Hai quản trị khóa nhau cùng lúc trên Postgres thật (task 15): `node scripts/admin-lock-race-check.mjs --rounds 5` đạt 5/5 vòng.
   - Mỗi vòng một yêu cầu 200, yêu cầu kia 401 (người thao tác đã bị khóa), và đúng một quản trị của cặp còn hoạt động.
   - Cả năm vòng đều ra 401, không vòng nào ra 409 hay 400. Vì vậy chưa chứng minh được là hai giao dịch thật sự chồng lên nhau (nhánh thử lại Serializable). Chỉ kiểm được kết quả cuối luôn đúng.
-- Kiểm trực quan bằng Playwright ở 390×844, 720×900 và 1280×800 (sáng và tối) cho các màn Người dùng, hộp thoại, bảng/thẻ manager, chi tiết, 404 và màn đăng nhập sau khi bị khóa. Ảnh lưu ở `apps/web/.impeccable/review/2.5c/` (không commit).
+- Kiểm trực quan bằng Playwright ở 390×844, 720×900 và 1280×800 (sáng và tối). Ảnh lưu ở `apps/web/.impeccable/review/2.5c/` (không commit); ảnh sau lượt sửa có tiền tố `fix-`. Chi tiết học viên: chiều rộng trang 1280 ở 1280 px và 390 ở điện thoại.
 
-### Lỗi đã biết (chưa sửa trong lượt này)
+### Đã sửa sau review cuối
 
-- **Chi tiết học viên (`#manager/learner/<id>`) cuộn ngang.**
-  - Ở 1280×800, chiều rộng trang là 2421 px.
-  - Trên điện thoại, trang bị thu nhỏ vì khung bố cục giãn tới 1200 px.
-  - Nguyên nhân: hai dải `.ice-hero` (Tiến độ học, Lịch ôn tập) tràn ra mép bằng `::after` với `inset: auto -100vmax 0`. Màn học viên bọc các dải này trong `.ice-stage { overflow-x: clip }`, còn màn chi tiết của manager thì không.
-  - E2E ghi nhận lỗi này bằng `test.fail` (đặt `E2E_SHOW_KNOWN=1` để thấy lỗi thật). Khi sửa xong thì bỏ dòng đó.
-- Nút sắp xếp cột "Tên" rộng 33 px, dưới mức 44 px.
+- Chi tiết học viên nằm trong `.ice-stage` như màn Tiến độ/Ôn tập của học viên, nên dải `.ice-hero` tràn mép được cắt; trang không còn cuộn ngang.
+- Nút sắp xếp cột rộng tối thiểu 44 px.
+- Bảng manager ở 720 px: bóng mờ ở mép còn cột ẩn; tên đăng nhập không xuống dòng giữa từ.
+- Bảng Người dùng: thao tác ở ô cố định (lưới 2×2 dưới 1400 px, một hàng từ 1400 px), các dòng thẳng hàng; ô chỉ xuống dòng giữa các từ; tiêu đề cột một dòng. Gạch chân tab hiện tại dùng màu mực thay màu cá hồi (đủ tương phản).
+- Điện thoại: phần sắp xếp/lọc của bảng manager gom vào một mục mở ra được.
+- Thông báo 401 trung tính, không nhắc mã mời.
+- 401 lạc khi vẫn đúng người dùng đó đăng nhập: giữ hàng đợi và phiên học. Có test cho hai 401 cùng lúc và 401 trong lúc đăng xuất đang chờ lưu.
+- Tạo hàng loạt: sau lượt chạy có dòng lỗi, nút "Sửa các dòng chưa tạo được" đưa riêng các dòng đó (không kèm mật khẩu) trở lại ô nhập; lỗi server chỉ hiện một lần; dấu ngoặc kép không đóng báo lỗi kèm số dòng mở ngoặc.
+- Manager: các route chi tiết dùng đồng hồ tiêm được (`this.now()`), test so sánh với `/me` ghim thời gian; có test xem tiến độ và mức nhớ của học viên đã khóa.
+- CSV học viên: "Lần học cuối" theo giờ Việt Nam, dạng `yyyy-mm-dd HH:mm`; mọi ký tự điều khiển C0 ở đầu ô đều bị vô hiệu hóa.
+- Đổi mật khẩu: nút Hủy bị khóa khi đang lưu.
+- Ghi chú trong `home.css`, `float-rope.css` vì sao bóng trên nền nước sâu giữ màu gõ cứng.
 
 ## Chưa làm
 
@@ -118,7 +124,7 @@ Theo spec mục 3 (không làm ở vòng này):
 
 Chưa build ảnh phát hành, chưa push GHCR, chưa nâng cấp VPS. Chưa thử quay lại ảnh r1 trên DB đã có dữ liệu 2.5c.
 
-Các điểm nhỏ đã ghi nhận qua các vòng review, chưa làm (để triage sau):
+Các điểm nhỏ đã ghi nhận qua các vòng review, còn lại sau lượt sửa (đã kiểm lại với mã, để triage sau):
 - **Server**
   - Lỗi P2002 chưa thu hẹp theo cột.
   - Tra tên bằng ILIKE không dùng chỉ mục `lower()` (đủ cho quy mô pilot).
@@ -128,35 +134,24 @@ Các điểm nhỏ đã ghi nhận qua các vòng review, chưa làm (để tria
   - `includeDisabled` chỉ nhận `true`.
   - Tạo hàng loạt mất khoảng 9 giây cho 500 dòng (giao diện cảnh báo không đóng trang). Một lỗi commit mơ hồ có thể làm mất mật khẩu đã tạo; quản trị đặt lại được.
   - Mật khẩu tạo hàng loạt tối đa 128 ký tự, nơi khác là 150.
-  - Thông báo 401 chung cho phiên hết hạn hoặc bị khóa vẫn nói "nhập lại mã mời", kể cả với tài khoản nhân sự.
+  - Kiểm hai quản trị khóa nhau chỉ thấy kết quả 401, chưa chứng minh nhánh thử lại Serializable (xem trên).
 - **Web quản trị**
-  - Khi khung mật khẩu tạm của chính quản trị đang hiện: nút thử lại ở thông báo lỗi vẫn bấm được.
-  - Gạch chân tab có tương phản 2.8:1 ở trang Người dùng.
+  - Khi khung mật khẩu tạm của chính quản trị đang hiện: nút thử lại ở thông báo lỗi tải danh sách vẫn bấm được.
   - Màu nền đổi giữa `#admin` và `#admin/users` (vì `:has()` cần Firefox 121+).
   - Màu lớp phủ hộp thoại còn gõ cứng.
+  - Thẻ người dùng trên điện thoại cao (4 nút xếp 2×2), trang 20 người khá dài.
 - **Tạo hàng loạt**
-  - Khi dán CSV không có dòng tiêu đề, dòng đầu bị bỏ mà chỉ có cảnh báo nhẹ.
-  - Lỗi server hiện hai lần.
-  - Chạy thất bại thì ô nhập bị xóa (không có "sửa các dòng lỗi").
-  - Câu báo khi mất phản hồi chưa nhắc kiểm lại danh sách.
-  - Tên bắt đầu bằng `-` bị thêm `'` trong CSV mật khẩu.
-  - Dấu ngoặc kép không đóng nuốt hết phần còn lại của file.
+  - Khi dán CSV không có dòng tiêu đề, dòng đầu bị bỏ, chỉ có cảnh báo (đã hiện rõ dòng bị bỏ).
+  - Tên bắt đầu bằng `-` bị thêm `'` trong CSV mật khẩu (chủ ý, chống chèn công thức).
+  - Mật khẩu nhập tay của dòng lỗi không được đưa lại vào ô nhập khi sửa và chạy lại (chủ ý); để trống thì hệ thống tự tạo.
+  - Kết quả trên điện thoại mỗi dòng một thẻ, 500 dòng sẽ rất dài.
 - **Web quản lý**
-  - Chip lọc chỉ chọn một nhưng chưa nói rõ.
   - Câu trạng thái rỗng nháy khi tải lại.
-  - Admin ở `#manager` không có tab "Quản trị" được đánh dấu.
-  - Id trên route bị mã hóa hai lần với id không phải UUID.
-  - Thẻ `<p>` rỗng ở Ôn tập chỉ đọc.
-  - Chip nhóm rỗng bị làm mờ cả chữ.
+  - Admin ở `#manager` không có tab nào trên thanh chính được đánh dấu (tab "Học viên" ở dải tab quản trị vẫn được đánh dấu).
 - **Shell**
   - `leaveGuard` dùng `location.replace`, ghi đè một mục lịch sử.
-  - Chưa có test cho hai lỗi 401 cùng lúc và lỗi 401 trong lúc đăng xuất.
-  - Nút Hủy ở màn đổi mật khẩu vẫn bấm được khi đang chờ lưu.
-- **Quan sát trực quan khác**: xem báo cáo task 15. Ví dụ:
-  - Ở 720 px, cột "Phiên 7 ngày" nằm ngoài vùng cuộn mà không có dấu hiệu.
-  - Tên đăng nhập dài xuống dòng giữa từ trong bảng.
-  - Bảng Người dùng ở 1280 px có cột thao tác lệch hàng.
-  - Trên điện thoại, phần lọc của bảng manager chiếm gần hết màn đầu.
+
+**Câu hỏi mở cho chủ dự án:** spec mục 6.3 ghi manager có route `account` (đổi mật khẩu tự nguyện), còn plan T9 đã bỏ route đó; hiện manager không có màn tài khoản, chỉ đổi mật khẩu khi bị buộc (sau khi quản trị đặt lại). Cần quyết định: thêm `account` cho manager theo spec, hay sửa spec theo hiện trạng.
 
 ## Chạy E2E
 

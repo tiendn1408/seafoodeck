@@ -72,7 +72,7 @@ Sau đó làm mục 6. So số liệu catalogue trước/sau bằng tay: 96 Item
 
 ## 6. Kiểm tay trong trình duyệt
 
-Các bước 1–6 dưới đây đã được chạy tự động trên stack Docker local (bản `manager-admin-25c-local`, ngày 23/11/2026) bằng `npm run test:e2e`, xem [DELIVERY_25C.md](DELIVERY_25C.md). Chưa kiểm trên VPS. Lỗi đã biết: màn chi tiết học viên cuộn ngang (ghi trong DELIVERY_25C.md).
+Các bước 1–6 dưới đây đã được chạy tự động trên stack Docker local (bản `manager-admin-25c-local`, ngày 23/11/2026) bằng `npm run test:e2e`, xem [DELIVERY_25C.md](DELIVERY_25C.md). Chưa kiểm trên VPS. Lỗi cuộn ngang ở màn chi tiết học viên đã sửa trong lượt sửa sau review cuối; e2e kiểm lại đạt.
 
 1. Đăng nhập quản trị tại `https://seafoodeck.tiendn.io.vn/#admin`. Mở `#admin/users`, tạo học viên "An" (vai trò student) với mật khẩu do **chủ dự án tự chọn**; không ghi mật khẩu vào tài liệu, repo, chat hay log. Tạo thêm một tài khoản vai trò manager nếu chưa có.
 2. Đăng nhập bằng tài khoản manager: phải vào `#manager` và thấy bảng học viên (có "An"), lọc/sắp xếp được.
