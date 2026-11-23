@@ -65,6 +65,10 @@ Không `down -v`, không xóa volume `pilot_db`, `pilot_storage`, không đụng
     curl -fsS https://seafoodeck.tiendn.io.vn/api/v1/health      # release đúng <TAG-2.5c>
     curl -fsSI https://seafoodeck.tiendn.io.vn/ | head -1         # HTTP 200, TLS hợp lệ
     dc ps                                                          # api, web, db, storage healthy
+    curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeck.tiendn.io.vn/api/v1/docs          # phải là 404
+    curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeck.tiendn.io.vn/api/v1/openapi.json  # phải là 404
+
+Hai dòng cuối kiểm rằng tài liệu API (Swagger, liệt kê mọi route `/admin/*`, `/manager/*`) không lộ ra ngoài: API chỉ phục vụ khi `EXPOSE_API_DOCS=true` (mặc định tắt, không đặt trong `.local/pilot.env`), và `deploy/Caddyfile.pilot` (từ 2.5d) trả 404 cho `/api/v1/docs*`, `/api/v1/openapi*` dù API có bật. Khác 404 là lỗi: kiểm `.local/pilot.env` không có `EXPOSE_API_DOCS=true` rồi recreate API. Ảnh API trước 2.5d luôn phục vụ hai đường này (chưa có cờ), chỉ chặn được ở Caddy.
 
 Sau đó làm mục 6. So số liệu catalogue trước/sau bằng tay: 96 Item, 96 Revision, 94 MediaAsset, release nội bộ giữ nguyên. Số trước nâng cấp đọc trong [biên bản demo 20/11](DEPLOY_LEARNER_DEMO_20261120.md) (mục kiểm sau nâng cấp); số sau nâng cấp đếm trong DB, ví dụ:
 
@@ -102,6 +106,7 @@ Nếu cần khôi phục dữ liệu từ `_backups/before-25c` (DB/ảnh hỏng
 - `rebuild:progress` (dựng lại tiến độ) chỉ chạy khi API đã dừng; không chạy khi API còn bật.
 - Tiến độ HS của một loài đặt lại khi ghi chú, SKU hoặc ảnh của loài đó đổi.
 - `ALLOW_INTERNAL_DEMO` chỉ để xem nội bộ; tắt khi mở cho người ngoài. Nội dung chưa được khách duyệt vẫn là nội bộ.
+- `EXPOSE_API_DOCS` để trống hoặc `false` trên VPS. Chỉ đặt `true` khi chạy API cục bộ và cần xem Swagger tại `/api/v1/docs`; đặc tả trong repo là `docs/api/openapi.json` (`npm run contract:generate`, không cần cờ).
 - Giới hạn đăng nhập nằm trong bộ nhớ: mất khi API khởi động lại.
 - Tài khoản demo hiện có là `demo-hoc-vien` (vai trò student, buộc đổi mật khẩu lần đầu). Credential chỉ nằm trong file quyền 600 trên VPS (`/opt/seafoodeck-pilot/.local/demo-hoc-vien-20261120.json`), không ghi vào Git/chat/log.
 - Đoán hình cần media loại `identification`; trên VPS cả 94 media hiện là `profile`, draft, nên chế độ này báo chưa đủ ảnh gốc hợp lệ. Danh mục 96 mục hiện là dữ liệu tham khảo của prototype (có cả tôm), chưa phải danh mục khách đã duyệt.
