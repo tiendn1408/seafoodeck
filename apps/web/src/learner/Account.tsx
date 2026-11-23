@@ -17,6 +17,8 @@ export interface MeAccount {
 }
 
 type Props = {
+  /** The signed-in role, which sets the minimum password length (students 8, others 16). */
+  role: string;
   userId: string | undefined;
   onLogout: () => void;
   /** Called with the saved display name (null when cleared) so the shell can update. */
@@ -25,8 +27,8 @@ type Props = {
   onPasswordChanged?: (session: AuthView) => void;
 };
 
-/** The student's own account: display name, password change and sign-out. Deep, photo-less, short. */
-export function Account({ userId, onLogout, onSaved, onPasswordChanged }: Props) {
+/** The signed-in account's own settings: display name, password change and sign-out. Deep, photo-less, short. */
+export function Account({ role, userId, onLogout, onSaved, onPasswordChanged }: Props) {
   const me = useMe<MeAccount>('/me', userId);
   const [draft, setDraft] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
@@ -58,7 +60,7 @@ export function Account({ userId, onLogout, onSaved, onPasswordChanged }: Props)
     return (
       <ChangePassword
         forced={false}
-        role="student"
+        role={role}
         onCancel={() => setChanging(false)}
         onDone={(session) => {
           onPasswordChanged?.(session);

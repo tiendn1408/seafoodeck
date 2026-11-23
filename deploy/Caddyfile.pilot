@@ -8,6 +8,14 @@
         Cache-Control "no-store"
         X-Robots-Tag "noindex, nofollow"
     }
+    # Defence in depth: the API serves its Swagger UI / OpenAPI JSON only with EXPOSE_API_DOCS=true,
+    # and never through this public proxy. Path handles sort before /api/* (more specific).
+    handle /api/v1/docs* {
+        respond 404
+    }
+    handle /api/v1/openapi* {
+        respond 404
+    }
     handle /api/* {
         reverse_proxy api:3000
     }

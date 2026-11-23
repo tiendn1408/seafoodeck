@@ -55,7 +55,9 @@ const csrfOfLast = (key: string) => {
 const patches = () => calls.filter((c) => c.key === 'PATCH /me');
 
 async function account(props: Partial<Parameters<typeof Account>[0]> = {}) {
-  const host = mount(<Account userId="u1" onLogout={() => {}} onSaved={() => {}} {...props} />);
+  const host = mount(
+    <Account role="student" userId="u1" onLogout={() => {}} onSaved={() => {}} {...props} />,
+  );
   await tick();
   return host;
 }

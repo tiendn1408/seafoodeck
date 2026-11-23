@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @seafoodeck/web --",
     "build": "npm run build --workspace @seafoodeck/api && npm run build --workspace @seafoodeck/web",
+    "check:bundle": "npm run check:bundle --workspace @seafoodeck/web",
     "test": "npm run test --workspace @seafoodeck/web && npm run test --workspace @seafoodeck/api && npm run test:scripts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",

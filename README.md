@@ -21,6 +21,8 @@ Production không cần seed: tạo env bằng `--production --origin https://..
 
 Nâng cấp VPS từ demo học viên 20/11 lên 2.5c (không có migration mới): [runbook](docs/DEPLOY_UPGRADE_25C.md).
 
+Swagger (`/api/v1/docs`, `/api/v1/openapi.json`) mặc định tắt: API chỉ phục vụ khi biến môi trường `EXPOSE_API_DOCS=true` (chỉ dùng khi chạy local), và `deploy/Caddyfile.pilot` luôn trả 404 cho hai đường này. Đặc tả trong repo: `npm run contract:generate` ghi `docs/api/openapi.json`, không cần cờ.
+
 ## Tài khoản học viên (phase 2.5a, API; giao diện từ 2.5b/2.5c)
 
 Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` ở màn Người dùng (`#admin/users`, có nhập CSV hàng loạt) hoặc qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Tên đăng nhập không phân biệt hoa/thường. Manager xem bảng học viên ở `#manager`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
@@ -74,3 +76,5 @@ Web không chứa catalog/đáp án/ảnh khách. Nội dung và tên đến t�
 [Hai mốc chuyển monorepo](docs/MONOREPO_MILESTONES.md) · [Đặc tả API](docs/api/openapi.json) · [Báo cáo bàn giao 0.6](docs/DELIVERY_0.6.0.md) · [Giao nhận](docs/FILE_HANDOFF.md) · [Yêu cầu pilot](docs/requirements/Seafood_Deck_Pilot_Implementation_Plan.md)
 
 Baseline 0.5.1 còn tại tag `baseline-0.5.1`; mốc di chuyển web giữ hành vi cũ tại `milestone-1-web-migration`. Dữ liệu lưu trình duyệt của baseline được giữ riêng, không tự nhập thành tiến độ pilot. CI chỉ kiểm thử/build, không deploy VPS.
+
+Phase 2.5d (ma trận vai trò × route, tách bundle admin/manager, màn Tài khoản của manager): [docs/DELIVERY_25D.md](docs/DELIVERY_25D.md).

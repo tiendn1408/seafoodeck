@@ -12,7 +12,9 @@ COPY apps/web/tsconfig.json apps/web/tsconfig.build.json apps/web/vite.config.ts
 COPY apps/web/src ./src
 COPY apps/web/public ./public
 COPY apps/web/e2e ./e2e
-RUN npm run build
+COPY apps/web/scripts ./scripts
+# The release image must pass the role split check (no admin/manager code for every visitor).
+RUN npm run build && npm run check:bundle
 
 FROM caddy:2-alpine AS runtime
 ARG RELEASE_TAG=pilot-internal-20261118-r2

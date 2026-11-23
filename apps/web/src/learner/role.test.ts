@@ -30,10 +30,10 @@ describe('routeAllowed', () => {
     for (const r of ['review', 'progress', 'account', 'admin'])
       expect(routeAllowed('trial', r)).toBe(false);
   });
-  it('managers get the learner table, learner details and the library; no study, /me pages or account', () => {
-    for (const r of ['home', 'manager', 'manager/learner/x', 'library', 'profile/x'])
+  it('managers get the learner table, details, the library and their account; no study or learner /me pages', () => {
+    for (const r of ['home', 'manager', 'manager/learner/x', 'library', 'profile/x', 'account'])
       expect(routeAllowed('manager', r), r).toBe(true);
-    for (const r of ['study', 'review', 'progress', 'account', 'admin', 'admin/users', 'manager/x'])
+    for (const r of ['study', 'review', 'progress', 'admin', 'admin/users', 'manager/x'])
       expect(routeAllowed('manager', r), r).toBe(false);
   });
   it('only managers and admins may open the manager routes', () => {
@@ -77,7 +77,7 @@ describe('routeAllowed', () => {
       'admin/users',
       'manager',
     ]);
-    expect(routesFor('manager')).toEqual(['home', 'manager', 'library']);
+    expect(routesFor('manager')).toEqual(['home', 'manager', 'library', 'account']);
     expect(routesFor('staff')).toEqual(['home', 'library', 'study', 'admin']);
     expect(routesFor('guest')).toEqual([]);
   });
