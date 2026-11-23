@@ -66,10 +66,34 @@ export function ratingPlan(count, seed, ratio = KNOWN_RATIO) {
   return plan;
 }
 
+/** Removes terminal escape sequences (arrow keys, Home/End, bracketed-paste markers, …) from a typed chunk,
+ * so their printable bytes never end up inside the password. Plain control keys are left to the caller. */
+export function stripEscapes(chunk) {
+  // CSI (ESC [ params final), SS3 (ESC O x), then any other ESC + one character.
+  return chunk.replace(/\u001b\[[0-?]*[ -/]*[@-~]|\u001bO.|\u001b[\s\S]?/g, '');
+}
+
+/** Applies one typed chunk to the hidden value: {value, done?: 'enter' | 'cancel'}. Other control characters are dropped. */
+export function applyTyped(value, chunk) {
+  for (const ch of stripEscapes(chunk)) {
+    if (ch === '\r' || ch === '\n' || ch === '\u0004') return {value, done: 'enter'};
+    if (ch === '\u0003') return {value, done: 'cancel'};
+    if (ch === '\u007f' || ch === '\b') value = value.slice(0, -1);
+    else if (!/[\u0000-\u001f\u007f-\u009f]/.test(ch)) value += ch;
+  }
+  return {value};
+}
+
 function promptHidden(question) {
   return new Promise((resolve, reject) => {
     const {stdin, stderr} = process;
     if (!stdin.isTTY) return reject(new Error('Cần terminal tương tác để nhập mật khẩu ẩn.'));
+    // Raw mode is restored on every way out (Enter, Ctrl+C, an error exit, a kill signal), never leaving a mute terminal.
+    const restore = () => { try { stdin.setRawMode(false); } catch { /* stdin already closed */ } };
+    const onSignal = () => { restore(); process.exit(130); };
+    const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+    process.on('exit', restore);
+    for (const s of signals) process.on(s, onSignal);
     // Raw mode first: initialising stderr before it would leave the terminal echoing the password.
     stdin.setRawMode(true);
     stderr.write(question);
@@ -77,13 +101,17 @@ function promptHidden(question) {
     stdin.resume();
     stdin.setEncoding('utf8');
     const onData = chunk => {
-      for (const ch of chunk) {
-        if (ch === '\r' || ch === '\n' || ch === '\u0004') { done(); return resolve(value); }
-        if (ch === '\u0003') { done(); return reject(new Error('Đã hủy.')); }
-        if (ch === '\u007f' || ch === '\b') value = value.slice(0, -1); else value += ch;
-      }
+      const r = applyTyped(value, chunk);
+      value = r.value;
+      if (r.done === 'enter') { done(); resolve(value); }
+      else if (r.done === 'cancel') { done(); reject(new Error('Đã hủy.')); }
     };
-    const done = () => { stdin.setRawMode(false); stdin.pause(); stdin.off('data', onData); stderr.write('\n'); };
+    const done = () => {
+      restore();
+      process.off('exit', restore);
+      for (const s of signals) process.off(s, onSignal);
+      stdin.pause(); stdin.off('data', onData); stderr.write('\n');
+    };
     stdin.on('data', onData);
   });
 }
@@ -111,7 +139,8 @@ async function main() {
   const call = async (path, body) => {
     const method = body === undefined ? 'GET' : 'POST';
     const headers = {Origin: args.origin, ...(cookie ? {Cookie: cookie} : {}), ...(method === 'GET' ? {} : {'X-CSRF-Token': csrf, 'Content-Type': 'application/json'})};
-    const res = await fetch(args.origin + '/api/v1' + path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)});
+    // redirect:'error': never follow a redirect that could carry the cookie/CSRF to another origin.
+    const res = await fetch(args.origin + '/api/v1' + path, {method, headers, redirect: 'error', body: body === undefined ? undefined : JSON.stringify(body)});
     const c = res.headers.getSetCookie()[0];
     if (c) cookie = c.split(';')[0];
     const text = await res.text();

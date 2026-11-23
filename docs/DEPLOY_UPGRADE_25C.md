@@ -22,9 +22,11 @@ Chỉ push hai ảnh amd64 đã kiểm cục bộ đúng tag này:
 
 ## 1. Sao lưu trước (DB và ảnh)
 
-Script dừng API vài chục giây trong lúc sao lưu, nên làm lúc không có ai dùng. Backup chứa dữ liệu riêng tư, không đưa lên GitHub.
+Script dừng API vài chục giây trong lúc sao lưu, nên làm lúc không có ai dùng. Backup chứa dữ liệu riêng tư, không đưa lên GitHub. Trước `git pull --ff-only`: thư mục làm việc phải sạch (`git status` rỗng) và 2.5c phải đã được merge vào `main` trên origin; nếu chưa, dừng lại, không kéo nhánh khác lên VPS.
 
     cd /opt/seafoodeck-pilot
+    git status --short          # phải rỗng; nếu có file sửa tay, dừng lại xử lý trước
+    git fetch origin && git log --oneline -1 origin/main   # phải là commit đã merge 2.5c
     git pull --ff-only origin main
     sudo env PILOT_COMPOSE_FILE=deploy/compose.pilot.ghcr.yaml sh scripts/backup-pilot.sh _backups/before-25c
     ls -la _backups/before-25c      # phải thấy db.sql, objects.json và images.txt
@@ -39,6 +41,7 @@ Lưu hai dòng này (bản `learner-demo-20261120-r1`; cũng có trong tài li�
 
     sed -i 's#^API_IMAGE_REF=.*#API_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-api@sha256:<DIGEST-API>#' .local/pilot.env
     sed -i 's#^WEB_IMAGE_REF=.*#WEB_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-web@sha256:<DIGEST-WEB>#' .local/pilot.env
+    # alias chỉ có trong shell tương tác (gõ tay qua SSH); trong script hãy viết đầy đủ lệnh này
     alias dc='sudo docker compose --env-file .local/pilot.env --project-directory . -f deploy/compose.pilot.ghcr.yaml'
     dc config --images      # phải thấy đúng hai mã mới
 
@@ -63,9 +66,13 @@ Không `down -v`, không xóa volume `pilot_db`, `pilot_storage`, không đụng
     curl -fsSI https://seafoodeck.tiendn.io.vn/ | head -1         # HTTP 200, TLS hợp lệ
     dc ps                                                          # api, web, db, storage healthy
 
-Sau đó làm mục 6. So số liệu catalogue trước/sau bằng tay: 96 Item, 96 Revision, 94 MediaAsset, release nội bộ giữ nguyên (số trước nâng cấp đọc từ biên bản demo 20/11).
+Sau đó làm mục 6. So số liệu catalogue trước/sau bằng tay: 96 Item, 96 Revision, 94 MediaAsset, release nội bộ giữ nguyên. Số trước nâng cấp đọc trong [biên bản demo 20/11](DEPLOY_LEARNER_DEMO_20261120.md) (mục kiểm sau nâng cấp); số sau nâng cấp đếm trong DB, ví dụ:
+
+    dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select (select count(*) from \"Item\"), (select count(*) from \"Revision\"), (select count(*) from \"MediaAsset\")"'
 
 ## 6. Kiểm tay trong trình duyệt
+
+Các bước 1–6 dưới đây đã được chạy tự động trên stack Docker local (bản `manager-admin-25c-local`, ngày 23/11/2026) bằng `npm run test:e2e`, xem [DELIVERY_25C.md](DELIVERY_25C.md). Chưa kiểm trên VPS. Lỗi đã biết: màn chi tiết học viên cuộn ngang (ghi trong DELIVERY_25C.md).
 
 1. Đăng nhập quản trị tại `https://seafoodeck.tiendn.io.vn/#admin`. Mở `#admin/users`, tạo học viên "An" (vai trò student) với mật khẩu do **chủ dự án tự chọn**; không ghi mật khẩu vào tài liệu, repo, chat hay log. Tạo thêm một tài khoản vai trò manager nếu chưa có.
 2. Đăng nhập bằng tài khoản manager: phải vào `#manager` và thấy bảng học viên (có "An"), lọc/sắp xếp được.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_ORIGIN, hostConfirmed, originGate, parseArgs, ratingPlan } from './demo-learner-play.mjs';
+import { applyTyped, DEFAULT_ORIGIN, hostConfirmed, originGate, parseArgs, ratingPlan, stripEscapes } from './demo-learner-play.mjs';
 
 test('parseArgs defaults and values', () => {
   const a = parseArgs(['--username', 'an']);
@@ -31,4 +31,11 @@ test('ratingPlan is deterministic with a fixed known ratio', () => {
   for (const n of [2, 3, 10, 40]) assert.equal(ratingPlan(n, 1).filter(r => r === 'known').length, Math.round(n / 2));
   assert.notDeepEqual(ratingPlan(40, 1), ratingPlan(40, 2));
   assert.ok(ratingPlan(6, 3).every(r => r === 'known' || r === 'again'));
+});
+
+test('typed password ignores escape sequences and control keys', () => {
+  assert.equal(stripEscapes('ab\u001b[Dc\u001bOH\u001b[200~d\u001b[201~'), 'abcd');
+  assert.deepEqual(applyTyped('', 'pa\u001b[Css\u0007w'), { value: 'passw' });
+  assert.deepEqual(applyTyped('pass', 'x\u007f\bw\r'), { value: 'pasw', done: 'enter' });
+  assert.deepEqual(applyTyped('p', '\u0003'), { value: 'p', done: 'cancel' });
 });
