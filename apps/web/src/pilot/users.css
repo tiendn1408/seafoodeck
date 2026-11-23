@@ -315,7 +315,8 @@
   .users-table td {
     overflow-wrap: break-word;
   }
-  .users-table thead th {
+  .users-table thead th,
+  .users-table td[data-label='Vai trò'] {
     white-space: nowrap;
   }
   .users-table .users-actions {
@@ -340,7 +341,8 @@
     grid-area: 2 / 2;
   }
 }
-@media (min-width: 1100px) {
+/* One row of four only where it fits beside the other columns (the content is 1084 px at 1280). */
+@media (min-width: 1400px) {
   .users-table .users-actions {
     grid-template-columns: repeat(4, auto);
   }
