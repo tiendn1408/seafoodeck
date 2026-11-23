@@ -20,6 +20,8 @@ Chỉ push hai ảnh amd64 đã kiểm cục bộ đúng tag này:
 
 `publish-pilot.sh` in digest của từng ảnh; ghi lại hai digest vào hai dòng ở trên. Không đưa token vào tài liệu hay lịch sử chia sẻ.
 
+Từ 2.5d, bước build của ảnh web (`apps/web/Dockerfile` và `Dockerfile` ở gốc) chạy `npm run build && npm run check:bundle`: nếu mã admin/manager lọt vào bundle tải cho mọi người thì build ảnh web thất bại, không có ảnh để push. Ảnh web build trước 2.5d chưa có bước này; build lại, không push ảnh cũ.
+
 ## 1. Sao lưu trước (DB và ảnh)
 
 Script dừng API vài chục giây trong lúc sao lưu, nên làm lúc không có ai dùng. Backup chứa dữ liệu riêng tư, không đưa lên GitHub. Trước `git pull --ff-only`: thư mục làm việc phải sạch (`git status` rỗng) và 2.5c phải đã được merge vào `main` trên origin; nếu chưa, dừng lại, không kéo nhánh khác lên VPS.
