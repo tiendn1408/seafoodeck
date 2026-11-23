@@ -503,9 +503,10 @@ describe('UsersAdmin row actions', () => {
     // Every mutation is off too, on every row (each would hit MUST_CHANGE_PASSWORD).
     const mutations = [
       button(host, 'Tạo người dùng'),
+      button(host, 'Tạo hàng loạt'),
       ...host.querySelectorAll<HTMLButtonElement>('.users-actions button'),
     ];
-    expect(mutations.length).toBe(1 + 3 * rows.length);
+    expect(mutations.length).toBe(2 + 3 * rows.length);
     for (const b of mutations) {
       expect(b.disabled, b.textContent!).toBe(true);
       await click(b);
@@ -580,5 +581,20 @@ describe('UsersAdmin row actions', () => {
     }
     expect(button(rowOf(host, 'me'), 'Đặt lại mật khẩu').disabled).toBe(false);
     expect(button(rowOf(host, 'u2'), 'Khóa').disabled).toBe(false);
+  });
+});
+
+describe('bulk entry point', () => {
+  it('opens the bulk dialog and is disabled while the own secret is shown', async () => {
+    const host = await screen();
+    await click(button(host, 'Tạo hàng loạt'));
+    expect(dialog()?.textContent).toContain('Dán hoặc chọn file CSV');
+    await click(button(dialog()!, 'Hủy'));
+    expect(dialog()).toBeNull();
+    routes['POST /admin/users/me/reset-password'] = () =>
+      json({ temporaryPassword: 'SelfTemp123' });
+    await click(button(rowOf(host, 'me'), 'Đặt lại mật khẩu'));
+    await click(button(dialog()!, 'Đặt lại mật khẩu'));
+    expect(button(host, 'Tạo hàng loạt').disabled).toBe(true);
   });
 });

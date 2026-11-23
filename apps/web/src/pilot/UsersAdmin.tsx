@@ -3,6 +3,7 @@ import { api, type AdminUserPage, type AdminUserRow } from './api';
 import { AdminTabs } from './AdminTabs';
 import { setLeaveGuard } from './leaveGuard';
 import { Dialog } from './Dialog';
+import { BulkDialog } from './BulkUsers';
 import { ErrorNote } from '../learner/ErrorNote';
 import { minPasswordLength } from '../learner/ChangePassword';
 import './users.css';
@@ -66,7 +67,10 @@ function relative(iso: string, now = Date.now()): string {
 }
 
 type Pending =
-  { kind: 'create' } | { kind: 'lock' | 'reset' | 'delete'; user: AdminUserRow } | null;
+  | { kind: 'create' }
+  | { kind: 'bulk' }
+  | { kind: 'lock' | 'reset' | 'delete'; user: AdminUserRow }
+  | null;
 interface Secret {
   /** Per-reveal counter, so a new password remounts the panel (never the password itself). */
   seq: number;
@@ -214,7 +218,8 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
   }
 
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
-  const user = pending && pending.kind !== 'create' ? pending.user : null;
+  const user =
+    pending && pending.kind !== 'create' && pending.kind !== 'bulk' ? pending.user : null;
 
   return (
     <div className="users-admin">
@@ -226,15 +231,26 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           </h1>
           <p>Tạo tài khoản, khóa, đặt lại mật khẩu hoặc xóa người dùng.</p>
         </div>
-        <button
-          type="button"
-          className="users-primary"
-          disabled={paused}
-          title={paused ? PAUSED_REASON : undefined}
-          onClick={() => open({ kind: 'create' })}
-        >
-          Tạo người dùng
-        </button>
+        <div className="users-head-actions">
+          <button
+            type="button"
+            className="users-secondary"
+            disabled={paused}
+            title={paused ? PAUSED_REASON : undefined}
+            onClick={() => open({ kind: 'bulk' })}
+          >
+            Tạo hàng loạt
+          </button>
+          <button
+            type="button"
+            className="users-primary"
+            disabled={paused}
+            title={paused ? PAUSED_REASON : undefined}
+            onClick={() => open({ kind: 'create' })}
+          >
+            Tạo người dùng
+          </button>
+        </div>
       </header>
 
       <p className="users-live" role="status" aria-live="polite">
@@ -464,6 +480,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
           }
         />
       )}
+      {pending?.kind === 'bulk' && <BulkDialog onClose={() => setPending(null)} onDone={refresh} />}
       {pending?.kind === 'lock' && user && (
         <Dialog title={`Khóa ${user.username}?`} onClose={() => setPending(null)}>
           <p>Khóa sẽ đăng xuất người này ngay. Có thể mở khóa lại bất cứ lúc nào.</p>

@@ -517,3 +517,44 @@
 .pilot-admin .admin-tabs a[aria-current='page'] {
   border-bottom-color: var(--ice-ink);
 }
+
+/* Bulk creation dialog: wider, the result table scrolls inside. */
+.users-dialog:has(.users-bulk) {
+  width: min(100%, 44rem);
+}
+.users-bulk textarea {
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+}
+.users-bulk .users-table {
+  display: block;
+  max-height: 16rem;
+  overflow: auto;
+}
+.users-bulk-tools {
+  justify-content: flex-start;
+  margin-bottom: var(--space-3);
+}
+.users-file {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.users-file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.users-file:focus-within {
+  outline: 3px solid var(--ice-focus);
+  outline-offset: 3px;
+}
+
+.users-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
