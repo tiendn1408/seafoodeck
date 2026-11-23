@@ -277,13 +277,30 @@ export default function PilotApp() {
     rememberSession(null);
   }
   const recovering = useRef(false);
+  // The signed-in view as of the latest render, read when /auth/me answers after a 401.
+  const authNow = useRef(auth);
   useEffect(() => {
+    authNow.current = auth;
     sessionLost.current = () => {
       if (recovering.current) return;
       recovering.current = true;
-      // Whatever the failed request reports is moot now: the login screen replaces it.
       void api<AuthView>('/auth/me')
         .then((a) => {
+          const was = authNow.current;
+          // A stray 401 (for example a request sent with a session that has since rotated)
+          // while the same user is still signed in: keep their queues and screen, adopt the
+          // fresh view only.
+          if (
+            a.role !== 'guest' &&
+            a.userId !== undefined &&
+            a.role === was?.role &&
+            a.userId === was.userId
+          ) {
+            setCsrf(a.csrf);
+            setAuth(a);
+            return;
+          }
+          // Whatever the failed request reports is moot now: the login screen replaces it.
           reset(a);
           setError('');
         })
@@ -364,7 +381,9 @@ export default function PilotApp() {
                 ? 'study-stage'
                 : staged && route === 'account'
                   ? 'account-stage'
-                  : staged && ['library', 'review', 'progress'].includes(route)
+                  : staged &&
+                      (['library', 'review', 'progress'].includes(route) ||
+                        route.startsWith('manager/learner/'))
                     ? 'ice-stage'
                     : 'content home-content'
         }

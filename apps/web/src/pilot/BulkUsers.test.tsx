@@ -34,6 +34,11 @@ describe('parseBulkCsv', () => {
     expect(bad.headerSuspect).toBe(true);
     expect(bad.rows).toEqual([{ username: 'lan' }]);
   });
+  it('an opening quote that is never closed is an error naming its line', () => {
+    const r = parseBulkCsv('username,name,pw\nlan,Lan,\nbinh,"Bình\nhoa,Hoa,\ncuc,,\n');
+    expect(r.error).toBe('Dấu ngoặc kép mở ở dòng 3 chưa được đóng.');
+    expect(r.rows).toEqual([]);
+  });
   it('reports empty input', () => {
     expect(parseBulkCsv('username,name,pw\n\n').error).toMatch(/Chưa có dòng/);
   });
@@ -201,5 +206,58 @@ describe('BulkDialog', () => {
     await click(button(host, 'Tải CSV mật khẩu'));
     expect(timers.mock.calls.some((c) => c[1] === 1000)).toBe(true);
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('a server error shows once, not also as a field error', async () => {
+    const host = mount(<BulkDialog onClose={() => {}} onDone={() => {}} />);
+    type(host, CSV);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(new Response(JSON.stringify({ message: 'Máy chủ bận.' }), { status: 400 })),
+      ),
+    );
+    await click(button(host, 'Xem trước'));
+    const said = document.body.textContent!.split('Máy chủ bận.').length - 1;
+    expect(said).toBe(1);
+    expect(document.querySelector('.users-field-error')).toBeNull();
+  });
+
+  it('after a run with failures, keeps the failed rows (no passwords) to fix and run again', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => {
+        const body = JSON.parse(init.body as string);
+        bodies.push(body);
+        const out = body.rows.map((r: { username: string }, i: number) =>
+          r.username === 'bad_1' || r.username === 'bad2'
+            ? { line: i + 1, username: r.username, status: 'invalid', message: 'Lỗi' }
+            : {
+                line: i + 1,
+                username: r.username,
+                status: 'created',
+                ...(body.dryRun ? {} : { temporaryPassword: 'GenPass' + i }),
+              },
+        );
+        return Promise.resolve(reply(out));
+      }),
+    );
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const host = mount(<BulkDialog onClose={() => {}} onDone={() => {}} />);
+    type(host, 'u,n,p\nok1,Một,\nbad_1,"Hai, Ba",Typed-Secret-9\nbad2,,\n');
+    await click(button(host, 'Xem trước'));
+    await click(button(host, 'Tạo hàng loạt'));
+    // Passwords not downloaded yet: going back to edit asks first.
+    await click(button(host, 'Sửa các dòng chưa tạo được'));
+    expect(confirm).toHaveBeenCalled();
+    expect(document.querySelector('textarea')).toBeNull();
+    confirm.mockReturnValue(true);
+    await click(button(host, 'Sửa các dòng chưa tạo được'));
+    const ta = document.querySelector('textarea')!;
+    expect(ta.value).toBe('tên đăng nhập,tên hiển thị,mật khẩu\nbad_1,"Hai, Ba",\nbad2,,\n');
+    expect(ta.value).not.toContain('Typed-Secret-9');
+    expect(ta.value).not.toContain('ok1');
+    await click(button(host, 'Xem trước'));
+    expect(bodies[bodies.length - 1].rows.map((r) => r.username)).toEqual(['bad_1', 'bad2']);
   });
 });

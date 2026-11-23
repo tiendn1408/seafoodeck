@@ -115,7 +115,7 @@ export function ChangePassword({
               {busy ? 'Đang lưu…' : 'Đổi mật khẩu'}
             </button>
             {!forced && (
-              <button type="button" className="btn secondary" onClick={onCancel}>
+              <button type="button" className="btn secondary" disabled={busy} onClick={onCancel}>
                 Hủy
               </button>
             )}

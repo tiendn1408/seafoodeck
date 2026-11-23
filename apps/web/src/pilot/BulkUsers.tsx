@@ -35,12 +35,16 @@ const HEADER_WORDS = /tên|username|user name|mật khẩu|password|pass\b|\bpw\
 const UNKNOWN_OUTCOME =
   ' Tài khoản có thể đã được tạo: kiểm tra danh sách và đặt lại mật khẩu cho tài khoản chưa có mật khẩu.';
 
-/** Minimal RFC 4180 reader: BOM, quoted commas/quotes/newlines, CRLF. Returns [line, cells]. */
-function readCells(text: string): [number, string[]][] {
+/**
+ * Minimal RFC 4180 reader: BOM, quoted commas/quotes/newlines, CRLF. Returns [line, cells] rows
+ * and, when a quoted cell never closes, the line its opening quote is on.
+ */
+function readCells(text: string): { rows: [number, string[]][]; openQuote: number | null } {
   const out: [number, string[]][] = [];
   let cells: string[] = [],
     cell = '',
     quoted = false,
+    quoteLine = 0,
     line = 1,
     start = 1;
   const endRow = () => {
@@ -62,8 +66,10 @@ function readCells(text: string): [number, string[]][] {
         if (c === '\n') line++;
         cell += c;
       }
-    } else if (c === '"' && cell === '') quoted = true;
-    else if (c === ',') {
+    } else if (c === '"' && cell === '') {
+      quoted = true;
+      quoteLine = line;
+    } else if (c === ',') {
       cells.push(cell);
       cell = '';
     } else if (c === '\r' || c === '\n') {
@@ -74,17 +80,27 @@ function readCells(text: string): [number, string[]][] {
     } else cell += c;
   }
   if (cell !== '' || cells.length) endRow();
-  return out;
+  return { rows: out, openQuote: quoted ? quoteLine : null };
 }
 
 /** First non-blank line is the header; blank lines are skipped. */
 export function parseBulkCsv(text: string): BulkParsed {
-  const data = readCells(text).filter(([, c]) => c.some((x) => x.trim() !== ''));
+  const read = readCells(text);
+  const data = read.rows.filter(([, c]) => c.some((x) => x.trim() !== ''));
   const body = data.slice(1);
   const head = (data[0]?.[1] ?? []).map((x) => x.trim());
   const header = head.some(Boolean) ? head : [];
   const headerSuspect =
     header.length > 0 && USERNAME.test(header[0]) && !header.some((x) => HEADER_WORDS.test(x));
+  // An unclosed quote would swallow every later row into one cell: refuse instead.
+  if (read.openQuote !== null)
+    return {
+      rows: [],
+      lines: [],
+      error: `Dấu ngoặc kép mở ở dòng ${read.openQuote} chưa được đóng.`,
+      header,
+      headerSuspect,
+    };
   if (!body.length)
     return {
       rows: [],
@@ -111,6 +127,20 @@ export function parseBulkCsv(text: string): BulkParsed {
     };
   });
   return { rows, lines: body.map(([l]) => l), error: '', header, headerSuspect };
+}
+
+/** The column header used when failed rows are put back in the box. */
+const INPUT_HEADER = 'tên đăng nhập,tên hiển thị,mật khẩu';
+/** One cell of the input box: quoted when it holds a comma, quote or line break. */
+const inputCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+/** The rows that were not created, as input CSV without their passwords (typed or not). */
+export function failedRowsCsv(rows: BulkInput[]): string {
+  return (
+    [
+      INPUT_HEADER,
+      ...rows.map((r) => [r.username, r.displayName ?? '', ''].map(inputCell).join(',')),
+    ].join('\n') + '\n'
+  );
 }
 
 /** Cells starting with = + - @ (or control whitespace) would run as formulas in a spreadsheet. */
@@ -157,6 +187,8 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
     [downloaded, setDownloaded] = useState(false);
   // Names and source lines of the submitted rows, never their typed passwords.
   const [meta, setMeta] = useState<{ displayName?: string; line: number }[]>([]);
+  // The rows a real run could not create, without passwords, ready to fix and run again.
+  const [retry, setRetry] = useState('');
   const ids = useId();
   const parsed = parseBulkCsv(text);
   const guarded = busy || (!!final && !downloaded && final.created > 0);
@@ -193,6 +225,8 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
       else {
         setMeta(parsed.rows.map((x, i) => ({ displayName: x.displayName, line: parsed.lines[i] })));
         setFinal(r);
+        const failed = parsed.rows.filter((_, i) => r.rows[i]?.status === 'invalid');
+        setRetry(failed.length ? failedRowsCsv(failed) : '');
         setText('');
         setPreviewed(null);
         onDone();
@@ -228,6 +262,16 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setDownloaded(true);
+  }
+  /** Back to the input box with only the rows that were not created. */
+  function fixFailed() {
+    if (busy || !final) return;
+    if (!downloaded && final.created > 0 && !window.confirm(CLOSE_QUESTION)) return;
+    setFinal(null);
+    setMeta([]);
+    setDownloaded(false);
+    edit(retry);
+    setRetry('');
   }
   function close() {
     if (busy) return;
@@ -293,9 +337,7 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
               Tên đăng nhập 3–50 ký tự (chữ không dấu, số, _ hoặc -); tên hiển thị tối đa 80; mật
               khẩu nhập tay 8–128 ký tự. Nếu cột có dấu phẩy, đặt trong ngoặc kép.
             </p>
-            {(error || parsed.error) && text && !busy && (
-              <p className="users-field-error">{parsed.error || error}</p>
-            )}
+            {parsed.error && text && !busy && <p className="users-field-error">{parsed.error}</p>}
             {error && <ErrorNote message={error} />}
           </>
         )}
@@ -337,6 +379,8 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
               <p className="users-hint">
                 Dòng “chưa tạo được” có thể do dữ liệu sai hoặc lỗi tạm thời; sửa dữ liệu rồi chạy
                 lại, các dòng đã tạo sẽ được bỏ qua.
+                {final &&
+                  ' “Sửa các dòng chưa tạo được” đưa riêng các dòng đó trở lại ô nhập, không kèm mật khẩu (để trống thì hệ thống tự tạo).'}
               </p>
             )}
             <table className="users-table">
@@ -371,6 +415,11 @@ export function BulkDialog({ onClose, onDone }: { onClose: () => void; onDone: (
           <button type="button" className="users-secondary" disabled={busy} onClick={close}>
             {final ? 'Đóng' : 'Hủy'}
           </button>
+          {final && retry && (
+            <button type="button" className="users-secondary" onClick={fixFailed}>
+              Sửa các dòng chưa tạo được
+            </button>
+          )}
           {!final && (
             <>
               <button

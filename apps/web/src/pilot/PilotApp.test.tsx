@@ -3,7 +3,7 @@ import { act } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import PilotApp, { TRIAL_SESSION_KEY } from './PilotApp';
-import { setAuthRequiredHandler } from './api';
+import { api, setAuthRequiredHandler } from './api';
 import { clearMe } from '../learner/meStore';
 import { kindOf, routeAllowed, routesFor } from '../learner/role';
 import { disposeAll, pendingTotal, sessionQueue } from '../learner/study/submitQueues';
@@ -674,6 +674,9 @@ describe('PilotApp role-aware routes', () => {
     await tick();
     expect(host.querySelector('h1')?.textContent).toBe('Học viên: Lan Nguyễn');
     expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
+    // The embedded Tiến độ / Lịch ôn tập heroes bleed to the edges: only the ice stage clips
+    // them (overflow-x: clip), so the detail must sit in it like the learner's own pages.
+    expect(host.querySelector('.manager-detail')?.parentElement?.className).toBe('ice-stage');
   });
 
   it('decodes the learner id from the hash once, so reserved characters survive', async () => {
@@ -940,6 +943,90 @@ describe('PilotApp 401 on a signed-in route', () => {
     expect(calls).toContain('POST /auth/login');
     expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(before);
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('chưa đúng');
+  });
+
+  const pendingAttempt = 'POST /learning/sessions/g9/questions/q1/attempts';
+  const queued = { gameId: 'g9', questionId: 'q1', key: 'k9', answer: { rating: 'known' } };
+  const stray401 = () => api('/me/stray').catch(() => {});
+
+  it('a stray 401 while the same user is still signed in keeps queues and screen, adopts the csrf', async () => {
+    routes['GET /me/stray'] = lockedOut;
+    routes[pendingAttempt] = () => new Promise<Response>(() => {});
+    location.hash = '#review';
+    let me = 0;
+    routes['GET /auth/me'] = () => json(view('student', me++ === 0 ? {} : { csrf: 'c-fresh' }));
+    routes['GET /catalog/overview'] = () => json(overview);
+    routes['GET /me/mastery'] = () => json({});
+    routes['GET /me/review'] = () => json({ due: [reviewEntry], scheduled: [] });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    sessionQueue('g9', () => {}).enqueue(queued);
+    await tick();
+    expect(pendingTotal()).toBe(1);
+    const heading = host.querySelector('h1')?.textContent;
+    expect(heading).toBeTruthy();
+    await act(async () => void (await stray401()));
+    await tick();
+    expect(calls.filter((c) => c === 'GET /auth/me')).toHaveLength(2);
+    // Same user, live session: nothing is thrown away and the learner stays where they were.
+    expect(pendingTotal()).toBe(1);
+    expect(host.textContent).not.toContain('Học thử bằng mã mời');
+    expect(host.querySelector('h1')?.textContent).toBe(heading);
+    // The fresh csrf is used from now on.
+    routes['POST /me/probe'] = () => json({});
+    await act(async () => void (await api('/me/probe', {})));
+    const sent = inits[calls.lastIndexOf('POST /me/probe')]!.headers as Record<string, string>;
+    expect(sent['X-CSRF-Token']).toBe('c-fresh');
+  });
+
+  it('a 401 after which another user is signed in resets everything', async () => {
+    routes['GET /me/stray'] = lockedOut;
+    routes[pendingAttempt] = () => new Promise<Response>(() => {});
+    location.hash = '#review';
+    let me = 0;
+    routes['GET /auth/me'] = () =>
+      json(me++ === 0 ? view('student') : view('student', { userId: 'u-other', csrf: 'c-o' }));
+    routes['GET /catalog/overview'] = () => json(overview);
+    routes['GET /me/mastery'] = () => json({});
+    routes['GET /me/review'] = () => json({ due: [reviewEntry], scheduled: [] });
+    mount(<PilotApp />);
+    await tick();
+    await tick();
+    sessionQueue('g9', () => {}).enqueue(queued);
+    await act(async () => void (await stray401()));
+    await tick();
+    expect(pendingTotal()).toBe(0);
+  });
+
+  it('two 401s at once recover once; a 401 during the logout flush ends on the sign-in', async () => {
+    routes['GET /me/stray'] = lockedOut;
+    const host = await lockedStudent();
+    // Two requests refused together: one /auth/me, one reset.
+    await act(async () => void (await Promise.all([stray401(), stray401()])));
+    await tick();
+    expect(calls.filter((c) => c === 'GET /auth/me')).toHaveLength(2);
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('a 401 while logout waits for queued saves: one sign-in screen, no error, no hang', async () => {
+    routes['GET /me/stray'] = lockedOut;
+    routes[pendingAttempt] = () => new Promise<Response>(() => {});
+    routes['POST /auth/logout'] = () => json(view('guest'));
+    const host = await lockedStudent();
+    sessionQueue('g9', () => {}).enqueue(queued);
+    await tick();
+    await click(button(host, 'Đăng xuất'));
+    expect(host.textContent).toContain('Đang lưu tiến độ…');
+    await act(async () => void (await stray401()));
+    await tick();
+    await tick();
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+    expect(host.textContent).not.toContain('Đang lưu tiến độ…');
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(pendingTotal()).toBe(0);
+    expect(calls.filter((c) => c === 'POST /auth/logout').length).toBeLessThanOrEqual(1);
   });
 
   it('a review start sends limit only when set, other bodies unchanged', async () => {
