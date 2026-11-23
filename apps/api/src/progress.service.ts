@@ -175,17 +175,23 @@ export class ProgressService {
     return { release, versionOf, scenarioRevision };
   }
 
-  /** The student's ReviewProgress rows scoped to the current release (empty for non-students). */
-  async active(actor: AuthSession) {
+  /**
+   * The student's ReviewProgress rows scoped to the current release (empty for non-students).
+   * `forUser` reads another learner (manager views); the catalog scope still follows `actor`.
+   */
+  async active(actor: AuthSession, forUser?: string) {
     const { release, versionOf, scenarioRevision } = await this.versions(actor);
-    const userId = studentId(actor);
+    const userId = forUser ?? studentId(actor);
     const all = userId
       ? (await this.db.reviewProgress.findMany({ where: { userId } })).map(toRow)
       : [];
     return { release, versionOf, scenarioRevision, all, rows: activeRows(all, versionOf) };
   }
 
-  async context(actor: AuthSession): Promise<{
+  async context(
+    actor: AuthSession,
+    userId?: string,
+  ): Promise<{
     overview: OverviewData;
     rows: ReviewRow[];
     versionOf: VersionOf;
@@ -194,7 +200,7 @@ export class ProgressService {
     internal: boolean;
   }> {
     const o = await this.catalog.overview(actor);
-    const { rows, versionOf, scenarioRevision } = await this.active(actor);
+    const { rows, versionOf, scenarioRevision } = await this.active(actor, userId);
     return {
       overview: {
         items: o.items.map((i) => ({
@@ -295,11 +301,12 @@ export class ProgressService {
   async review(
     actor: AuthSession,
     now = Date.now(),
+    userId?: string,
   ): Promise<{
     due: ReviewEntry[];
     scheduled: ReviewEntry[];
   }> {
-    const c = await this.context(actor);
+    const c = await this.context(actor, userId);
     const byItem = new Map(c.overview.items.map((i) => [i.itemId, i]));
     const byRevision = new Map(c.overview.items.map((i) => [i.revisionId, i]));
     const entries = c.rows
@@ -325,8 +332,8 @@ export class ProgressService {
   }
 
   /** The student's whole attempt log, oldest first. */
-  private async log(actor: AuthSession): Promise<LogRow[]> {
-    const userId = studentId(actor);
+  private async log(actor: AuthSession, forUser?: string): Promise<LogRow[]> {
+    const userId = forUser ?? studentId(actor);
     if (!userId) return [];
     const rows = await this.db.learningAttempt.findMany({
       where: { userId },
@@ -347,9 +354,9 @@ export class ProgressService {
     }));
   }
 
-  async progress(actor: AuthSession, now = Date.now()) {
-    const c = await this.context(actor);
-    const log = await this.log(actor);
+  async progress(actor: AuthSession, now = Date.now(), userId?: string) {
+    const c = await this.context(actor, userId);
+    const log = await this.log(actor, userId);
     const mastery = masteryCounts(c.overview, c.rows);
     const streak = streakDays(log, now);
     return {
@@ -374,8 +381,9 @@ export class ProgressService {
   async mastery(
     actor: AuthSession,
     now = Date.now(),
+    userId?: string,
   ): Promise<Record<string, { status: 'new' | 'due' | 'learning'; level: 0 | 1 | 2 | 3 | 4 }>> {
-    const c = await this.context(actor);
+    const c = await this.context(actor, userId);
     return Object.fromEntries(
       c.overview.items.map((i) => [
         i.itemId,

@@ -281,6 +281,14 @@ export class MeMasteryEntryResponse {
   @ApiProperty({ enum: ['new', 'due', 'learning'] }) status!: 'new' | 'due' | 'learning';
   @ApiProperty({ enum: [0, 1, 2, 3, 4] }) level!: 0 | 1 | 2 | 3 | 4;
 }
+export class ManagerLearnerResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() username!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() disabled!: boolean;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty({ nullable: true, type: String }) lastLoginAt!: string | null;
+}
 export class AdminUserRowResponse {
   @ApiProperty() id!: string;
   @ApiProperty() username!: string;
