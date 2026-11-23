@@ -1232,3 +1232,78 @@ test('manager opens their account, renames, changes password and keeps working',
     await expect(page).toHaveURL(/#manager$/);
   });
 });
+
+// Phase 2.5d: admin and manager code ships as role-gated lazy chunks.
+const LAZY_CHUNK =
+  /\/assets\/(Admin|AdminTabs|UsersAdmin|ManagerLearners|ManagerLearnerDetail)-[\w-]+\.js/;
+const chunkRequests = (page: Page) => {
+  const seen: string[] = [];
+  page.on('request', (r) => {
+    const m = LAZY_CHUNK.exec(new URL(r.url()).pathname);
+    if (m) seen.push(m[1]);
+  });
+  return seen;
+};
+
+test('a student session and a signed-out visitor never request the admin or manager chunks', async ({
+  page,
+  browser,
+}, info) => {
+  const seen = chunkRequests(page);
+  await login(page);
+  await page.goto('/#library');
+  await expect(page.locator('.library-card').first()).toBeVisible();
+  await page.goto('/#progress');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  // Staff routes bounce a learner to Home without fetching their code.
+  await page.goto('/#admin/users');
+  await expect(page).toHaveURL(/#home$/);
+  await page.goto('/#manager');
+  await expect(page).toHaveURL(/#home$/);
+  expect(seen).toEqual([]);
+
+  const trial = await newProjectPage(browser, info);
+  try {
+    const seenTrial = chunkRequests(trial.page);
+    await trial.page.goto('/');
+    await expect(trial.page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+    await trial.page.goto('/#admin');
+    await trial.page.goto('/#manager');
+    await expect(trial.page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+    expect(seenTrial).toEqual([]);
+  } finally {
+    await trial.context.close();
+  }
+});
+
+test('an admin session loads the admin chunks and a manager session the manager chunks', async ({
+  page,
+  browser,
+}, info) => {
+  const seenAdmin = chunkRequests(page);
+  await adminLogin(page);
+  await page.goto('/#admin/users');
+  await expect(page.getByRole('heading', { level: 1, name: 'Người dùng' })).toBeVisible();
+  expect(seenAdmin).toEqual(expect.arrayContaining(['UsersAdmin']));
+  expect(seenAdmin.some((n) => n.startsWith('Manager'))).toBe(false);
+
+  const manager = await newProjectPage(browser, info);
+  try {
+    const seenManager = chunkRequests(manager.page);
+    const m = manager.page;
+    await m.goto('/');
+    await m.getByLabel('Tên đăng nhập', { exact: true }).fill(users.manager.username);
+    await m.getByLabel('Mật khẩu', { exact: true }).fill(users.manager.password);
+    await m.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+    await expect(m).toHaveURL(/#manager$/);
+    await expect(m.locator('.manager-table, .manager-card').first()).toBeVisible();
+    await m.goto(`/#manager/learner/${users.student.id}`);
+    await expect(m.locator('.manager-detail h1')).toBeVisible();
+    expect(seenManager).toEqual(
+      expect.arrayContaining(['ManagerLearners', 'ManagerLearnerDetail']),
+    );
+    expect(seenManager).not.toContain('UsersAdmin');
+  } finally {
+    await manager.context.close();
+  }
+});
