@@ -71,6 +71,10 @@ for (const file of eager) {
     if (code.includes(marker))
       problems.push(`${rel(file)} (loaded for every visitor) contains ${marker}`);
 }
+// File names are public too: nothing every visitor downloads is named after a staff screen.
+for (const file of eager)
+  if (/^(admin|users|manager)/i.test(rel(file).split('/').pop()))
+    problems.push(`${rel(file)} (loaded for every visitor) is named after a staff screen`);
 for (const marker of MARKERS)
   if (!lazy.some((f) => readFileSync(f, 'utf8').includes(marker)))
     problems.push(`no lazy chunk contains ${marker} (marker list out of date?)`);
