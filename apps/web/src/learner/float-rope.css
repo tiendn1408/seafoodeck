@@ -1,6 +1,8 @@
 /*
  * Float rope: haul progress as buoys on a heavy, sagging rope. Lives on deep surfaces.
  * Each float sits at its tie point on the rope (`--x`, set by floatX in FloatRope.tsx).
+ * Buoy shadows and rope tints stay hard-coded on purpose: they are tuned for the always-dark deep
+ * surface, while the shadow tokens follow the ice theme.
  */
 .float-rope {
   --float-size: 46px;

@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { AdminTabs } from './AdminTabs';
 import { mount, unmountAll } from '../learner/testDom';
 
@@ -24,5 +26,10 @@ describe('AdminTabs', () => {
     const host = mount(<AdminTabs current="users" disabled />);
     expect(host.querySelectorAll('nav a')).toHaveLength(0);
     expect(host.querySelectorAll('nav span[aria-disabled="true"]')).toHaveLength(3);
+  });
+  it('marks the current tab in ink: salmon on ice is under 3:1', () => {
+    const css = readFileSync(resolve(__dirname, 'users.css'), 'utf8');
+    const rule = css.match(/\.admin-tabs a\[aria-current='page'\],[^{]*\{[^}]*\}/)![0];
+    expect(rule).toMatch(/border-bottom-color:\s*var\(--ice-ink\)/);
   });
 });

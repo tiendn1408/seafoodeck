@@ -796,6 +796,8 @@ test('admin creates An in the UI; manager follows An; lock, unlock and password 
         await header.getByRole('button').click();
         await expect(header).toHaveAttribute('aria-sort', 'descending');
       } else {
+        // Phones fold sort and filters into one disclosure.
+        await m.locator('.manager-more > summary').click();
         await m.getByLabel('Sắp xếp theo').selectOption('name');
         await expect(m.getByLabel('Sắp xếp theo')).toHaveValue('name');
       }
@@ -865,6 +867,7 @@ test('admin creates An in the UI; manager follows An; lock, unlock and password 
       );
       // The manager still sees An, flagged as locked, once locked learners are shown.
       await manager.page.goto('/#manager');
+      if (!desktop) await manager.page.locator('.manager-more > summary').click();
       await manager.page.getByLabel('Hiện người đã khóa').check();
       await manager.page.getByLabel('Tìm theo tên đăng nhập hoặc tên hiển thị').fill(an.username);
       await expect(
@@ -1100,7 +1103,7 @@ async function smallTargets(page: Page) {
   return page.evaluate(() =>
     [
       ...document.querySelectorAll<HTMLElement>(
-        'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), label:has(> input[type=checkbox]), a.users-secondary, a.manager-csv, .admin-tabs > *',
+        'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), label:has(> input[type=checkbox]), a.users-secondary, a.manager-csv, .admin-tabs > *, .manager-more > summary',
       ),
     ]
       .filter((el) => el.getClientRects().length > 0 && !el.closest('.users-sr'))
@@ -1162,19 +1165,13 @@ test('manager and admin screens: no sideways scroll, touch targets of at least 4
     await test.step(`${name} (${info.project.name})`, async () => {
       await open();
       expect(await scrollsSideways(page), `${name} scrolls sideways`).toBe(false);
-      // Known, recorded in the 2.5c delivery notes: the "Tên" sort header button is narrower
-      // than 44 px on desktop and tablet widths.
-      const small = (await smallTargets(page)).filter((t) => !/^manager-sort:Tên /.test(t));
-      expect(small, `${name} small targets`).toEqual([]);
+      expect(await smallTargets(page), `${name} small targets`).toEqual([]);
     });
 });
 
 test('manager learner detail never scrolls sideways', async ({ page }) => {
-  // Known defect found in the 2.5c visual check (not fixed in this task): the full-bleed
-  // `.ice-hero` bands of Tiến độ / Lịch ôn tập are not inside an `.ice-stage` on
-  // #manager/learner/<id>, so their `::after` (inset -100vmax) widens the page. Remove this
-  // line when it is fixed.
-  test.fail(!process.env.E2E_SHOW_KNOWN, 'known: .ice-hero bleed widens #manager/learner/<id>');
+  // The full-bleed `.ice-hero` bands of Tiến độ / Lịch ôn tập (`::after` inset -100vmax) must be
+  // clipped by the ice stage here too.
   await page.goto('/');
   await page.getByLabel('Tên đăng nhập', { exact: true }).fill(users.manager.username);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(users.manager.password);

@@ -390,7 +390,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                         <div className="users-actions">
                           {u.role === 'student' && (
                             <a
-                              className="users-secondary"
+                              className="users-secondary users-act-view"
                               href={`#manager/learner/${encodeURIComponent(u.id)}`}
                             >
                               Xem tiến độ<span className="users-sr"> {u.username}</span>
@@ -399,7 +399,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           {u.disabled ? (
                             <button
                               type="button"
-                              className="users-secondary"
+                              className="users-secondary users-act-lock"
                               disabled={busy || paused}
                               title={paused ? PAUSED_REASON : undefined}
                               onClick={() => void unlock(u)}
@@ -409,7 +409,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           ) : (
                             <button
                               type="button"
-                              className="users-secondary"
+                              className="users-secondary users-act-lock"
                               disabled={self || paused}
                               title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                               onClick={() => open({ kind: 'lock', user: u })}
@@ -419,7 +419,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           )}
                           <button
                             type="button"
-                            className="users-secondary"
+                            className="users-secondary users-act-reset"
                             disabled={paused}
                             title={paused ? PAUSED_REASON : undefined}
                             onClick={() => open({ kind: 'reset', user: u })}
@@ -428,7 +428,7 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
                           </button>
                           <button
                             type="button"
-                            className="users-secondary"
+                            className="users-secondary users-act-delete"
                             disabled={self || paused}
                             title={paused ? PAUSED_REASON : self ? SELF_REASON : undefined}
                             onClick={() => open({ kind: 'delete', user: u })}

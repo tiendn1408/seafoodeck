@@ -262,6 +262,88 @@ describe('ManagerLearners on a narrow screen', () => {
   });
 });
 
+describe('ManagerLearners narrow-screen controls', () => {
+  it('folds sort and filters into one disclosure whose summary names the current choice', async () => {
+    media(true);
+    const host = await open();
+    const more = host.querySelector<HTMLDetailsElement>('details.manager-more')!;
+    expect(more).not.toBeNull();
+    expect(more.open).toBe(false);
+    const summary = more.querySelector('summary')!;
+    expect(summary.textContent).toContain('Sắp xếp và lọc');
+    expect(summary.textContent).toContain('Lần học cuối ↓');
+    // Search stays outside, always visible.
+    expect(more.querySelector('input[type="search"]')).toBeNull();
+    expect(more.querySelector('select')).not.toBeNull();
+    expect(more.querySelector('[role="group"]')?.textContent).toContain('Chưa học 7 ngày');
+    expect(more.textContent).toContain('Hiện người đã khóa');
+    await click(button(host, 'Chưa học 7 ngày'));
+    expect(summary.textContent).toContain('Chưa học 7 ngày');
+    expect(last()).toContain('filter=idle7d');
+  });
+
+  it('desktop keeps the filters out in the open, no disclosure', async () => {
+    const host = await open();
+    expect(host.querySelector('details')).toBeNull();
+    expect(host.querySelector('[role="group"]')?.textContent).toContain('Lọc (chọn một)');
+  });
+});
+
+describe('ManagerLearners table scroll cue', () => {
+  function widths(scroll: number, client: number) {
+    const proto = HTMLElement.prototype;
+    const sw = Object.getOwnPropertyDescriptor(proto, 'scrollWidth');
+    const cw = Object.getOwnPropertyDescriptor(proto, 'clientWidth');
+    Object.defineProperty(proto, 'scrollWidth', {
+      configurable: true,
+      get() {
+        return this.classList?.contains('manager-scroll') ? scroll : 0;
+      },
+    });
+    Object.defineProperty(proto, 'clientWidth', {
+      configurable: true,
+      get() {
+        return this.classList?.contains('manager-scroll') ? client : 0;
+      },
+    });
+    return () => {
+      if (sw) Object.defineProperty(proto, 'scrollWidth', sw);
+      if (cw) Object.defineProperty(proto, 'clientWidth', cw);
+    };
+  }
+
+  it('marks the edges that hide more columns, and follows the scroll position', async () => {
+    const restore = widths(900, 600);
+    try {
+      const host = await open();
+      const box = host.querySelector<HTMLElement>('.manager-scrollbox')!;
+      expect(box.hasAttribute('data-more-end')).toBe(true);
+      expect(box.hasAttribute('data-more-start')).toBe(false);
+      const region = box.querySelector<HTMLElement>('.manager-scroll')!;
+      await act(async () => {
+        region.scrollLeft = 300;
+        region.dispatchEvent(new Event('scroll'));
+      });
+      expect(box.hasAttribute('data-more-start')).toBe(true);
+      expect(box.hasAttribute('data-more-end')).toBe(false);
+    } finally {
+      restore();
+    }
+  });
+
+  it('a table that fits shows no cue', async () => {
+    const restore = widths(600, 600);
+    try {
+      const host = await open();
+      const box = host.querySelector<HTMLElement>('.manager-scrollbox')!;
+      expect(box.hasAttribute('data-more-end')).toBe(false);
+      expect(box.hasAttribute('data-more-start')).toBe(false);
+    } finally {
+      restore();
+    }
+  });
+});
+
 describe('ManagerLearners bad dates', () => {
   it('a malformed last-study date shows a dash instead of crashing', async () => {
     list = () => page([learner('lan', { lastStudyAt: 'not-a-date' })]);

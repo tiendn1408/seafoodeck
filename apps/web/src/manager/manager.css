@@ -61,6 +61,53 @@
   text-decoration: none;
 }
 
+/*
+ * The table scrolls sideways inside its box on tablets. A soft shade on the edge that still hides
+ * columns says there is more; it follows the scroll position (data-more-* from the component).
+ */
+.manager-scrollbox {
+  position: relative;
+}
+.manager-scrollbox::before,
+.manager-scrollbox::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--space-7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.manager-scrollbox::before {
+  left: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ice-ink) 18%, transparent),
+    transparent
+  );
+}
+.manager-scrollbox::after {
+  right: 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--ice-ink) 18%, transparent),
+    transparent
+  );
+}
+.manager-scrollbox[data-more-start]::before,
+.manager-scrollbox[data-more-end]::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .manager-scrollbox::before,
+  .manager-scrollbox::after {
+    transition: none;
+  }
+}
 .manager-scroll {
   overflow-x: auto;
   border-radius: var(--radius-md);
@@ -76,12 +123,18 @@
 }
 .manager-table .manager-person {
   white-space: normal;
+  overflow-wrap: normal;
   min-width: 11rem;
+}
+/* A username is one token: never broken mid-word (the table scrolls instead). */
+.manager-table .manager-user {
+  white-space: nowrap;
 }
 .manager-sort {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  min-width: 44px;
   min-height: 44px;
   padding: 0;
   border: 0;
@@ -171,6 +224,45 @@ th[aria-sort='descending'] {
   color: var(--ice-ink);
   font-weight: 700;
 }
+/* Phones: sort and filters behind one disclosure; the summary keeps what is applied in view. */
+.manager-more {
+  margin: 0 0 var(--space-4);
+  border: 1px solid var(--ice-line);
+  border-radius: var(--radius-md);
+  background: var(--ice-surface);
+}
+.manager-more > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+}
+.manager-more > summary::-webkit-details-marker {
+  display: none;
+}
+.manager-more > summary::before {
+  content: '▸';
+  color: var(--ice-muted);
+}
+.manager-more[open] > summary::before {
+  content: '▾';
+}
+.manager-more-title {
+  font-weight: 700;
+}
+.manager-more-state {
+  color: var(--ice-muted);
+  font-size: var(--text-sm);
+}
+.manager-more > .manager-tools,
+.manager-more > .manager-filters {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+}
 @media (max-width: 600px) {
   .manager-switch {
     margin-left: 0;
@@ -198,4 +290,16 @@ th[aria-sort='descending'] {
 }
 .manager-detail h1:focus {
   outline: none;
+}
+
+/*
+ * The learner detail sits on the ice stage, like the learner's own Tiến độ / Ôn tập: their deep
+ * heroes bleed to the viewport edges and only the stage clips that bleed. Everything above the
+ * heroes takes the `.ice-page` gutter, so it lines up with the sections below.
+ */
+.ice-stage > .manager-learners {
+  padding-top: var(--space-6);
+}
+.ice-stage > .manager-learners > :not(.ice-page) {
+  margin-inline: max(clamp(16px, 4vw, 56px), calc((100% - 1240px) / 2));
 }

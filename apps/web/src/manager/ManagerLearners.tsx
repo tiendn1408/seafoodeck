@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { api, type LearnerPage, type LearnerRow } from '../pilot/api';
 import { AdminTabs } from '../pilot/AdminTabs';
 import { ErrorNote } from '../learner/ErrorNote';
@@ -95,6 +95,35 @@ function Person({ row }: { row: LearnerRow }) {
   );
 }
 
+/**
+ * Which edges of a horizontally scrolled box still hide content, so the table can show a fade
+ * there (a cut-off last column otherwise gives no hint that more columns exist).
+ */
+function useScrollEdges(watch: unknown) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const next = { start: max > 1 && el.scrollLeft > 1, end: max > 1 && el.scrollLeft < max - 1 };
+      setEdges((e) => (e.start === next.start && e.end === next.end ? e : next));
+    };
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    ro?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+      ro?.disconnect();
+    };
+  }, [watch]);
+  return [ref, edges] as const;
+}
+
 export function ManagerLearners({ admin = false }: { admin?: boolean }) {
   const [sort, setSort] = useState<SortKey>('lastStudyAt'),
     [dir, setDir] = useState<Dir>('desc'),
@@ -108,6 +137,7 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
     [settled, setSettled] = useState<{ key: string; error: string } | null>(null);
   const narrow = useMedia('(max-width: 599.98px)');
   const ids = useId();
+  const [scrollRef, edges] = useScrollEdges(narrow ? null : data);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -170,6 +200,38 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
   const plain = !q && !filter;
   const ariaSort = (k: SortKey) =>
     sort !== k ? 'none' : dir === 'asc' ? 'ascending' : 'descending';
+  const filters = (
+    <div className="manager-filters" role="group" aria-labelledby={ids + 'filters'}>
+      <span className="manager-filters-label" id={ids + 'filters'}>
+        Lọc (chọn một)
+      </span>
+      {FILTERS.map((f) => (
+        <button
+          key={f.id}
+          type="button"
+          className="manager-chip"
+          aria-pressed={filter === f.id}
+          onClick={() => {
+            setFilter((cur) => (cur === f.id ? '' : f.id));
+            setPage(1);
+          }}
+        >
+          {f.label}
+        </button>
+      ))}
+      <label className="users-check manager-switch">
+        <input
+          type="checkbox"
+          checked={showLocked}
+          onChange={(e) => {
+            setShowLocked(e.target.checked);
+            setPage(1);
+          }}
+        />
+        Hiện người đã khóa
+      </label>
+    </div>
+  );
 
   return (
     <div className="users-admin manager-learners">
@@ -197,8 +259,23 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        {narrow && (
-          <>
+      </div>
+
+      {narrow ? (
+        // Phones: sort and filters fold away so the first cards are on the first screen; the
+        // summary still says what is applied.
+        <details className="manager-more">
+          <summary>
+            <span className="manager-more-title">Sắp xếp và lọc</span>
+            <span className="manager-more-state">
+              {[
+                `${COLUMNS.find((c) => c.key === sort)!.label} ${dir === 'asc' ? '↑' : '↓'}`,
+                ...(filter ? [FILTERS.find((f) => f.id === filter)!.label] : []),
+                ...(showLocked ? ['có người đã khóa'] : []),
+              ].join(' · ')}
+            </span>
+          </summary>
+          <div className="manager-tools">
             <label className="users-field manager-sortfield">
               Sắp xếp theo
               <select value={sort} onChange={(e) => sortBy(e.target.value as SortKey)}>
@@ -219,40 +296,12 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
             >
               {dir === 'asc' ? 'Tăng dần ↑' : 'Giảm dần ↓'}
             </button>
-          </>
-        )}
-      </div>
-
-      <div className="manager-filters" role="group" aria-labelledby={ids + 'filters'}>
-        <span className="manager-filters-label" id={ids + 'filters'}>
-          Lọc (chọn một)
-        </span>
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            className="manager-chip"
-            aria-pressed={filter === f.id}
-            onClick={() => {
-              setFilter((cur) => (cur === f.id ? '' : f.id));
-              setPage(1);
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
-        <label className="users-check manager-switch">
-          <input
-            type="checkbox"
-            checked={showLocked}
-            onChange={(e) => {
-              setShowLocked(e.target.checked);
-              setPage(1);
-            }}
-          />
-          Hiện người đã khóa
-        </label>
-      </div>
+          </div>
+          {filters}
+        </details>
+      ) : (
+        filters
+      )}
 
       {loadError ? (
         <ErrorNote message={loadError} retry={() => setReload((n) => n + 1)} />
@@ -313,51 +362,63 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
               ))}
             </ul>
           ) : (
-            <div className="manager-scroll" role="region" aria-label="Bảng học viên" tabIndex={0}>
-              <table className="users-table manager-table" aria-describedby={ids + 'count'}>
-                <caption className="users-sr">Danh sách học viên</caption>
-                <thead>
-                  <tr>
-                    {COLUMNS.map((c) => (
-                      <th
-                        key={c.key}
-                        scope="col"
-                        aria-sort={ariaSort(c.key)}
-                        className={c.num ? 'manager-num' : undefined}
-                      >
-                        <button
-                          type="button"
-                          className="manager-sort"
-                          onClick={() => sortBy(c.key)}
+            <div
+              className="manager-scrollbox"
+              data-more-start={edges.start || undefined}
+              data-more-end={edges.end || undefined}
+            >
+              <div
+                className="manager-scroll"
+                ref={scrollRef}
+                role="region"
+                aria-label="Bảng học viên"
+                tabIndex={0}
+              >
+                <table className="users-table manager-table" aria-describedby={ids + 'count'}>
+                  <caption className="users-sr">Danh sách học viên</caption>
+                  <thead>
+                    <tr>
+                      {COLUMNS.map((c) => (
+                        <th
+                          key={c.key}
+                          scope="col"
+                          aria-sort={ariaSort(c.key)}
+                          className={c.num ? 'manager-num' : undefined}
                         >
-                          {c.label}
-                        </button>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.items.map((r) => (
-                    <tr key={r.id} data-learner={r.id}>
-                      <th scope="row" className="manager-person">
-                        <Person row={r} />
-                      </th>
-                      <td className="manager-num">{r.learning}</td>
-                      <td className="manager-num">{r.solid}</td>
-                      <td className="manager-num">
-                        <Avg v={r.avgLevel} />
-                      </td>
-                      <td>
-                        <Last at={r.lastStudyAt} />
-                      </td>
-                      <td className="manager-num">
-                        <Overdue n={r.overdue} />
-                      </td>
-                      <td className="manager-num">{r.sessions7d}</td>
+                          <button
+                            type="button"
+                            className="manager-sort"
+                            onClick={() => sortBy(c.key)}
+                          >
+                            {c.label}
+                          </button>
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.items.map((r) => (
+                      <tr key={r.id} data-learner={r.id}>
+                        <th scope="row" className="manager-person">
+                          <Person row={r} />
+                        </th>
+                        <td className="manager-num">{r.learning}</td>
+                        <td className="manager-num">{r.solid}</td>
+                        <td className="manager-num">
+                          <Avg v={r.avgLevel} />
+                        </td>
+                        <td>
+                          <Last at={r.lastStudyAt} />
+                        </td>
+                        <td className="manager-num">
+                          <Overdue n={r.overdue} />
+                        </td>
+                        <td className="manager-num">{r.sessions7d}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
           <nav className="users-pages" aria-label="Phân trang">

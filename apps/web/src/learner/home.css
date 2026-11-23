@@ -1,4 +1,8 @@
-/* Home "Biển sâu": today's haul in deep water. Deep surface only; ignores the ice theme. */
+/*
+ * Home "Biển sâu": today's haul in deep water. Deep surface only; ignores the ice theme.
+ * The shadows here stay hard-coded on purpose: they are drawn for the always-dark deep surface
+ * (near-black, heavier than --shadow-raise), and the ice shadow tokens change with the theme.
+ */
 
 .home-stage {
   position: relative;
@@ -631,13 +635,19 @@
   border-color: var(--tone);
   background: rgb(255 255 255 / 0.1);
 }
+/* An empty group: the outline and the mark recede, the label stays readable at full strength. */
 .group-entry[data-empty] {
-  opacity: 0.55;
+  border-style: dashed;
+  background: transparent;
   cursor: default;
+}
+.group-entry[data-empty] .group-entry-mark,
+.group-entry[data-empty] svg:last-child {
+  opacity: 0.4;
 }
 .group-entry[data-empty]:hover {
   border-color: var(--deep-line);
-  background: var(--deep-surface);
+  background: transparent;
 }
 .group-entry-mark {
   width: 26px;

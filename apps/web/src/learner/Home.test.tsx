@@ -362,7 +362,11 @@ describe('learner CSS polish (tokens, clamp, status pill)', () => {
     expect(rule).toMatch(/border:\s*0/);
     expect(rule).toMatch(/background:\s*none/);
   });
-  it('dims empty group chips', () => {
-    expect(read('home.css')).toMatch(/\.group-entry\[data-empty\] \{[^}]*opacity/);
+  it('dims an empty group chip by its outline and mark, never the label text', () => {
+    const css = read('home.css');
+    // No whole-button opacity: the label must keep full contrast.
+    expect(css).not.toMatch(/\.group-entry\[data-empty\] \{[^}]*opacity/);
+    expect(css).toMatch(/\.group-entry\[data-empty\] \{[^}]*border-style:\s*dashed/);
+    expect(css).toMatch(/\.group-entry\[data-empty\] \.group-entry-mark[^{]*\{[^}]*opacity/);
   });
 });

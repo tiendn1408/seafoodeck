@@ -100,6 +100,24 @@ describe('UsersAdmin list', () => {
     expect(rowOf(host, 'me').querySelector('a')).toBeNull();
   });
 
+  it('every action sits in its own named slot, so rows line up whatever is missing', async () => {
+    const host = await screen();
+    const slots = (id: string) =>
+      [...rowOf(host, id).querySelectorAll('.users-actions > *')].map((el) => el.className);
+    expect(slots('u2')).toEqual([
+      'users-secondary users-act-view',
+      'users-secondary users-act-lock',
+      'users-secondary users-act-reset',
+      'users-secondary users-act-delete',
+    ]);
+    // A locked manager: no "Xem tiến độ", "Mở khóa" in the lock slot.
+    expect(slots('u3')).toEqual([
+      'users-secondary users-act-lock',
+      'users-secondary users-act-reset',
+      'users-secondary users-act-delete',
+    ]);
+  });
+
   it('ignores a slower, older list response that arrives after a newer one', async () => {
     let releaseOld: () => void = () => {};
     routes['GET /admin/users?role=manager&page=1&limit=20'] = () =>

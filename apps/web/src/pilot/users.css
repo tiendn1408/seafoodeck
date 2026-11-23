@@ -29,10 +29,11 @@
 .admin-tabs a:hover {
   color: var(--ice-ink);
 }
+/* Ink, not salmon: salmon on the ice background is under 3:1 for this thin mark. */
 .admin-tabs a[aria-current='page'],
 .admin-tabs span[aria-current='page'] {
   color: var(--ice-ink);
-  border-bottom-color: var(--action);
+  border-bottom-color: var(--ice-ink);
 }
 .admin-tabs span[aria-disabled='true'] {
   cursor: not-allowed;
@@ -303,6 +304,59 @@
   justify-content: flex-end;
   gap: var(--space-2);
 }
+/*
+ * Table widths: the actions keep fixed slots (view | lock | reset | delete) so the buttons line up
+ * from row to row even where a row has no "Xem tiến độ" or shows "Mở khóa" instead of "Khóa".
+ * Cells wrap only between words (break-word does not shrink a column's minimum like `anywhere`
+ * does), so usernames break at their hyphens, not mid-word, and headers stay on one line.
+ */
+@media (min-width: 601px) {
+  .users-table th,
+  .users-table td {
+    overflow-wrap: break-word;
+  }
+  .users-table thead th {
+    white-space: nowrap;
+  }
+  .users-table .users-actions {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: end;
+  }
+  .users-actions > * {
+    white-space: nowrap;
+  }
+  .users-act-view {
+    grid-area: 1 / 1;
+  }
+  .users-act-lock {
+    grid-area: 1 / 2;
+    min-width: 7rem;
+  }
+  .users-act-reset {
+    grid-area: 2 / 1;
+  }
+  .users-act-delete {
+    grid-area: 2 / 2;
+  }
+}
+@media (min-width: 1100px) {
+  .users-table .users-actions {
+    grid-template-columns: repeat(4, auto);
+  }
+  .users-act-view {
+    grid-area: 1 / 1;
+  }
+  .users-act-lock {
+    grid-area: 1 / 2;
+  }
+  .users-act-reset {
+    grid-area: 1 / 3;
+  }
+  .users-act-delete {
+    grid-area: 1 / 4;
+  }
+}
 .users-pages {
   display: flex;
   align-items: center;
@@ -512,10 +566,6 @@
   --ice-muted: #4c5e66;
   --ice-line: #d4e0e3;
   --ice-focus: #0b6a7c;
-}
-/* Salmon on that light grey is under 3:1, so the current tab is marked in ink there. */
-.pilot-admin .admin-tabs a[aria-current='page'] {
-  border-bottom-color: var(--ice-ink);
 }
 
 /* Bulk creation dialog: wider, the result table scrolls inside. */
