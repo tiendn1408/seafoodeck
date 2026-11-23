@@ -146,6 +146,14 @@
   font-weight: 600;
   white-space: nowrap;
 }
+/* Phone (360-390px): the status shrinks and truncates instead of pushing the brand around. */
+.shell[data-layout='phone'] .shell-saving {
+  min-width: 0;
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.6875rem;
+}
 .shell-logout-text {
   clip-path: inset(50%);
   position: absolute;

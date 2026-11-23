@@ -6,6 +6,7 @@ import { ManagerNotice } from './ManagerNotice';
 import { clearMe } from './meStore';
 import PilotApp from '../pilot/PilotApp';
 import { setAuthRequiredHandler } from '../pilot/api';
+import { disposeAll, sessionQueue } from './study/submitQueues';
 import { button, click, field, mount, setValue, submit, unmountAll } from './testDom';
 
 vi.mock('./meStore', async (original) => {
@@ -16,7 +17,7 @@ vi.mock('./meStore', async (original) => {
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
 let routes: Record<string, (init?: RequestInit) => Promise<Response>>;
-let calls: { key: string; body?: string }[];
+let calls: { key: string; body?: string; headers?: HeadersInit }[];
 beforeEach(() => {
   clearMe();
   vi.mocked(clearMe).mockClear();
@@ -36,17 +37,22 @@ beforeEach(() => {
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       const key = `${init?.method ?? 'GET'} ${String(url).replace('/api/v1', '')}`;
-      calls.push({ key, body: init?.body as string | undefined });
+      calls.push({ key, body: init?.body as string | undefined, headers: init?.headers });
       const r = routes[key];
       return r ? r(init) : json({ message: 'unrouted ' + key }, 404);
     }),
   );
 });
 afterEach(() => {
+  disposeAll();
   unmountAll();
   vi.unstubAllGlobals();
 });
 const tick = () => act(async () => void (await new Promise((r) => setTimeout(r, 10))));
+const csrfOfLast = (key: string) => {
+  const c = calls.filter((x) => x.key === key).at(-1);
+  return (c?.headers as Record<string, string> | undefined)?.['X-CSRF-Token'];
+};
 const patches = () => calls.filter((c) => c.key === 'PATCH /me');
 
 async function account(props: Partial<Parameters<typeof Account>[0]> = {}) {
@@ -101,7 +107,8 @@ describe('Account', () => {
   });
 
   it('opens the optional password change; cancel closes, success confirms', async () => {
-    routes['POST /me/password'] = () => json({ ok: true });
+    routes['POST /me/password'] = () =>
+      json({ role: 'student', internal: false, csrf: 'c-new', expiresAt: 'later', changed: true });
     const host = await account();
     await click(button(host, 'Đổi mật khẩu'));
     expect(host.textContent).toContain('Mật khẩu hiện tại');
@@ -115,6 +122,84 @@ describe('Account', () => {
     await submit(host);
     expect(host.textContent).not.toContain('Mật khẩu hiện tại');
     expect(host.querySelector('[role="status"]')?.textContent).toContain('Đã đổi mật khẩu');
+  });
+
+  async function openChange(host: HTMLElement) {
+    await click(button(host, 'Đổi mật khẩu'));
+    setValue(field(host, 'Mật khẩu hiện tại'), 'dummy-old-pass');
+    setValue(field(host, 'Mật khẩu mới'), 'dummy-new-pass1');
+    setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass1');
+  }
+  const attempt = 'POST /learning/sessions/g1/questions/q1/attempts';
+  const rating = { gameId: 'g1', questionId: 'q1', key: 'k1', answer: { rating: 'known' } };
+  const sentPassword = () => calls.filter((c) => c.key === 'POST /me/password').length;
+
+  it('a password change sends the new csrf with the next mutation and reports the new session', async () => {
+    const onPasswordChanged = vi.fn();
+    routes['POST /me/password'] = () =>
+      json({
+        role: 'student',
+        internal: false,
+        csrf: 'c-new',
+        expiresAt: 'later',
+        displayName: 'Lan',
+      });
+    routes['PATCH /me'] = () =>
+      json({
+        username: 'lan.nguyen',
+        displayName: 'Lan',
+        role: 'student',
+        mustChangePassword: false,
+      });
+    const host = await account({ onPasswordChanged });
+    await openChange(host);
+    await submit(host);
+    expect(onPasswordChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ csrf: 'c-new', expiresAt: 'later', displayName: 'Lan' }),
+    );
+    await submit(host);
+    await tick();
+    expect(patches()).toHaveLength(1);
+    expect(csrfOfLast('PATCH /me')).toBe('c-new');
+  });
+
+  it('waits for queued answers to be saved before changing the password', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    routes[attempt] = () => gate.then(() => json({ answered: true, questionId: 'q1' }));
+    routes['POST /me/password'] = () => json({ role: 'student', csrf: 'c2' });
+    const host = await account();
+    sessionQueue('g1', () => {}).enqueue(rating);
+    await openChange(host);
+    await submit(host);
+    expect(sentPassword()).toBe(0);
+    release();
+    await tick();
+    await tick();
+    expect(sentPassword()).toBe(1);
+    disposeAll();
+  });
+
+  it('asks before changing the password while an answer could not be saved', async () => {
+    routes[attempt] = () => json({ message: 'hỏng' }, 400);
+    routes['POST /me/password'] = () => json({ role: 'student', csrf: 'c2' });
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await account();
+    const q = sessionQueue('g1', () => {}, { retryMs: [] });
+    q.enqueue(rating);
+    await q.flush();
+    await openChange(host);
+    await submit(host);
+    await tick();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(sentPassword()).toBe(0);
+    expect(host.textContent).toContain('Mật khẩu hiện tại');
+    confirm.mockReturnValue(true);
+    await submit(host);
+    await tick();
+    expect(sentPassword()).toBe(1);
+    disposeAll();
   });
 
   it('Đăng xuất calls onLogout', async () => {

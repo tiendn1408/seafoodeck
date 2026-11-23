@@ -73,17 +73,20 @@ const overview = {
 };
 let routes: Record<string, () => Promise<Response>>;
 let calls: string[];
+let inits: (RequestInit | undefined)[];
 beforeEach(() => {
   clearMe();
   setAuthRequiredHandler(null);
   location.hash = '#home';
   calls = [];
+  inits = [];
   routes = {};
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       const key = `${init?.method ?? 'GET'} ${String(url).replace('/api/v1', '')}`;
       calls.push(key);
+      inits.push(init);
       const r = routes[key];
       return r ? r() : json({ message: 'unrouted ' + key }, 404);
     }),
@@ -199,7 +202,11 @@ describe('PilotApp forced password flow', () => {
     routes['GET /auth/me'] = () => json(me);
     routes['POST /me/password'] = () => {
       me = view('student');
-      return json({ ok: true });
+      return json({
+        ...view('student', { mustChangePassword: false }),
+        csrf: 'c-new',
+        changed: true,
+      });
     };
     const host = mount(<PilotApp />);
     await tick();
@@ -208,8 +215,78 @@ describe('PilotApp forced password flow', () => {
     setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass1');
     await submit(host);
     await tick();
-    expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(2);
+    // The response is the new session view: no second /auth/me round trip.
+    expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(1);
     expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+  });
+
+  const headerOf = (key: string) =>
+    (inits[calls.lastIndexOf(key)]?.headers as Record<string, string>)['X-CSRF-Token'];
+
+  it('forced change adopts the new csrf: the next mutating request sends it', async () => {
+    routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
+    routes['POST /me/password'] = () =>
+      json({ ...view('student'), csrf: 'c-new', displayName: 'Lan', mustChangePassword: false });
+    routes['POST /auth/logout'] = () => json(view('guest'));
+    const host = mount(<PilotApp />);
+    await tick();
+    setValue(field(host, 'Mật khẩu hiện tại'), 'dummy-old-pass');
+    setValue(field(host, 'Mật khẩu mới'), 'dummy-new-pass1');
+    setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass1');
+    await submit(host);
+    await tick();
+    expect(headerOf('POST /me/password')).toBe('c-student');
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    expect(headerOf('POST /auth/logout')).toBe('c-new');
+  });
+
+  it('voluntary change from the account page adopts csrf and display name too', async () => {
+    location.hash = '#account';
+    routes['GET /auth/me'] = () => json(view('student', { displayName: 'An' }));
+    routes['GET /me'] = () =>
+      json({ username: 'an', displayName: 'An', role: 'student', mustChangePassword: false });
+    routes['POST /me/password'] = () =>
+      json({ ...view('student'), csrf: 'c-new2', displayName: 'An', mustChangePassword: false });
+    routes['PATCH /me'] = () =>
+      json({ username: 'an', displayName: 'Bình', role: 'student', mustChangePassword: false });
+    const host = mount(<PilotApp />);
+    await tick();
+    await click(button(host, 'Đổi mật khẩu'));
+    setValue(field(host, 'Mật khẩu hiện tại'), 'dummy-old-pass');
+    setValue(field(host, 'Mật khẩu mới'), 'dummy-new-pass1');
+    setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass1');
+    await submit(host);
+    await tick();
+    expect(host.textContent).toContain('Đã đổi mật khẩu');
+    setValue(field(host, 'Tên hiển thị'), 'Bình');
+    await submit(host);
+    await tick();
+    expect(headerOf('PATCH /me')).toBe('c-new2');
+  });
+
+  it('forced screen: logout waits for queued saves, says so, and ignores a second click', async () => {
+    routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
+    routes['POST /auth/logout'] = () => json(view('guest'));
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    routes['POST /learning/sessions/g1/questions/q1/attempts'] = () =>
+      gate.then(() => json({ answered: true, questionId: 'q1' }));
+    const host = mount(<PilotApp />);
+    await tick();
+    sessionQueue('g1', () => {}).enqueue({
+      gameId: 'g1',
+      questionId: 'q1',
+      key: 'k',
+      answer: { rating: 'known' },
+    });
+    await click(button(host, 'Đăng xuất'));
+    expect(host.textContent).toContain('Đang lưu tiến độ…');
+    expect(button(host, 'Đăng xuất').disabled).toBe(true);
+    release();
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c === 'POST /auth/logout')).toHaveLength(1);
   });
 
   it('logout then login as another user leaves no forced state behind', async () => {
@@ -634,5 +711,250 @@ describe('PilotApp logout keeps unsaved self-ratings in mind', () => {
     window.dispatchEvent(e);
     expect(e.defaultPrevented).toBe(false);
     expect(sessionQueue('g1', () => {})).not.toBe(q);
+  });
+});
+
+describe('PilotApp sign-out edge cases', () => {
+  const attempt = 'POST /learning/sessions/g1/questions/q1/attempts';
+  const rating = { gameId: 'g1', questionId: 'q1', key: 'k1', answer: { rating: 'known' } };
+  async function signedIn() {
+    location.hash = '#library';
+    routes['GET /auth/me'] = () => json(view('learner', { userId: undefined }));
+    routes['GET /catalog/overview'] = () => json(overview);
+    const host = mount(<PilotApp />);
+    await tick();
+    return host;
+  }
+  const loggedOut = () => calls.filter((c) => c === 'POST /auth/logout').length;
+
+  it('a second click while the logout request is in flight sends nothing more', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    routes['POST /auth/logout'] = () => gate.then(() => json(view('guest', { userId: undefined })));
+    const host = await signedIn();
+    await click(button(host, 'Đăng xuất'));
+    await click(button(host, 'Đăng xuất'));
+    await click(button(host, 'Đăng xuất'));
+    expect(loggedOut()).toBe(1);
+    release();
+    await tick();
+    expect(loggedOut()).toBe(1);
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+  });
+
+  it('the guard drops after a failed logout request, so it can be tried again', async () => {
+    routes['POST /auth/logout'] = () => json({ message: 'hỏng' }, 500);
+    const host = await signedIn();
+    await click(button(host, 'Đăng xuất'));
+    await tick();
+    await click(button(host, 'Đăng xuất'));
+    expect(loggedOut()).toBe(2);
+  });
+
+  it('a final 409 whose server result is being adopted shows no confirm box', async () => {
+    routes['POST /auth/logout'] = () => json(view('guest', { userId: undefined }));
+    routes[attempt] = () => json({ message: 'Câu đã nộp.' }, 409);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    routes['GET /learning/sessions/g1'] = () =>
+      gate.then(() =>
+        json({
+          ...studyGame('g1'),
+          questions: [
+            {
+              ...studyGame('g1').questions[0],
+              result: { answered: true, questionId: 'q1', targetId: 't' },
+            },
+          ],
+        }),
+      );
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await signedIn();
+    sessionQueue('g1', () => {}).enqueue(rating);
+    await tick();
+    await click(button(host, 'Đăng xuất'));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(loggedOut()).toBe(0);
+    release();
+    await tick();
+    await tick();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(loggedOut()).toBe(1);
+  });
+});
+
+describe('PilotApp 401 on a signed-in route', () => {
+  const attempt = 'POST /learning/sessions/g1/questions/q1/attempts';
+  const lockedOut = () => json({ message: 'Phiên không hợp lệ.' }, 401);
+  const reviewEntry = {
+    targetId: 'i1',
+    itemId: 'i1',
+    label: 'Vẹm xanh',
+    skill: 'name:en',
+    stage: 0,
+    dueAt: '2026-11-20T00:00:00.000Z',
+  };
+  async function lockedStudent() {
+    location.hash = '#review';
+    let locked = false;
+    routes['GET /auth/me'] = () => json(locked ? view('guest') : view('student'));
+    routes['GET /catalog/overview'] = () => json(overview);
+    routes['GET /me/mastery'] = () => json({});
+    routes['GET /me/review'] = () => json({ due: [reviewEntry], scheduled: [] });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    locked = true; // the manager locked the account: the server deleted the session
+    return host;
+  }
+
+  it('a request answered 401 returns to the login screen with no generic error', async () => {
+    routes['POST /learning/sessions'] = lockedOut;
+    const host = await lockedStudent();
+    await click(button(host, 'Ôn 1 mục đến hạn'));
+    await tick();
+    await tick();
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(host.textContent).not.toContain('Phiên không hợp lệ');
+    expect(calls.filter((c) => c === 'GET /auth/me')).toHaveLength(2);
+  });
+
+  it('a queued answer answered 401 is not retried and the queues are disposed', async () => {
+    routes[attempt] = lockedOut;
+    const host = await lockedStudent();
+    const q = sessionQueue('g1', () => {}, { retryMs: [5, 5] });
+    q.enqueue({ gameId: 'g1', questionId: 'q1', key: 'k', answer: { rating: 'known' } });
+    await tick();
+    await tick();
+    await tick();
+    expect(calls.filter((c) => c === attempt)).toHaveLength(1);
+    expect(pendingTotal()).toBe(0);
+    expect(host.textContent).toContain('Học thử bằng mã mời');
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('a wrong-password 401 on the login form is not a session loss', async () => {
+    routes['GET /auth/me'] = () => json(view('guest'));
+    routes['POST /auth/login'] = () => json({ message: 'Sai thông tin.' }, 401);
+    const host = mount(<PilotApp />);
+    await tick();
+    const before = calls.filter((c) => c === 'GET /auth/me').length;
+    const [user, secret] = host.querySelectorAll<HTMLInputElement>('input');
+    setValue(user, 'lan');
+    setValue(secret, 'xxxxxxxxxx');
+    await submit(host);
+    await tick();
+    expect(calls).toContain('POST /auth/login');
+    expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(before);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('chưa đúng');
+  });
+
+  it('a review start sends limit only when set, other bodies unchanged', async () => {
+    routes['POST /learning/sessions'] = () => json(studyGame('g2'));
+    const host = await lockedStudent();
+    await click(button(host, 'Ôn 1 mục đến hạn'));
+    await tick();
+    const body = JSON.parse(String(inits[calls.indexOf('POST /learning/sessions')]!.body));
+    expect(body).toEqual({ mode: 'review', kind: 'en', limit: 1 });
+  });
+});
+
+describe('PilotApp admin one-time password guard', () => {
+  async function selfReset() {
+    location.hash = '#admin/users';
+    routes['GET /auth/me'] = () => json(view('admin'));
+    routes['POST /auth/logout'] = () => json(view('guest'));
+    routes['GET /admin/users?page=1&limit=20'] = () =>
+      json({
+        items: [
+          {
+            id: 'u-admin',
+            username: 'owner',
+            displayName: null,
+            role: 'admin',
+            disabled: false,
+            mustChangePassword: false,
+            createdAt: '2026-11-01T00:00:00.000Z',
+            lastLoginAt: null,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      });
+    routes['POST /admin/users/u-admin/reset-password'] = () =>
+      json({ temporaryPassword: 'OwnTmp7xKq9Rz2aBcDeF' });
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    const row = host.querySelector<HTMLElement>('[data-user="u-admin"]')!;
+    await click(button(row, 'Đặt lại mật khẩu'));
+    await click(button(host.querySelector<HTMLElement>('[role="dialog"]')!, 'Đặt lại'));
+    await tick();
+    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
+    return host;
+  }
+  const loggedOut = () => calls.filter((c) => c === 'POST /auth/logout').length;
+
+  it('logout asks first; declining keeps the password on screen', async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await selfReset();
+    await click(button(host.querySelector('.shell-header')!, 'Đăng xuất'));
+    await tick();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(loggedOut()).toBe(0);
+    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
+  });
+
+  it('confirming the logout discards the password and signs out', async () => {
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    );
+    const host = await selfReset();
+    await click(button(host.querySelector('.shell-header')!, 'Đăng xuất'));
+    await tick();
+    expect(loggedOut()).toBe(1);
+    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
+  });
+
+  it('navigating to another route asks first; declining stays on the users screen', async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await selfReset();
+    location.hash = '#library';
+    await tick();
+    await tick();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(location.hash).toBe('#admin/users');
+    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
+  });
+
+  it('confirming the navigation leaves the screen and drops the password', async () => {
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    );
+    const host = await selfReset();
+    location.hash = '#library';
+    await tick();
+    await tick();
+    expect(location.hash).toBe('#library');
+    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
+  });
+
+  it('once the panel is closed nothing asks any more', async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    const host = await selfReset();
+    await click(button(host.querySelector<HTMLElement>('.users-reveal')!, 'Đóng'));
+    await tick();
+    location.hash = '#library';
+    await tick();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(location.hash).toBe('#library');
   });
 });

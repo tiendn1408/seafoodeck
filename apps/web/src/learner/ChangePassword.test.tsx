@@ -89,12 +89,18 @@ describe('ChangePassword', () => {
     expect(onLogout).toHaveBeenCalled();
   });
   it('not forced: has a cancel action and no forced explanation', async () => {
-    const onDone = vi.fn();
+    const onCancel = vi.fn();
     const host = mount(
-      <ChangePassword forced={false} role="student" onDone={onDone} onLogout={() => {}} />,
+      <ChangePassword
+        forced={false}
+        role="student"
+        onDone={() => {}}
+        onCancel={onCancel}
+        onLogout={() => {}}
+      />,
     );
     expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
     await click(button(host, 'Hủy'));
-    expect(onDone).toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalled();
   });
 });

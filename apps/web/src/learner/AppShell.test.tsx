@@ -137,3 +137,17 @@ describe('AppShell navigation by kind (desktop)', () => {
     expect(host.querySelector('a[href="#account"]')?.getAttribute('aria-current')).toBe('page');
   });
 });
+
+describe('AppShell saving status on phones', () => {
+  it('the status is capped and truncated at phone widths so the header does not crowd', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const css = readFileSync(resolve(__dirname, 'shell.css'), 'utf8');
+    const rule = css.match(/\.shell\[data-layout='phone'\] \.shell-saving \{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).toMatch(/max-width:\s*[\d.]+rem/);
+    expect(rule).toMatch(/text-overflow:\s*ellipsis/);
+    expect(rule).toMatch(/overflow:\s*hidden/);
+    // 360px minus gutters, mark, theme/account/logout buttons: well under the 7.5rem cap needs.
+    expect(parseFloat(rule.match(/max-width:\s*([\d.]+)rem/)![1])).toBeLessThanOrEqual(8);
+  });
+});

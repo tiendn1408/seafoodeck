@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, setAuthRequiredHandler, setCsrf, type AuthView, type Game, type MeHome } from './api';
+import {
+  api,
+  setAuthRequiredHandler,
+  setCsrf,
+  setUnauthorizedHandler,
+  type AuthView,
+  type Game,
+  type MeHome,
+} from './api';
+import { confirmLeave, leaveGuarded, setLeaveGuard } from './leaveGuard';
 import { stopAudio } from './Media';
 import { Admin } from './Admin';
 import { UsersAdmin } from './UsersAdmin';
@@ -22,7 +31,7 @@ import type { MeMastery } from './api';
 import { Progress } from '../learner/Progress';
 import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
-import { disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
+import { adoptingTotal, disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
 /**
  * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
@@ -67,9 +76,25 @@ export default function PilotApp() {
   const [game, setGame] = useState<Game | null>(null),
     [pending, setPending] = useState(false),
     [libraryView, setLibraryView] = useState<LibraryView>(LIBRARY_START);
+  // The route on screen, and a hash change we undo ourselves (it must not count as navigation).
+  const shown = useRef(route);
+  useEffect(() => {
+    shown.current = route;
+  }, [route]);
+  const undoing = useRef(false);
   useEffect(() => {
     const f = () => {
       const next = currentRoute();
+      if (undoing.current) {
+        undoing.current = false;
+        return;
+      }
+      // Something that cannot be shown again (an admin's own temporary password) is on screen.
+      if (next !== shown.current && leaveGuarded() && !confirmLeave()) {
+        undoing.current = true;
+        location.replace('#' + shown.current);
+        return;
+      }
       setRoute(next);
       window.scrollTo(0, 0);
       setError('');
@@ -87,6 +112,10 @@ export default function PilotApp() {
       .catch((e) => setError(e.message));
   }, []);
   useEffect(() => setAuthRequiredHandler(() => setMustChange(true)), []);
+  // The session is gone (for example the account was locked and the server deleted it): back to
+  // the sign-in as a guest, quietly. Set below, once the helpers it resets exist.
+  const sessionLost = useRef<() => void>(() => {});
+  useEffect(() => setUnauthorizedHandler(() => sessionLost.current()), []);
   const signedIn = !!auth && auth.role !== 'guest';
   // Only an authenticated session can be forced; a flag raised while a guest never sticks.
   const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
@@ -223,37 +252,74 @@ export default function PilotApp() {
   // True while logout waits for self-ratings still being saved in the background.
   const [saving, setSaving] = useState(false);
   const leaving = useRef(false);
+  function reset(a: AuthView) {
+    clearMe();
+    setMustChange(false);
+    setAuth(a);
+    setCsrf(a.csrf);
+    signIns.current++;
+    disposeAll();
+    restoreTried.current = null;
+    setGame(null);
+    rememberSession(null);
+  }
+  const recovering = useRef(false);
+  useEffect(() => {
+    sessionLost.current = () => {
+      if (recovering.current) return;
+      recovering.current = true;
+      // Whatever the failed request reports is moot now: the login screen replaces it.
+      void api<AuthView>('/auth/me')
+        .then((a) => {
+          reset(a);
+          setError('');
+        })
+        .catch(() => {})
+        .finally(() => void (recovering.current = false));
+    };
+  });
+  /** The session view a password change answered with (ChangePassword already holds its csrf). */
+  function adoptSession(s: AuthView) {
+    setAuth(
+      (a) =>
+        a && {
+          ...a,
+          csrf: s.csrf ?? a.csrf,
+          expiresAt: s.expiresAt ?? a.expiresAt,
+          displayName: s.displayName !== undefined ? s.displayName : a.displayName,
+          mustChangePassword: false,
+        },
+    );
+  }
   async function logout() {
+    // Held until the logout request is over, so a second click never sends a second one.
     if (leaving.current) return;
+    if (!confirmLeave()) return;
     leaving.current = true;
     try {
-      if (pendingTotal() > 0) {
+      if (pendingTotal() > 0 || adoptingTotal() > 0) {
         setSaving(true);
-        const saved = await flushAll(5000);
-        setSaving(false);
+        let saved: boolean;
+        try {
+          saved = await flushAll(5000);
+        } finally {
+          setSaving(false);
+        }
         if (
           !saved &&
           !window.confirm('Còn câu chưa lưu được. Đăng xuất sẽ mất các câu này. Vẫn đăng xuất?')
         )
           return;
       }
+      const a = await api<AuthView>('/auth/logout', {});
+      setLeaveGuard(null);
+      reset(a);
+      location.hash = 'home';
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       leaving.current = false;
     }
-    void api<AuthView>('/auth/logout', {})
-      .then((a) => {
-        clearMe();
-        setMustChange(false);
-        setAuth(a);
-        setCsrf(a.csrf);
-        signIns.current++;
-        disposeAll();
-        restoreTried.current = null;
-        setGame(null);
-        rememberSession(null);
-        location.hash = 'home';
-      })
-      .catch((e) => setError(e.message));
   }
   return (
     <AppShell
@@ -298,15 +364,11 @@ export default function PilotApp() {
             forced
             role={auth.role}
             onLogout={() => void logout()}
-            onDone={() => {
+            saving={saving}
+            onDone={(session) => {
               clearMe();
-              void api<AuthView>('/auth/me')
-                .then((a) => {
-                  setCsrf(a.csrf);
-                  setAuth(a);
-                  setMustChange(false);
-                })
-                .catch((e) => setError(e.message));
+              adoptSession(session);
+              setMustChange(false);
             }}
           />
         ) : loginKind(route, auth.role) ? (
@@ -380,6 +442,7 @@ export default function PilotApp() {
                 userId={auth.userId}
                 onLogout={() => void logout()}
                 onSaved={(displayName) => setAuth((a) => a && { ...a, displayName })}
+                onPasswordChanged={adoptSession}
               />
             )}
             {route === 'admin' && staff && <Admin usersTab={kind === 'admin'} />}

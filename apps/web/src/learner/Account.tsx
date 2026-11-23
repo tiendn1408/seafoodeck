@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KeyRound, LogOut } from 'lucide-react';
-import { api } from '../pilot/api';
+import { api, type AuthView } from '../pilot/api';
 import { ChangePassword } from './ChangePassword';
 import { ErrorNote } from './ErrorNote';
 import { useMe } from './meStore';
@@ -21,10 +21,12 @@ type Props = {
   onLogout: () => void;
   /** Called with the saved display name (null when cleared) so the shell can update. */
   onSaved: (displayName: string | null) => void;
+  /** Called with the new session after a password change, so the shell adopts its fields. */
+  onPasswordChanged?: (session: AuthView) => void;
 };
 
 /** The student's own account: display name, password change and sign-out. Deep, photo-less, short. */
-export function Account({ userId, onLogout, onSaved }: Props) {
+export function Account({ userId, onLogout, onSaved, onPasswordChanged }: Props) {
   const me = useMe<MeAccount>('/me', userId);
   const [draft, setDraft] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
@@ -58,7 +60,8 @@ export function Account({ userId, onLogout, onSaved }: Props) {
         forced={false}
         role="student"
         onCancel={() => setChanging(false)}
-        onDone={() => {
+        onDone={(session) => {
+          onPasswordChanged?.(session);
           setChanging(false);
           setStatus('Đã đổi mật khẩu.');
         }}

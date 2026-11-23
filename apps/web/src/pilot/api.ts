@@ -228,6 +228,17 @@ export function setAuthRequiredHandler(fn: AuthRequiredHandler | null): () => vo
     if (fn && authRequired === fn) authRequired = null;
   };
 }
+let unauthorized: (() => void) | null = null;
+/**
+ * Called for a 401 on any route behind the sign-in (the session is gone: expired, revoked or the
+ * account was locked). Login and logout answer 401 for their own reasons and never call it.
+ */
+export function setUnauthorizedHandler(fn: (() => void) | null): () => void {
+  unauthorized = fn;
+  return () => {
+    if (fn && unauthorized === fn) unauthorized = null;
+  };
+}
 export async function api<T>(
   path: string,
   body?: unknown,
@@ -265,6 +276,7 @@ export async function api<T>(
   if (!response.ok) {
     const code = typeof data?.code === 'string' ? data.code : undefined;
     if (code === 'MUST_CHANGE_PASSWORD') authRequired?.(code);
+    if (response.status === 401 && !path.startsWith('/auth/')) unauthorized?.();
     throw new ApiError(
       Array.isArray(data.message)
         ? data.message.join('; ')
