@@ -3,7 +3,7 @@ import { act } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import PilotApp, { TRIAL_SESSION_KEY } from './PilotApp';
-import { api, setAuthRequiredHandler } from './api';
+import { api, setAuthRequiredHandler, type AuthView } from './api';
 import { clearMe } from '../learner/meStore';
 import { kindOf, routeAllowed, routesFor } from '../learner/role';
 import { disposeAll, pendingTotal, sessionQueue } from '../learner/study/submitQueues';
@@ -325,17 +325,23 @@ describe('PilotApp forced password flow', () => {
 });
 
 describe('PilotApp role-aware routes', () => {
-  it('trial, manager, staff and admin never request /me or /me/* on any route their kind allows', async () => {
+  it('trial, staff and admin never request /me*; a manager reads only GET /me, on its account screen', async () => {
     // Every allowed route comes from the route table, so new routes are covered automatically.
-    const views = [
-      view('learner'),
-      { ...view('learner'), userId: undefined }, // real invite sessions carry no userId
-      view('manager'),
-      view('editor'), // staff sessions carry a userId, but /me/* admits students only
-      view('admin'), // admin kind, with a userId, including #admin/users
+    const views: [string, AuthView][] = [
+      ['trial', view('learner')],
+      ['trial (no userId)', { ...view('learner'), userId: undefined }], // real invite sessions
+      ['manager', view('manager')],
+      ['editor', view('editor')], // staff sessions carry a userId, but /me/* admits students only
+      ['admin', view('admin')], // admin kind, with a userId, including #admin/users
     ];
+    const isMe = (c: string) => {
+      const p = c.split(' ')[1].split('?')[0];
+      return p === '/me' || p.startsWith('/me/');
+    };
+    /** `/me*` calls per session label, then per route visited. */
+    const meCalls: Record<string, Record<string, string[]>> = {};
     const visited: string[] = [];
-    for (const v of views) {
+    for (const [label, v] of views) {
       const kind = kindOf(v);
       const hashes = [...routesFor(kind), 'profile/x'].filter((r) => routeAllowed(kind, r));
       expect(hashes.length).toBeGreaterThan(1);
@@ -346,37 +352,41 @@ describe('PilotApp role-aware routes', () => {
         json({ username: 'hà', displayName: null, role: 'manager', mustChangePassword: false });
       routes['GET /manager/learners/x'] = () =>
         json({ id: 'x', username: 'x', displayName: 'Lan', disabled: false });
+      meCalls[label] = {};
       for (const hash of [
         ...hashes,
         ...(kind === 'manager' || kind === 'admin' ? ['manager/learner/x'] : []),
       ]) {
         location.hash = '#' + hash;
+        const before = calls.length;
         const host = mount(<PilotApp />);
         await tick();
         await tick();
         // A manager's home is the learner table.
         const expected = kind === 'manager' && hash === 'home' ? 'manager' : hash;
-        expect(location.hash, `${v.role} ${hash}`).toBe('#' + expected);
+        expect(location.hash, `${label} ${hash}`).toBe('#' + expected);
         expect(host.querySelector('.shell')).not.toBeNull();
         visited.push(`${v.role} ${hash}`);
         unmountAll();
+        meCalls[label][hash] = calls.slice(before).filter(isMe);
       }
     }
     expect(visited).toContain('admin admin/users');
     expect(visited).toContain('admin manager');
     expect(visited).toContain('manager manager');
     expect(visited).toContain('manager manager/learner/x');
+    expect(visited).toContain('manager account');
     expect(visited).not.toContain('editor admin/users');
     expect(calls).toContain('GET /admin/users?page=1&limit=20');
     expect(calls).toContain(LEARNERS);
-    const me = calls.filter((c) => {
-      const p = c.split(' ')[1].split('?')[0];
-      return p === '/me' || p.startsWith('/me/');
-    });
-    expect(calls.length).toBeGreaterThan(0);
-    // Only a manager's own account screen reads /me (the account itself, never the learner views).
-    expect(me.every((c) => c === 'GET /me')).toBe(true);
-    expect(me.length).toBe(1);
+    const flat = (label: string) => Object.values(meCalls[label]).flat();
+    for (const label of ['trial', 'trial (no userId)', 'editor', 'admin'])
+      expect(flat(label), label).toEqual([]);
+    // A manager's own account screen reads the account itself, never the learner views
+    // (/me/home, /me/review, /me/progress, /me/mastery); no other manager screen reads /me*.
+    expect(meCalls.manager.account).toEqual(['GET /me']);
+    for (const [hash, list] of Object.entries(meCalls.manager))
+      if (hash !== 'account') expect(list, `manager ${hash}`).toEqual([]);
   });
 
   it('a manager on a species profile has no study start and never opens a session', async () => {
