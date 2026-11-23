@@ -17,17 +17,22 @@ export function AdminTabs({
   ] as const;
   return (
     <nav className="admin-tabs" aria-label="Khu quản trị">
-      {tabs.map((t) => (
-        <a
-          key={t.id}
-          href={disabled ? undefined : t.href}
-          aria-disabled={disabled ? true : undefined}
-          title={disabled ? 'Đóng khung mật khẩu tạm trước.' : undefined}
-          aria-current={current === t.id ? 'page' : undefined}
-        >
-          {t.label}
-        </a>
-      ))}
+      {tabs.map((t) =>
+        disabled ? (
+          <span
+            key={t.id}
+            aria-disabled="true"
+            title="Đóng khung mật khẩu tạm trước."
+            aria-current={current === t.id ? 'page' : undefined}
+          >
+            {t.label}
+          </span>
+        ) : (
+          <a key={t.id} href={t.href} aria-current={current === t.id ? 'page' : undefined}>
+            {t.label}
+          </a>
+        ),
+      )}
     </nav>
   );
 }

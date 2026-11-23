@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { api, type AdminUserPage, type AdminUserRow } from './api';
 import { AdminTabs } from './AdminTabs';
+import { setLeaveGuard } from './leaveGuard';
 import { Dialog } from './Dialog';
 import { ErrorNote } from '../learner/ErrorNote';
 import { minPasswordLength } from '../learner/ChangePassword';
@@ -79,6 +80,8 @@ interface Secret {
   self: boolean;
 }
 let secretSeq = 0;
+const LEAVE_QUESTION =
+  'Mật khẩu tạm của bạn chỉ hiện một lần. Rời trang sẽ mất mật khẩu này. Vẫn rời đi?';
 
 export function UsersAdmin({ selfId }: { selfId?: string }) {
   const [role, setRole] = useState(''),
@@ -121,7 +124,12 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
       e.returnValue = '';
     };
     window.addEventListener('beforeunload', ask);
-    return () => window.removeEventListener('beforeunload', ask);
+    // The shell asks before sign-out and in-app navigation (hash changes) discard it.
+    const release = setLeaveGuard(LEAVE_QUESTION);
+    return () => {
+      window.removeEventListener('beforeunload', ask);
+      release();
+    };
   }, [paused]);
 
   const params = new URLSearchParams();

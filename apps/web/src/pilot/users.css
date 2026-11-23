@@ -14,7 +14,8 @@
   border-bottom: 1px solid var(--ice-line);
   overflow-x: auto;
 }
-.admin-tabs a {
+.admin-tabs a,
+.admin-tabs span {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -28,11 +29,12 @@
 .admin-tabs a:hover {
   color: var(--ice-ink);
 }
-.admin-tabs a[aria-current='page'] {
+.admin-tabs a[aria-current='page'],
+.admin-tabs span[aria-current='page'] {
   color: var(--ice-ink);
   border-bottom-color: var(--action);
 }
-.admin-tabs a[aria-disabled='true'] {
+.admin-tabs span[aria-disabled='true'] {
   cursor: not-allowed;
 }
 .admin-tabs a:focus-visible {

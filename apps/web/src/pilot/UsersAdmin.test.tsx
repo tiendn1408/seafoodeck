@@ -481,9 +481,15 @@ describe('UsersAdmin row actions', () => {
     const ev = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
-    for (const a of host.querySelectorAll('nav[aria-label="Khu quản trị"] a')) {
+    // Disabled tabs are inert spans, not anchors without an href.
+    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toHaveLength(
+      0,
+    );
+    const tabs = host.querySelectorAll('nav[aria-label="Khu quản trị"] > *');
+    expect(tabs).toHaveLength(2);
+    for (const a of tabs) {
+      expect(a.tagName, a.textContent!).toBe('SPAN');
       expect(a.getAttribute('aria-disabled'), a.textContent!).toBe('true');
-      expect(a.hasAttribute('href'), a.textContent!).toBe(false);
     }
     // Typing, filtering and paging are off.
     const search = field(host, 'Tìm');
@@ -517,7 +523,8 @@ describe('UsersAdmin row actions', () => {
       'GET /admin/users?page=1&limit=20',
     ]);
     expect(removed.mock.calls.some(([t, f]) => t === 'beforeunload' && f === unload)).toBe(true);
-    expect(host.querySelector('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toBeNull();
+    expect(host.querySelector('nav[aria-label="Khu quản trị"] [aria-disabled]')).toBeNull();
+    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a')).toHaveLength(2);
   });
 
   it('the reset confirm waits while the list is loading', async () => {
