@@ -16,6 +16,8 @@ import {
 import type { OverviewData, VersionOf } from './progress-derive';
 import { badges, figures, recentSessions, streakDays } from './progress-achievements';
 import type { LogRow } from './progress-achievements';
+import { learnerMetrics } from './progress-manager';
+import type { LearnerMetrics } from './progress-manager';
 import { DAY, effectiveDueAt } from './progress-review';
 import type { ReviewRow } from './progress-review';
 
@@ -352,6 +354,65 @@ export class ProgressService {
       label: r.label,
       at: r.at.toISOString(),
     }));
+  }
+
+  /**
+   * Manager table figures for many learners in a fixed number of queries: one ReviewProgress read,
+   * one non-skipped attempt read (thin projection), plus the catalog scope, all `userId IN (...)`.
+   * Rows are scoped to the actor's current release and computed per learner in memory (no stored
+   * aggregates). Read-only, so no transaction.
+   */
+  async learnerMetricsBatch(
+    actor: AuthSession,
+    userIds: string[],
+    now = Date.now(),
+  ): Promise<Map<string, LearnerMetrics>> {
+    const out = new Map<string, LearnerMetrics>();
+    if (!userIds.length) return out;
+    const o = await this.catalog.overview(actor);
+    const { versionOf } = await this.versions(actor);
+    const overview: OverviewData = {
+      items: o.items.map((i) => ({
+        revisionId: i.revisionId,
+        itemId: i.itemId,
+        vi: i.vi,
+        scientific: i.scientific,
+        taxonomicGroup: i.taxonomicGroup,
+        imageId: i.imageId,
+      })),
+      learnable: o.learnable,
+      hsCases: o.hsCases,
+    };
+    const [progress, attempts] = await Promise.all([
+      this.db.reviewProgress.findMany({ where: { userId: { in: userIds } } }),
+      this.db.learningAttempt.findMany({
+        where: { userId: { in: userIds }, skipped: false },
+        select: { userId: true, sessionId: true, skipped: true, at: true },
+      }),
+    ]);
+    const rowsBy = new Map<string, ReviewRow[]>();
+    for (const p of progress) {
+      const list = rowsBy.get(p.userId) ?? [];
+      list.push(toRow(p));
+      rowsBy.set(p.userId, list);
+    }
+    const logBy = new Map<string, { sessionId: string; skipped: boolean; at: string }[]>();
+    for (const a of attempts) {
+      const list = logBy.get(a.userId) ?? [];
+      list.push({ sessionId: a.sessionId, skipped: a.skipped, at: a.at.toISOString() });
+      logBy.set(a.userId, list);
+    }
+    for (const id of userIds)
+      out.set(
+        id,
+        learnerMetrics(
+          overview,
+          activeRows(rowsBy.get(id) ?? [], versionOf),
+          logBy.get(id) ?? [],
+          now,
+        ),
+      );
+    return out;
   }
 
   async progress(actor: AuthSession, now = Date.now(), userId?: string) {

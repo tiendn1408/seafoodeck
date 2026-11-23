@@ -289,6 +289,24 @@ export class ManagerLearnerResponse {
   @ApiProperty() createdAt!: string;
   @ApiProperty({ nullable: true, type: String }) lastLoginAt!: string | null;
 }
+export class LearnerRowResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() username!: string;
+  @ApiProperty({ nullable: true, type: String }) displayName!: string | null;
+  @ApiProperty() disabled!: boolean;
+  @ApiProperty() learning!: number;
+  @ApiProperty() solid!: number;
+  @ApiProperty({ nullable: true, type: Number }) avgLevel!: number | null;
+  @ApiProperty({ nullable: true, type: String }) lastStudyAt!: string | null;
+  @ApiProperty() overdue!: number;
+  @ApiProperty() sessions7d!: number;
+}
+export class LearnerPageResponse {
+  @ApiProperty({ type: [LearnerRowResponse] }) items!: LearnerRowResponse[];
+  @ApiProperty() total!: number;
+  @ApiProperty() page!: number;
+  @ApiProperty() limit!: number;
+}
 export class AdminUserRowResponse {
   @ApiProperty() id!: string;
   @ApiProperty() username!: string;
