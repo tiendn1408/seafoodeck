@@ -16,6 +16,8 @@ import {
   Controller,
   Get,
   HttpException,
+  Module,
+  forwardRef,
   Req,
   UseGuards,
   type CanActivate,
@@ -31,7 +33,7 @@ import {
 } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { Reflector } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AppModule } from './main';
 import {
   AccessGuard,
@@ -158,18 +160,54 @@ const joinPath = (...parts: string[]) =>
     .filter((p) => p !== '')
     .join('/');
 
-/** Every controller reachable from a module through its imports (AppModule = the running app). */
-function controllersOf(root: Type<unknown>): Type<unknown>[] {
-  const seen = new Set<unknown>();
-  const found = new Set<Type<unknown>>();
-  const walk = (mod: Type<unknown>) => {
+/**
+ * True for a class (a static @Module). A DynamicModule ({ module, ... }) or forwardRef
+ * ({ forwardRef }) is an object, and its controllers/providers would not be read below.
+ * (`@Module({})` with no keys defines no metadata, so metadata presence is not required.)
+ */
+const isModuleClass = (m: unknown): m is Type<unknown> => typeof m === 'function';
+
+/** Every module reachable from a module through its imports (AppModule = the running app). */
+function modulesOf(root: Type<unknown>): Type<unknown>[] {
+  const seen = new Set<Type<unknown>>();
+  const walk = (mod: unknown, from: string) => {
+    // A DynamicModule, forwardRef or anything else this walk cannot read would hide its
+    // controllers and guards from the matrix: fail loudly so the walk gets taught about it.
+    assert.ok(
+      isModuleClass(mod),
+      `${from} imports ${String((mod as { name?: string })?.name ?? mod)} which is not a plain @Module class (DynamicModule/forwardRef?); teach role-matrix.test.ts to read it`,
+    );
     if (seen.has(mod)) return;
     seen.add(mod);
-    for (const c of Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, mod) ?? []) found.add(c);
-    for (const m of Reflect.getMetadata(MODULE_METADATA.IMPORTS, mod) ?? []) walk(m);
+    for (const m of Reflect.getMetadata(MODULE_METADATA.IMPORTS, mod) ?? []) walk(m, mod.name);
   };
-  walk(root);
+  walk(root, 'the root');
+  return [...seen];
+}
+
+/** Every controller reachable from a module through its imports. */
+function controllersOf(root: Type<unknown>): Type<unknown>[] {
+  const found = new Set<Type<unknown>>();
+  for (const mod of modulesOf(root))
+    for (const c of Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, mod) ?? []) found.add(c);
   return [...found];
+}
+
+/** The classes registered as global guards (APP_GUARD providers) by the reachable modules. */
+function globalGuardsOf(root: Type<unknown>): unknown[] {
+  const guards: unknown[] = [];
+  for (const mod of modulesOf(root))
+    for (const p of Reflect.getMetadata(MODULE_METADATA.PROVIDERS, mod) ?? []) {
+      if (typeof p !== 'object' || p === null || (p as { provide?: unknown }).provide !== APP_GUARD)
+        continue;
+      const { useClass } = p as { useClass?: unknown };
+      assert.ok(
+        typeof useClass === 'function',
+        `${mod.name} registers an APP_GUARD without useClass; model it in role-matrix.test.ts`,
+      );
+      guards.push(useClass);
+    }
+  return guards;
 }
 
 /** Every route handler of the given controllers, read from Nest's route and guard metadata. */
@@ -314,6 +352,11 @@ test('every route of the app has an entry in the role table (and no entry is sta
   assert.deepEqual(dupes, [], `Routes declared twice: ${dupes.join(', ')}`);
 });
 
+test('the global guards are exactly the ones this matrix models', () => {
+  // A new APP_GUARD changes what every route admits; extend `gate` (and this list) for it.
+  assert.deepEqual(globalGuardsOf(AppModule), [MustChangePasswordGuard]);
+});
+
 test('public routes are exactly the documented ones and carry no guards', () => {
   const pub = ROUTES.filter((r) => EXPECTED[r.key] === 'public');
   assert.deepEqual(pub.map((r) => r.key).sort(), [
@@ -398,4 +441,18 @@ test('the harness detects a missing or late role check', async () => {
   assert.equal(await gate(probe['GET /probe/checked'], 'learner'), 403);
   assert.equal(await gate(probe['GET /probe/checked'], 'guest'), 401);
   assert.equal(await gate(probe['GET /probe/checked'], 'admin'), 'reached');
+});
+
+test('the module walk refuses imports it cannot read', () => {
+  @Module({})
+  class Plain {}
+  @Module({ imports: [{ module: Plain, controllers: [ProbeController] }] })
+  class WithDynamic {}
+  @Module({ imports: [forwardRef(() => Plain)] })
+  class WithForwardRef {}
+  assert.throws(() => controllersOf(WithDynamic), /not a plain @Module class/);
+  assert.throws(() => controllersOf(WithForwardRef), /not a plain @Module class/);
+  @Module({ imports: [Plain], providers: [{ provide: APP_GUARD, useExisting: AccessGuard }] })
+  class WithAliasGuard {}
+  assert.throws(() => globalGuardsOf(WithAliasGuard), /APP_GUARD without useClass/);
 });
