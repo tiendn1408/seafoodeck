@@ -74,3 +74,5 @@ Web không chứa catalog/đáp án/ảnh khách. Nội dung và tên đến t�
 [Hai mốc chuyển monorepo](docs/MONOREPO_MILESTONES.md) · [Đặc tả API](docs/api/openapi.json) · [Báo cáo bàn giao 0.6](docs/DELIVERY_0.6.0.md) · [Giao nhận](docs/FILE_HANDOFF.md) · [Yêu cầu pilot](docs/requirements/Seafood_Deck_Pilot_Implementation_Plan.md)
 
 Baseline 0.5.1 còn tại tag `baseline-0.5.1`; mốc di chuyển web giữ hành vi cũ tại `milestone-1-web-migration`. Dữ liệu lưu trình duyệt của baseline được giữ riêng, không tự nhập thành tiến độ pilot. CI chỉ kiểm thử/build, không deploy VPS.
+
+Phase 2.5d (ma trận vai trò × route, tách bundle admin/manager, màn Tài khoản của manager): [docs/DELIVERY_25D.md](docs/DELIVERY_25D.md).
