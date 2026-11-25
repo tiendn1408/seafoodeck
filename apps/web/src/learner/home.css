@@ -694,7 +694,7 @@
     gap: var(--space-6) clamp(32px, 4vw, 64px);
     padding-top: clamp(16px, 3vh, 40px);
   }
-  /* Trial and staff: just the title and nudge, no empty catch/rope/resume rows. */
+  /* Trial: just the title and nudge, no empty catch/rope/resume rows. */
   .home-hero--plain {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;

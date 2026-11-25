@@ -86,8 +86,7 @@ export function Home({
   onSignIn,
   onOpenLibrary,
 }: {
-  /** `staff` gets the reduced Home without the sign-in nudge: /me/* admits account students only. */
-  kind: 'student' | 'trial' | 'staff';
+  kind: 'student' | 'trial';
   userId?: string;
   pending: boolean;
   onStart: StartSession;
@@ -200,7 +199,7 @@ export function Home({
         <div />
       </div>
 
-      {/* Trial and staff render only the title (and nudge): a single-row hero without the
+      {/* Trial renders only the title (and nudge): a single-row hero without the
           student's empty catch, rope and action rows. */}
       <section
         className={trial ? 'home-hero home-hero--plain' : 'home-hero'}
@@ -208,13 +207,9 @@ export function Home({
       >
         {trial ? (
           <div className="home-title">
-            <h1 id="home-title">
-              {learner === 'trial'
-                ? 'Học thử: chọn loài và chế độ luyện'
-                : 'Chọn loài và chế độ luyện'}
-            </h1>
+            <h1 id="home-title">Học thử: chọn loài và chế độ luyện</h1>
             <p className="home-sub">Mỗi lượt khoảng 2 phút.</p>
-            {learner === 'trial' && <TrialNudge onSignIn={onSignIn} />}
+            <TrialNudge onSignIn={onSignIn} />
           </div>
         ) : loading ? (
           <>

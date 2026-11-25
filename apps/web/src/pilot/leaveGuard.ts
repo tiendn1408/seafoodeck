@@ -1,5 +1,5 @@
 /**
- * A screen holding something that cannot be shown again (an admin's own one-time password)
+ * A screen holding something that cannot be shown again (such as a one-time password)
  * registers a question here; the shell asks it before sign-out or navigation discards it.
  */
 let question: string | null = null;

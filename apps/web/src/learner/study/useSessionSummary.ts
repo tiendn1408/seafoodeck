@@ -4,7 +4,7 @@ import { api, type SessionSummaryResponse } from '../../pilot/api';
 /**
  * `GET /learning/sessions/:id/summary`, fetched once per session id the first time `enabled`
  * is true. Study enables it only for a student whose session was re-opened after a reload
- * (its restored results carry no `progress`); trial and staff never call it. A failure
+ * (its restored results carry no `progress`); trial sessions never call it. A failure
  * leaves the summary without days, which it already handles.
  */
 export function useSessionSummary(gameId: string, enabled: boolean): SessionSummaryResponse | null {

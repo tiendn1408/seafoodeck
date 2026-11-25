@@ -1,16 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import {
-  BookOpen,
-  Library,
-  LogOut,
-  Moon,
-  RotateCcw,
-  ShieldCheck,
-  Sun,
-  Users,
-  Target,
-  UserRound,
-} from 'lucide-react';
+import { BookOpen, Library, LogOut, Moon, RotateCcw, Sun, Target, UserRound } from 'lucide-react';
 import { useMedia } from './useMedia';
 import { getTheme, setTheme, type Theme } from './theme';
 import type { Kind } from './role';
@@ -21,30 +10,22 @@ const tabs = [
   { id: 'review', label: 'Ôn tập', Icon: RotateCcw },
   { id: 'progress', label: 'Tiến độ', Icon: Target },
 ] as const;
-const learnersTab = { id: 'manager', label: 'Học viên', Icon: Users } as const;
-const adminTab = { id: 'admin', label: 'Quản trị', Icon: ShieldCheck } as const;
-type Tab = (typeof tabs)[number] | typeof learnersTab | typeof adminTab;
-/** Tabs per kind; staff and admins also get "Quản trị" (a top tab on desktop, a header icon on phones). */
+type Tab = (typeof tabs)[number];
+/** Tabs per kind. */
 const tabsFor: Record<Kind, readonly Tab[]> = {
   student: tabs,
   // Ôn tập / Tiến độ read /me/*, which admits account students only.
-  staff: tabs.slice(0, 2),
-  admin: tabs.slice(0, 2),
   trial: tabs.slice(0, 2),
-  manager: [learnersTab, tabs[1]],
   guest: [],
 };
 /** Honest label for an internal release; phones show a shorter one, never a second line. */
 const internalLabel = 'Bản kỹ thuật nội bộ · Nội dung chưa duyệt';
 
-/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện",
- * admin sub-pages (admin/users) to "Quản trị", learner details to "Học viên".
+/** Which tab owns a hash route: study belongs to "Học", species profiles to "Thư viện".
  * "account" is owned by no tab: the header's account entry is marked current instead. */
 export function tabFor(route: string): string {
   if (route === 'study') return 'home';
   if (route.startsWith('profile/')) return 'library';
-  if (route.startsWith('admin/')) return 'admin';
-  if (route.startsWith('manager/')) return 'manager';
   return route;
 }
 
@@ -93,7 +74,7 @@ export function AppShell({
   route: string;
   tone: 'deep' | 'ice';
   kind: Kind;
-  /** Display name for the student's or manager's account entry; falls back to "Tài khoản". */
+  /** Display name for the student's account entry; falls back to "Tài khoản". */
   userName?: string;
   internal: boolean;
   onLogout: () => void;
@@ -105,11 +86,9 @@ export function AppShell({
 }) {
   const desktop = useMedia('(min-width: 900px)');
   const current = tabFor(route);
-  const staff = kind === 'staff' || kind === 'admin';
   const bar = signedIn ? tabsFor[kind] : [];
-  const links = staff && signedIn ? [...bar, adminTab] : bar;
   const accountLabel = userName?.trim() || 'Tài khoản';
-  const account = signedIn && (kind === 'student' || kind === 'manager') && (
+  const account = signedIn && kind === 'student' && (
     <a
       className={desktop ? 'shell-account' : 'shell-icon-button'}
       href="#account"
@@ -184,9 +163,9 @@ export function AppShell({
       </a>
       <header className="shell-header">
         {brand}
-        {desktop && links.length > 0 && (
+        {desktop && bar.length > 0 && (
           <nav className="shell-tabs" aria-label="Điều hướng chính">
-            {links.map(({ id, label }) => (
+            {bar.map(({ id, label }) => (
               <a
                 key={id}
                 href={'#' + id}
@@ -199,11 +178,6 @@ export function AppShell({
           </nav>
         )}
         <div className="shell-actions">
-          {!desktop && signedIn && staff && (
-            <a className="shell-icon-button" href="#admin" aria-label="Quản trị" title="Quản trị">
-              <ShieldCheck size={20} aria-hidden="true" />
-            </a>
-          )}
           {/* Deep screens never change with the theme, so the toggle only lives on ice. */}
           {tone === 'ice' && <ThemeToggle />}
           {account}

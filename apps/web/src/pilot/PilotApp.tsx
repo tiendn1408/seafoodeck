@@ -13,14 +13,13 @@ import { stopAudio } from './Media';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
 import { AppShell } from '../learner/AppShell';
-import { Login, StaffLogin } from '../learner/Login';
+import { Login } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
 import { Progress } from '../learner/Progress';
 import { Review } from '../learner/Review';
 import { kindOf, routeAllowed } from '../learner/role';
-import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
@@ -30,7 +29,7 @@ import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
 import { adoptingTotal, disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
 /**
- * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
+ * The session a trial tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
  */
 export const TRIAL_SESSION_KEY = 'seafood-deck:study-session';
@@ -86,7 +85,7 @@ export default function PilotApp() {
         undoing.current = false;
         return;
       }
-      // Something that cannot be shown again (an admin's own temporary password) is on screen.
+      // Something that cannot be shown again is on screen.
       if (next !== shown.current && leaveGuarded() && !confirmLeave()) {
         undoing.current = true;
         location.replace('#' + shown.current);
@@ -113,24 +112,22 @@ export default function PilotApp() {
   // the sign-in as a guest, quietly. Set below, once the helpers it resets exist.
   const sessionLost = useRef<() => void>(() => {});
   useEffect(() => setUnauthorizedHandler(() => sessionLost.current()), []);
-  const signedIn = !!auth && auth.role !== 'guest';
+  const kind = kindOf(auth);
+  // Any session that is not a learner's is treated exactly like a signed-out visitor.
+  const signedIn = kind !== 'guest';
   // Only an authenticated session can be forced; a flag raised while a guest never sticks.
   const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
-  const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
-  const kind = kindOf(auth);
+  const loginShown = !!auth && !forced && !signedIn;
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
-  // A manager's home is the learner table: its own rule, ahead of the general redirect.
-  const managerHome = !!auth && !forced && kind === 'manager' && route === 'home';
-  const permitted = !auth || forced || managerHome || routeAllowed(kind, route);
+  const permitted = !auth || forced || routeAllowed(kind, route);
   // Stage wrappers follow the route only once it is signed in, permitted for this kind and not
-  // forced: the forced password screen uses the plain content wrapper, like the login screens.
-  const staged = signedIn && permitted && !forced && !managerHome;
+  // forced: the forced password screen uses the plain content wrapper, like the login screen.
+  const staged = signedIn && permitted && !forced;
   const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
-    if (managerHome) location.replace('#manager');
-    else if (!permitted) location.replace('#home');
-  }, [permitted, managerHome]);
-  // Only students have server-side progress; trial and staff keep the tab's session id.
+    if (!permitted) location.replace('#home');
+  }, [permitted]);
+  // Only students have server-side progress; trial tabs keep the tab's session id.
   const student = kind === 'student';
   function opened(g: Game) {
     // Reopening the session this tab already holds keeps answers whose save is still queued.
@@ -156,7 +153,7 @@ export default function PilotApp() {
     reviewTargets?: { targetId: string; skill: string }[],
     limit?: number,
   ) {
-    // Kinds without the study route (managers) never open a learning session.
+    // Kinds without the study route never open a learning session.
     if (!canStudy) return;
     setPending(true);
     setError('');
@@ -189,12 +186,12 @@ export default function PilotApp() {
     }
   }
   // A reload on #study reopens the session being studied: a student's from /me/home
-  // (activeSessionId), a trial or staff tab's from sessionStorage. Tried once per sign-in.
+  // (activeSessionId), a trial tab's from sessionStorage. Tried once per sign-in.
   const restoreTried = useRef<string | null>(null);
   // Bumped on logout so a restore still in flight never reopens the previous user's session.
   const signIns = useRef(0);
   const [restoreSettled, setRestoreSettled] = useState<string | null>(null);
-  const restoreFor = auth && auth.role !== 'guest' ? `${auth.role}:${auth.userId ?? ''}` : null;
+  const restoreFor = auth && signedIn ? `${auth.role}:${auth.userId ?? ''}` : null;
   const restoring =
     restoreFor !== null &&
     restoreSettled !== restoreFor &&
@@ -366,9 +363,7 @@ export default function PilotApp() {
                 ? 'study-stage'
                 : staged && route === 'account'
                   ? 'account-stage'
-                  : staged &&
-                      (['library', 'review', 'progress'].includes(route) ||
-                        route.startsWith('manager/learner/'))
+                  : staged && ['library', 'review', 'progress'].includes(route)
                     ? 'ice-stage'
                     : 'content home-content'
         }
@@ -388,24 +383,19 @@ export default function PilotApp() {
               setMustChange(false);
             }}
           />
-        ) : loginKind(route, auth.role) ? (
-          (() => {
-            const onLogin = (a: AuthView) => {
+        ) : !signedIn ? (
+          <Login
+            onLogin={(a) => {
               setCsrf(a.csrf);
               setMustChange(false);
               setAuth(a);
-            };
-            return loginKind(route, auth.role) === 'staff' ? (
-              <StaffLogin onLogin={onLogin} />
-            ) : (
-              <Login onLogin={onLogin} />
-            );
-          })()
-        ) : !permitted || managerHome ? null : (
+            }}
+          />
+        ) : !permitted ? null : (
           <>
-            {route === 'home' && kind !== 'manager' && (
+            {route === 'home' && (
               <Home
-                kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}
+                kind={student ? 'student' : 'trial'}
                 userId={auth.userId}
                 pending={pending}
                 onStart={start}
@@ -439,7 +429,7 @@ export default function PilotApp() {
                 <Study
                   key={game.id}
                   game={game}
-                  userKind={student ? 'student' : kind === 'trial' ? 'trial' : 'staff'}
+                  userKind={student ? 'student' : 'trial'}
                   onChange={changeGame}
                   onRetry={() => start('review', undefined, 'en', game.id)}
                   pending={pending}

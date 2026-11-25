@@ -253,25 +253,6 @@ describe('Home for trial (invite-code) learners', () => {
     expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(true);
   });
 
-  it('staff get the same reduced Home without the trial nudge and no /me/* call', async () => {
-    const host = mount(
-      <Home
-        kind="staff"
-        userId="u-admin"
-        pending={false}
-        onStart={async () => {}}
-        onSignIn={() => {}}
-        onOpenLibrary={() => {}}
-      />,
-    );
-    await tick();
-    await tick();
-    expect(meCalls()).toEqual([]);
-    expect(host.textContent).toContain('Flashcard tên loài');
-    expect(host.textContent).not.toContain('Đăng nhập để lưu tiến độ');
-    expect(host.querySelector('.home-hero')!.classList.contains('home-hero--plain')).toBe(true);
-  });
-
   it('the plain hero uses a single title row at every width', () => {
     const css = readFileSync(resolve(__dirname, 'home.css'), 'utf8');
     const rules = [...css.matchAll(/\.home-hero--plain \{([^}]*)\}/g)].map((m) => m[1]);

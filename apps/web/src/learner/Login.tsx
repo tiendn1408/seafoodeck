@@ -157,16 +157,3 @@ export function Login(props: Props) {
     />
   );
 }
-
-export function StaffLogin(props: Props) {
-  return (
-    <LoginScreen
-      {...props}
-      mode="account"
-      userLabel="Tài khoản"
-      title="Đăng nhập quản trị"
-      intro="Đăng nhập bằng tài khoản được cấp."
-      submit="Đăng nhập"
-    />
-  );
-}

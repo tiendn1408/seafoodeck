@@ -4,6 +4,7 @@ import { api, type CatalogItem } from '@web/pilot/api';
 import { SignedImage, Pronunciation } from '@web/pilot/Media';
 import { HsAdmin, type AdminTariff } from './HsAdmin';
 import { AdminTabs } from './AdminTabs';
+import './admin.css';
 interface Revision {
   id: string;
   version: number;

@@ -376,22 +376,14 @@ describe('PilotApp role-aware routes', () => {
       ['learner', '#review'],
       ['learner', '#progress'],
       ['learner', '#account'],
-      ['manager', '#review'],
-      ['manager', '#study'],
-      ['manager', '#manager/other'],
-      ['student', '#manager'],
       ['learner', '#manager'],
-      ['editor', '#manager'],
+      ['learner', '#admin'],
+      ['learner', '#admin/users'],
+      ['student', '#manager'],
       ['student', '#manager/learner/x'],
       ['student', '#admin'],
       ['student', '#admin/users'],
-      ['learner', '#admin/users'],
-      ['manager', '#admin/users'],
-      ['editor', '#admin/users'],
-      ['publisher', '#admin/users'],
-      ['admin', '#account'],
-      ['admin', '#review'],
-      ['admin', '#progress'],
+      ['student', '#nowhere'],
     ];
     for (const [role, hash] of cases) {
       routes['GET /auth/me'] = () => json(view(role));
@@ -399,16 +391,12 @@ describe('PilotApp role-aware routes', () => {
       const host = mount(<PilotApp />);
       await tick();
       await tick();
-      // Home for everyone but a manager, whose home is the learner table.
-      expect(location.hash, `${role} ${hash}`).toBe(role === 'manager' ? '#manager' : '#home');
-      expect(host.querySelector('.home-stage') !== null, `${role} ${hash}`).toBe(
-        role !== 'manager',
-      );
+      expect(location.hash, `${role} ${hash}`).toBe('#home');
+      expect(host.querySelector('.home-stage'), `${role} ${hash}`).not.toBeNull();
       expect(host.querySelector('#account-title, .ice-stage')).toBeNull();
       unmountAll();
     }
   });
-
   it('student home resumes the server session id; a legacy local key is ignored', async () => {
     localStorage.setItem(
       'seafood-deck:pilot:v1',

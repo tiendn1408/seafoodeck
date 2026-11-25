@@ -18,7 +18,7 @@ const modeNames: Record<string, string> = {
   hs: 'HS theo dạng hàng',
 };
 
-export type UserKind = 'student' | 'trial' | 'staff';
+export type UserKind = 'student' | 'trial';
 export type { GameUpdate };
 
 /** Review rows the server returned with the game's answers, the latest per target and skill. */
