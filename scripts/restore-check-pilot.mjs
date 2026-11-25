@@ -1,4 +1,5 @@
 // Restore only into an isolated local project, never the active stack.
+// Ports 18091/18092: the active stack uses 18089 (learner) and 18090 (Studio).
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ const source=readFileSync('.local/pilot.env','utf8');
 const env=Object.fromEntries(source.trim().split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>{const i=l.indexOf('=');return[l.slice(0,i),l.slice(i+1)];}));
 const project=process.env.RESTORE_PROJECT_NAME??'seafoodeck-restore-check';
 if(!/^seafoodeck-restore-[a-z0-9-]+$/.test(project))throw Error('Use a separate seafoodeck-restore-* project.');
-Object.assign(env,{PILOT_PROJECT_NAME:project,PILOT_ENV_FILE:'.local/restore.env',PUBLIC_ORIGIN:'http://127.0.0.1:18090',S3_PUBLIC_ENDPOINT:'http://127.0.0.1:18090',WEB_PORT:'18090'});
+Object.assign(env,{PILOT_PROJECT_NAME:project,PILOT_ENV_FILE:'.local/restore.env',PUBLIC_ORIGIN:'http://127.0.0.1:18091',S3_PUBLIC_ENDPOINT:'http://127.0.0.1:18091',WEB_PORT:'18091',STUDIO_ORIGIN:'http://localhost:18092',STUDIO_WEB_PORT:'18092'});
 writeFileSync('.local/restore.env',Object.entries(env).map(([k,v])=>`${k}=${v}`).join('\n')+'\n',{mode:0o600});
 const docker=(...args)=>execFileSync('docker',['compose','--env-file','.local/restore.env',...args],{encoding:'utf8',stdio:['pipe','pipe','pipe'],maxBuffer:10*1024*1024});
 assert.equal(docker('ps','-aq').trim(),'','Restore check refuses to reuse an existing project.');

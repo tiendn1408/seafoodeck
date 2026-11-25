@@ -1,6 +1,7 @@
-{$SITE_ADDRESS::80} {
-    root * /srv
-    encode zstd gzip
+# One web image, two sites (phase 2.5e): learner app from /srv/learner, Studio app from /srv/studio.
+# Both sites share one API (api:3000) and one S3 store (storage:8333).
+
+(security_headers) {
     header {
         X-Content-Type-Options nosniff
         Referrer-Policy no-referrer
@@ -8,17 +9,10 @@
         Cache-Control "no-store"
         X-Robots-Tag "noindex, nofollow"
     }
-    # Defence in depth: the API serves its Swagger UI / OpenAPI JSON only with EXPOSE_API_DOCS=true,
-    # and never through this public proxy. Path handles sort before /api/* (more specific).
-    handle /api/v1/docs* {
-        respond 404
-    }
-    handle /api/v1/openapi* {
-        respond 404
-    }
-    handle /api/* {
-        reverse_proxy api:3000
-    }
+}
+
+# S3 path proxy, hashed assets and SPA fallback; identical on both sites (each with its own root).
+(storage_and_spa) {
     # Preserve path and Host: both are part of S3 signatures. No listing URL is signed.
     handle /{$S3_BUCKET:seafoodeck-private}/* {
         reverse_proxy storage:8333
@@ -32,6 +26,76 @@
         file_server
     }
 }
+
+# Learner site. Serves only the learner build; staff API surface answers like a path that does not exist.
+{$SITE_ADDRESS::80} {
+    root * /srv/learner
+    encode zstd gzip
+    import security_headers
+    handle /api/* {
+        # Staff-only API paths (admin, manager) and the API docs (Swagger UI / OpenAPI JSON, which
+        # list every staff route) never reach the API from the learner host. They answer exactly like
+        # an unknown API path: they go through the same reverse-proxy hop as a real API response, to
+        # the loopback "not-found stub" below, which mirrors the API's own 404 (see there). Caddy's
+        # path matching is case-insensitive, like Express routing.
+        @staff path /api/v1/admin* /api/v1/manager* /api/v1/docs* /api/v1/openapi*
+        handle @staff {
+            reverse_proxy 127.0.0.1:8081 {
+                header_down -Server
+            }
+        }
+        handle {
+            # Express adds a weak ETag (a hash of the body) that the stub cannot compute; every API
+            # response is Cache-Control no-store, so the ETag is never used: drop it on this host.
+            reverse_proxy api:3000 {
+                header_down -ETag
+            }
+        }
+    }
+    import storage_and_spa
+}
+
+# Studio site (staff). If STUDIO_SITE_ADDRESS is unset (or set to the placeholder below), this block
+# binds only to the never-routable host "studio.invalid" over plain HTTP (no certificate request) and
+# closes every connection, so the Studio app is not served and the learner site never serves it.
+# Local stack: STUDIO_SITE_ADDRESS=http://localhost:8090 (container port 8090, published on
+# 127.0.0.1:${STUDIO_WEB_PORT}); VPS: the studio host name (Caddy obtains its certificate).
+{$STUDIO_SITE_ADDRESS:http://studio.invalid} {
+    root * /srv/studio
+    encode zstd gzip
+    import security_headers
+    # Only two top-level handles so the guard is evaluated first (a named-matcher handle sorts
+    # after path-matcher handles, but before the matcher-less one).
+    @unconfigured expression `"{$STUDIO_SITE_ADDRESS:http://studio.invalid}" == "http://studio.invalid"`
+    handle @unconfigured {
+        abort
+    }
+    handle {
+        handle /api/* {
+            reverse_proxy api:3000
+        }
+        import storage_and_spa
+    }
+}
+
+# Not-found stub, loopback only (never published). Mirrors what the API answers for an unknown path
+# (Nest's not-found handler + the API's error filter, checked against createApp() on 2026-11-25):
+#   404, Content-Type "application/json; charset=utf-8", Cache-Control no-store,
+#   X-Content-Type-Options nosniff, X-Request-ID <uuid v4>, Content-Length, body
+#   {"message":"Cannot <METHOD> <URL as forwarded, incl. query>","error":"Not Found","statusCode":404,"requestId":"<same uuid>"}
+# Through the learner site's proxy hop both get the same Via header, duplicated site headers and no
+# ETag. Keep this in step with apps/api/src/main.ts (error filter) if the API's 404 ever changes.
+http://:8081 {
+    bind 127.0.0.1
+    header {
+        Content-Type "application/json; charset=utf-8"
+        Cache-Control no-store
+        X-Content-Type-Options nosniff
+        X-Request-ID {http.request.uuid}
+    }
+    respond `\{"message":"Cannot {http.request.method} {http.request.uri}","error":"Not Found","statusCode":404,"requestId":"{http.request.uuid}"\}` 404
+}
+
 http://127.0.0.1:8080 {
     respond /healthz "ok" 200
 }

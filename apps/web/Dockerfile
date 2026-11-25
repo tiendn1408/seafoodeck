@@ -28,8 +28,12 @@ LABEL org.opencontainers.image.title="Seafood Deck internal demo" \
       org.opencontainers.image.version=$RELEASE_TAG \
       io.seafoodeck.content-status="draft-internal-only"
 COPY deploy/Caddyfile.pilot /etc/caddy/Caddyfile
-COPY --from=build /app/apps/web/dist /srv
+# Two sites, one image: learner build and Studio build side by side (deploy/Caddyfile.pilot).
+COPY --from=build /app/apps/web/dist /srv/learner
+COPY --from=build /app/apps/studio/dist /srv/studio
 ENV SITE_ADDRESS=seafoodeck.tiendn.io.vn
-EXPOSE 80 443
+# STUDIO_SITE_ADDRESS has no default here: unset, the Studio site is not served.
+# 8090: local-only Studio site (STUDIO_SITE_ADDRESS=http://localhost:8090).
+EXPOSE 80 443 8090
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

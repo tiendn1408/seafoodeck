@@ -15,15 +15,15 @@ docker compose --env-file .local/pilot.env up -d --build
 INTERNAL_SEED_COUNT=1000 docker compose --env-file .local/pilot.env --profile internal-seed run --rm seed
 ```
 
-Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pilot.env` riêng; không commit/gửi file này. Seed là lệnh chủ động **chỉ cho kiểm thử nội bộ**, không chạy lúc app khởi động. Bộ mẫu có 6 loài không tôm và 994 dòng SKU tổng hợp để kiểm phân trang; không phải danh mục được khách xác nhận. Ảnh thật tham chiếu chưa duyệt nhận diện; không phát hành public. Ảnh AI 2D chỉ trang trí, không tham gia chấm Đoán hình. Chưa có audio chuyên ngành đã duyệt.
+Mở http://127.0.0.1:18089 (học viên); Studio cho nhân sự ở http://localhost:18090. Lấy mã mời hoặc quản trị từ `.local/pilot.env` riêng; không commit/gửi file này. Seed là lệnh chủ động **chỉ cho kiểm thử nội bộ**, không chạy lúc app khởi động. Bộ mẫu có 6 loài không tôm và 994 dòng SKU tổng hợp để kiểm phân trang; không phải danh mục được khách xác nhận. Ảnh thật tham chiếu chưa duyệt nhận diện; không phát hành public. Ảnh AI 2D chỉ trang trí, không tham gia chấm Đoán hình. Chưa có audio chuyên ngành đã duyệt.
 
 Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Cài VPS/GHCR](docs/DEPLOY_PILOT.md); bản đã nâng trên VPS và cách vận hành hiện tại ở [demo học viên 20/11](docs/DEPLOY_LEARNER_DEMO_20261120.md).
 
-Tách origin nhân sự (phase 2.5e, API): đặt `STUDIO_ORIGIN` (init-pilot tạo `http://localhost:18090` cho local, `--studio-origin` cho production; cổng `STUDIO_WEB_PORT`). Khi đặt, vai trò editor/reviewer/publisher/manager/admin chỉ đăng nhập từ `STUDIO_ORIGIN`, học viên/mã mời chỉ từ `PUBLIC_ORIGIN`; sai origin trả đúng phản hồi sai mật khẩu. Ghi (`POST`...) chấp nhận cả hai origin, CORS S3 liệt kê cả hai. Không đặt: hành vi cũ (một origin cho mọi vai trò). Giao diện Studio và Caddy cho origin thứ hai đến ở các task sau.
+Tách origin nhân sự (phase 2.5e, API): đặt `STUDIO_ORIGIN` (init-pilot tạo `http://localhost:18090` cho local, `--studio-origin` cho production; cổng `STUDIO_WEB_PORT`). Khi đặt, vai trò editor/reviewer/publisher/manager/admin chỉ đăng nhập từ `STUDIO_ORIGIN`, học viên/mã mời chỉ từ `PUBLIC_ORIGIN`; sai origin trả đúng phản hồi sai mật khẩu. Ghi (`POST`...) chấp nhận cả hai origin, CORS S3 liệt kê cả hai. Không đặt: hành vi cũ (một origin cho mọi vai trò). Ảnh web chứa hai bản build và Caddy phục vụ hai site: app học viên ở `SITE_ADDRESS`, app Studio ở `STUDIO_SITE_ADDRESS` (local `http://localhost:8090` trong container, publish `127.0.0.1:${STUDIO_WEB_PORT}`; không đặt thì Studio không được phục vụ). Host học viên trả 404 như đường không tồn tại cho `/api/v1/admin*`, `/api/v1/manager*` và docs. DNS, biến môi trường VPS, kiểm sau deploy và giới hạn: [DEPLOY_STUDIO_HOST.md](docs/DEPLOY_STUDIO_HOST.md).
 
 Nâng cấp VPS từ demo học viên 20/11 lên 2.5c (không có migration mới): [runbook](docs/DEPLOY_UPGRADE_25C.md).
 
-Swagger (`/api/v1/docs`, `/api/v1/openapi.json`) mặc định tắt: API chỉ phục vụ khi biến môi trường `EXPOSE_API_DOCS=true` (chỉ dùng khi chạy local), và `deploy/Caddyfile.pilot` luôn trả 404 cho hai đường này. Đặc tả trong repo: `npm run contract:generate` ghi `docs/api/openapi.json`, không cần cờ.
+Swagger (`/api/v1/docs`, `/api/v1/openapi.json`) mặc định tắt: API chỉ phục vụ khi biến môi trường `EXPOSE_API_DOCS=true` (chỉ dùng khi chạy local), và `deploy/Caddyfile.pilot` luôn trả 404 cho hai đường này ở host học viên (host Studio để API tự quyết theo cờ). Đặc tả trong repo: `npm run contract:generate` ghi `docs/api/openapi.json`, không cần cờ.
 
 ## Tài khoản học viên (phase 2.5a, API; giao diện từ 2.5b/2.5c)
 

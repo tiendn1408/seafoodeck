@@ -58,8 +58,9 @@ services:
   web:
     platform: linux/amd64
     image: ${WEB_IMAGE_REF:?Set WEB_IMAGE_REF in .local/pilot.env}
-    environment: {SITE_ADDRESS: '${SITE_ADDRESS:-:80}',S3_BUCKET: '${S3_BUCKET:-seafoodeck-private}'}
-    ports: ['80:80', '443:443', '443:443/udp']
+    # Unset STUDIO_SITE_ADDRESS -> placeholder host (Studio site off); an empty value would break the Caddyfile.
+    environment: {SITE_ADDRESS: '${SITE_ADDRESS:-:80}',STUDIO_SITE_ADDRESS: '${STUDIO_SITE_ADDRESS:-http://studio.invalid}',S3_BUCKET: '${S3_BUCKET:-seafoodeck-private}'}
+    ports: ['80:80', '443:443', '443:443/udp', '127.0.0.1:${STUDIO_WEB_PORT:-18090}:8090']
     volumes: [caddy_data:/data, caddy_config:/config]
     depends_on: {api: {condition: service_healthy}}
     mem_limit: 96m
