@@ -7,13 +7,20 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY apps/api/package.json apps/api/package.json
 COPY apps/studio/package.json apps/studio/package.json
-RUN npm ci --workspace @seafoodeck/web --ignore-scripts
+RUN npm ci --workspace @seafoodeck/web --workspace @seafoodeck/studio --ignore-scripts
 WORKDIR /app/apps/web
 COPY apps/web/tsconfig.json apps/web/tsconfig.build.json apps/web/vite.config.ts apps/web/playwright.config.ts apps/web/index.html ./
 COPY apps/web/src ./src
 COPY apps/web/public ./public
 COPY apps/web/e2e ./e2e
-RUN npm run build
+WORKDIR /app/apps/studio
+COPY apps/studio/tsconfig.json apps/studio/tsconfig.build.json apps/studio/vite.config.ts apps/studio/index.html ./
+COPY apps/studio/src ./src
+WORKDIR /app
+COPY scripts/check-bundles.mjs scripts/check-bundles.mjs
+RUN npm run build --workspace @seafoodeck/web \
+ && npm run build --workspace @seafoodeck/studio \
+ && node scripts/check-bundles.mjs
 
 FROM caddy:2-alpine AS runtime
 ARG RELEASE_TAG=pilot-internal-20261118-r2

@@ -11,4 +11,30 @@ export default tseslint.config(
     plugins: { 'react-hooks': hooks },
     rules: hooks.configs.recommended.rules,
   },
+  {
+    // Learner/studio boundary: the learner app must never import the studio app.
+    files: ['**/*.{ts,tsx,js,mjs}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@seafoodeck/studio', '@seafoodeck/studio/*'],
+              message: 'apps/web must not import the studio app.',
+            },
+            {
+              // Any relative path that reaches a `studio` directory (../../../studio/src/x, ../../../../apps/studio/...).
+              regex: '^(?:\\.{1,2}/)+(?:.*/)?studio(?:/.*)?$',
+              message: 'apps/web must not import apps/studio.',
+            },
+            {
+              group: ['**/apps/studio', '**/apps/studio/**'],
+              message: 'apps/web must not import apps/studio.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
