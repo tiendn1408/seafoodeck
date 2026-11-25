@@ -48,7 +48,7 @@ export function tabFor(route: string): string {
   return route;
 }
 
-function ScaleMark() {
+export function ScaleMark() {
   return (
     <svg className="shell-mark" viewBox="0 0 30 22" width="30" height="22" aria-hidden="true">
       <path d="M8 13a7 7 0 0 1 14 0" />
@@ -58,7 +58,7 @@ function ScaleMark() {
   );
 }
 
-function ThemeToggle() {
+export function ThemeToggle() {
   const systemDark = useMedia('(prefers-color-scheme: dark)');
   const [choice, setChoice] = useState<Theme | null>(getTheme);
   const dark = (choice ?? (systemDark ? 'dark' : 'light')) === 'dark';

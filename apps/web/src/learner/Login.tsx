@@ -4,11 +4,10 @@ import { api, ApiError, type AuthView } from '../pilot/api';
 import { ErrorNote } from './ErrorNote';
 
 type Props = { onLogin: (a: AuthView) => void };
-type Mode = 'account' | 'invite' | 'staff';
+type Mode = 'account' | 'invite';
 
 const LABELS: Record<Mode, { user?: string; secret: string; autoComplete: string }> = {
   account: { user: 'Tên đăng nhập', secret: 'Mật khẩu', autoComplete: 'current-password' },
-  staff: { user: 'Tài khoản', secret: 'Mật khẩu', autoComplete: 'current-password' },
   invite: { secret: 'Mã mời', autoComplete: 'off' },
 };
 
@@ -22,12 +21,14 @@ function failure(e: unknown, mode: Mode): string {
   return (e as Error).message;
 }
 
-function LoginScreen({
+/** One sign-in form (account or invite code); other apps reuse it with their own copy. */
+export function LoginScreen({
   title,
   intro,
   submit,
   onLogin,
   mode,
+  userLabel,
   footer,
   focusFirst,
 }: Props & {
@@ -35,6 +36,8 @@ function LoginScreen({
   intro: ReactNode;
   submit: string;
   mode: Mode;
+  /** Replaces the account form's username label. */
+  userLabel?: string;
   footer?: ReactNode;
   focusFirst?: boolean;
 }) {
@@ -42,7 +45,8 @@ function LoginScreen({
     [username, setUsername] = useState(''),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
-  const labels = LABELS[mode];
+  const labels =
+    mode === 'account' && userLabel ? { ...LABELS[mode], user: userLabel } : LABELS[mode];
   const first = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focusFirst) first.current?.focus();
@@ -158,7 +162,8 @@ export function StaffLogin(props: Props) {
   return (
     <LoginScreen
       {...props}
-      mode="staff"
+      mode="account"
+      userLabel="Tài khoản"
       title="Đăng nhập quản trị"
       intro="Đăng nhập bằng tài khoản được cấp."
       submit="Đăng nhập"
