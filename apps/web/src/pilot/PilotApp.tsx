@@ -10,13 +10,6 @@ import {
 } from './api';
 import { confirmLeave, leaveGuarded, setLeaveGuard } from './leaveGuard';
 import { stopAudio } from './Media';
-import { lazyScreen } from './lazyScreen';
-import { roleChunks } from './roleChunks';
-// The admin and manager styles stay in the main stylesheet, at the place they had before those
-// screens became lazy chunks, so the cascade (and every screen's look) is unchanged. They hold
-// class rules only, no admin code or endpoints. Progress and Review are imported where the
-// manager detail used to pull them in, for the same reason (the built CSS is byte-identical).
-import './users.css';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
 import { AppShell } from '../learner/AppShell';
@@ -24,7 +17,6 @@ import { Login, StaffLogin } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
-import '../manager/manager.css';
 import { Progress } from '../learner/Progress';
 import { Review } from '../learner/Review';
 import { kindOf, routeAllowed } from '../learner/role';
@@ -62,12 +54,6 @@ function rememberedSession(): string | null {
 function refreshProgress() {
   for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
 }
-// Staff and manager screens: separate chunks, downloaded only when the route below renders them,
-// which happens after the login, forced-password and `permitted` checks for the signed-in kind.
-const Admin = lazyScreen(() => roleChunks.admin());
-const UsersAdmin = lazyScreen(() => roleChunks.users());
-const ManagerLearners = lazyScreen(() => roleChunks.learners());
-const ManagerLearnerDetail = lazyScreen(() => roleChunks.learner());
 /** Library with server mastery for students; other kinds pass an idle id, so no /me request is made. */
 function LibraryRoute({
   userId,
@@ -75,15 +61,6 @@ function LibraryRoute({
 }: { userId: string | undefined } & Omit<Parameters<typeof Library>[0], 'mastery'>) {
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
-}
-/** The learner id in `manager/learner/<id>`: the hash carries it percent-encoded, decode it once. */
-function routeId(route: string) {
-  const raw = route.split('/')[2] ?? '';
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
 }
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
@@ -270,8 +247,6 @@ export default function PilotApp() {
     refreshed.current = game.id;
     refreshProgress();
   }, [game]);
-  // Admins are staff-like everywhere (content area, no /me/*) and also manage accounts.
-  const staff = kind === 'staff' || kind === 'admin';
   // True while logout waits for self-ratings still being saved in the background.
   const [saving, setSaving] = useState(false);
   const leaving = useRef(false);
@@ -428,10 +403,6 @@ export default function PilotApp() {
           })()
         ) : !permitted || managerHome ? null : (
           <>
-            {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
-            {route.startsWith('manager/learner/') && auth.userId !== undefined && (
-              <ManagerLearnerDetail key={route} id={routeId(route)} userId={auth.userId} />
-            )}
             {route === 'home' && kind !== 'manager' && (
               <Home
                 kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}
@@ -491,8 +462,6 @@ export default function PilotApp() {
                 onPasswordChanged={adoptSession}
               />
             )}
-            {route === 'admin' && staff && <Admin usersTab={kind === 'admin'} />}
-            {route === 'admin/users' && kind === 'admin' && <UsersAdmin selfId={auth.userId} />}
           </>
         )}
       </div>

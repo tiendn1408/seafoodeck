@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { extraRows } from './itemExtras';
-import { api, type CatalogItem } from './api';
-import { SignedImage, Pronunciation } from './Media';
+import { api, type CatalogItem } from '@web/pilot/api';
+import { SignedImage, Pronunciation } from '@web/pilot/Media';
 import { HsAdmin, type AdminTariff } from './HsAdmin';
 import { AdminTabs } from './AdminTabs';
 interface Revision {

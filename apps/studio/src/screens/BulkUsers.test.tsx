@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { BulkDialog, BULK_MAX, buildPasswordCsv, parseBulkCsv } from './BulkUsers';
-import { button, click, mount, unmountAll } from '../learner/testDom';
+import { button, click, mount, unmountAll } from '@web/learner/testDom';
 
 describe('parseBulkCsv', () => {
   it('skips BOM, header and blank lines, and keeps quoted commas', () => {

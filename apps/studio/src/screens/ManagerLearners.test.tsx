@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { ManagerLearners } from './ManagerLearners';
-import { button, click, mount, setValue, unmountAll } from '../learner/testDom';
+import { button, click, mount, setValue, unmountAll } from '@web/learner/testDom';
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));

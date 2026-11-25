@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { api, type LearnerPage, type LearnerRow } from '../pilot/api';
-import { AdminTabs } from '../pilot/AdminTabs';
-import { ErrorNote } from '../learner/ErrorNote';
-import { useMedia } from '../learner/useMedia';
-import '../pilot/users.css';
+import { api } from '@web/pilot/api';
+import type { LearnerPage, LearnerRow } from '../api';
+import { AdminTabs } from './AdminTabs';
+import { ErrorNote } from '@web/learner/ErrorNote';
+import { useMedia } from '@web/learner/useMedia';
+import './users.css';
 import './manager.css';
 
 const LIMIT = 20;

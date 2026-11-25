@@ -21,7 +21,6 @@ jobs:
           package-manager-cache: false
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npm run check:bundle
       - run: npm run typecheck
       - run: npm test
       - run: npm run lint

@@ -6,15 +6,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY apps/api/package.json apps/api/package.json
+COPY apps/studio/package.json apps/studio/package.json
 RUN npm ci --workspace @seafoodeck/web --ignore-scripts
 WORKDIR /app/apps/web
 COPY apps/web/tsconfig.json apps/web/tsconfig.build.json apps/web/vite.config.ts apps/web/playwright.config.ts apps/web/index.html ./
 COPY apps/web/src ./src
 COPY apps/web/public ./public
 COPY apps/web/e2e ./e2e
-COPY apps/web/scripts ./scripts
-# The release image must pass the role split check (no admin/manager code for every visitor).
-RUN npm run build && npm run check:bundle
+RUN npm run build
 
 FROM caddy:2-alpine AS runtime
 ARG RELEASE_TAG=pilot-internal-20261118-r2

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from './api';
+import { api } from '@web/pilot/api';
 export interface AdminTariff {
   id: string;
   code: string;

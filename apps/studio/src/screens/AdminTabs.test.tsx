@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AdminTabs } from './AdminTabs';
-import { mount, unmountAll } from '../learner/testDom';
+import { mount, unmountAll } from '@web/learner/testDom';
 
 afterEach(unmountAll);
 const links = (host: HTMLElement) =>

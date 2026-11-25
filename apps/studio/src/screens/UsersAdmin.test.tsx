@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { UsersAdmin, generatePassword, PASSWORD_ALPHABET } from './UsersAdmin';
-import { button, click, field, mount, setValue, submit, unmountAll } from '../learner/testDom';
+import { button, click, field, mount, setValue, submit, unmountAll } from '@web/learner/testDom';
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
