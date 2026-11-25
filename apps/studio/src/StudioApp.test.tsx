@@ -312,13 +312,13 @@ describe('StudioApp role-aware routes', () => {
     await tick();
     await tick();
     expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     expect(calls.filter((c) => c === USERS)).toHaveLength(1);
     await click(button(host.querySelector<HTMLElement>('.users-reveal')!, 'Đóng'));
     await tick();
     await tick();
     expect(calls.filter((c) => c === USERS)).toHaveLength(2);
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
     expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain('OwnTmp');
     expect(location.href).not.toContain('OwnTmp');
@@ -459,7 +459,7 @@ describe('StudioApp forced password change', () => {
       const host = await open(role, role === 'manager' ? '#manager' : '#admin', {
         mustChangePassword: true,
       });
-      expect(host.textContent, role).toContain('Quản trị viên yêu cầu bạn đặt mật khẩu mới');
+      expect(host.textContent, role).toContain('Bạn cần đặt mật khẩu mới');
       expect(host.querySelector('.change-password'), role).not.toBeNull();
       expect(tone(host), role).toBe('deep');
       expect(host.querySelectorAll('nav'), role).toHaveLength(0);
@@ -472,7 +472,7 @@ describe('StudioApp forced password change', () => {
   it('a MUST_CHANGE_PASSWORD 403 from a screen flips to the forced screen', async () => {
     routes[USERS] = () => json(MUST, 403);
     const host = await open('admin', '#admin/users');
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.querySelectorAll('nav')).toHaveLength(0);
   });
 
@@ -489,7 +489,7 @@ describe('StudioApp forced password change', () => {
     expect(headerOf('POST /me/password')).toBe('c-editor');
     // The response is the new session view: no second /auth/me round trip.
     expect(calls.filter((c) => c === 'GET /auth/me')).toHaveLength(1);
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     expect(host.textContent).toContain('Biên tập và xuất bản');
     await click(button(host.querySelector('.shell-header')!, 'Đăng xuất'));
     await tick();
@@ -507,7 +507,7 @@ describe('StudioApp forced password change', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 
   it('a flag raised while guest does not stick to the next login', async () => {
@@ -520,7 +520,7 @@ describe('StudioApp forced password change', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 });
 

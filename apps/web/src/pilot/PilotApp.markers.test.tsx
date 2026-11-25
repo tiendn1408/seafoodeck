@@ -60,8 +60,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 const tick = () => act(async () => void (await new Promise((r) => setTimeout(r, 10))));
-async function render(role: string, hash: string) {
-  me = view(role);
+async function render(role: string, hash: string, extra: object = {}) {
+  me = { ...view(role), ...extra };
   location.hash = '#' + hash;
   const host = mount(<PilotApp />);
   await tick();
@@ -107,4 +107,45 @@ describe('PilotApp carries no staff-area marker', () => {
       );
     },
   );
+
+  // The forced password screen is what a learner sees after their password was reset: it must
+  // be as neutral as every other screen.
+  it.each(['learner', 'student'])(
+    '%s with mustChangePassword: the forced screen names no staff area',
+    async (role) => {
+      for (const hash of ROUTES) {
+        const host = await render(role, hash, { mustChangePassword: true });
+        const where = `${role} forced #${hash}`;
+        expect(host.querySelector('.change-password'), where).not.toBeNull();
+        expect(host.innerHTML, where).not.toMatch(MARKUP);
+        expect(host.textContent, where).not.toMatch(COPY);
+        unmountAll();
+      }
+      expect(calls.filter((c) => MARKUP.test(c))).toEqual([]);
+    },
+  );
+
+  it('a MUST_CHANGE_PASSWORD 403 flips to a forced screen that names no staff area', async () => {
+    me = view('student');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        const key = `${init?.method ?? 'GET'} ${String(url).replace('/api/v1', '')}`;
+        calls.push(key);
+        if (key === 'GET /auth/me') return json(me);
+        if (key === 'GET /me/home') {
+          return json({ message: 'Cần đổi mật khẩu trước.', code: 'MUST_CHANGE_PASSWORD' }, 403);
+        }
+        return json({ message: 'unrouted ' + key }, 404);
+      }),
+    );
+    location.hash = '#home';
+    const host = mount(<PilotApp />);
+    await tick();
+    await tick();
+    expect(calls).toContain('GET /me/home');
+    expect(host.querySelector('.change-password')).not.toBeNull();
+    expect(host.innerHTML).not.toMatch(MARKUP);
+    expect(host.textContent).not.toMatch(COPY);
+  });
 });

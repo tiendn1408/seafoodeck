@@ -293,7 +293,7 @@ export function Review({
           <h2>Chưa có mục ôn tập</h2>
           <p>
             {readOnly
-              ? 'Học viên chưa hoàn thành lượt nào.'
+              ? 'Chưa có lượt nào hoàn thành.'
               : 'Hoàn thành một lượt để lên lịch theo từng kỹ năng.'}
           </p>
           {!readOnly && (

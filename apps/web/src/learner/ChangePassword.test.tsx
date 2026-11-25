@@ -80,9 +80,7 @@ describe('ChangePassword', () => {
     const host = mount(
       <ChangePassword forced role="student" onDone={() => {}} onLogout={onLogout} />,
     );
-    expect(host.textContent).toContain(
-      'Quản trị viên yêu cầu bạn đặt mật khẩu mới trước khi tiếp tục.',
-    );
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới trước khi tiếp tục.');
     expect(host.textContent).not.toContain('Hủy');
     expect(host.querySelector('a')).toBeNull();
     await click(button(host, 'Đăng xuất'));
@@ -99,7 +97,7 @@ describe('ChangePassword', () => {
         onLogout={() => {}}
       />,
     );
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     await click(button(host, 'Hủy'));
     expect(onCancel).toHaveBeenCalled();
   });

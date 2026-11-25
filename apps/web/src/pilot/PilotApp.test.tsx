@@ -121,7 +121,7 @@ describe('PilotApp forced password flow', () => {
     routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
     const host = mount(<PilotApp />);
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu bạn đặt mật khẩu mới');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(tone(host)).toBe('deep');
     expect(navCount(host)).toBe(0);
     expect(host.textContent).not.toContain('Hủy');
@@ -176,7 +176,7 @@ describe('PilotApp forced password flow', () => {
     const host = mount(<PilotApp />);
     await tick();
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.querySelector('.pilot-error')).toBeNull();
     const n = calls.filter((c) => c.includes('/learning/')).length;
     await tick();
@@ -192,7 +192,7 @@ describe('PilotApp forced password flow', () => {
     const host = mount(<PilotApp />);
     await tick();
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.querySelector('.pilot-error')).toBeNull();
     expect(calls.filter((c) => c.includes('/learning/'))).toEqual([]);
   });
@@ -217,7 +217,7 @@ describe('PilotApp forced password flow', () => {
     await tick();
     // The response is the new session view: no second /auth/me round trip.
     expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(1);
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 
   const headerOf = (key: string) =>
@@ -302,7 +302,7 @@ describe('PilotApp forced password flow', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     expect(host.textContent).not.toContain('Đổi mật khẩu');
   });
 
@@ -319,7 +319,7 @@ describe('PilotApp forced password flow', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 });
 
