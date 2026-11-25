@@ -19,6 +19,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { Db } from './db';
 import { errorBody, errorStatus } from './errors';
+import { learnerEdge } from './learner-edge';
 import {
   DatabaseModule,
   AuthModule,
@@ -104,6 +105,8 @@ export async function createApp(env: NodeJS.ProcessEnv = process.env): Promise<I
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
+  // Learner host: staff paths become unknown routes (after the body parser, before every route).
+  app.use(learnerEdge);
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

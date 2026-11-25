@@ -33,23 +33,13 @@
     encode zstd gzip
     import security_headers
     handle /api/* {
-        # Staff-only API paths (admin, manager) and the API docs (Swagger UI / OpenAPI JSON, which
-        # list every staff route) never reach the API from the learner host. They answer exactly like
-        # an unknown API path: they go through the same reverse-proxy hop as a real API response, to
-        # the loopback "not-found stub" below, which mirrors the API's own 404 (see there). Caddy's
-        # path matching is case-insensitive, like Express routing.
-        @staff path /api/v1/admin* /api/v1/manager* /api/v1/docs* /api/v1/openapi*
-        handle @staff {
-            reverse_proxy 127.0.0.1:8081 {
-                header_down -Server
-            }
-        }
-        handle {
-            # Express adds a weak ETag (a hash of the body) that the stub cannot compute; every API
-            # response is Cache-Control no-store, so the ETag is never used: drop it on this host.
-            reverse_proxy api:3000 {
-                header_down -ETag
-            }
+        # Staff API paths (admin, manager, docs/openapi) must answer exactly like an unknown path on
+        # this host. Caddy only marks the request; the API (apps/api/src/learner-edge.ts) turns staff
+        # paths into an unknown route after its body parser and before routing, so the 404 comes from
+        # the very same pipeline as any unknown path. `header_up` overwrites any client-sent X-Edge.
+        # The API container has no published port: Caddy is its only way in.
+        reverse_proxy api:3000 {
+            header_up X-Edge learner
         }
     }
     import storage_and_spa
@@ -72,28 +62,13 @@
     }
     handle {
         handle /api/* {
-            reverse_proxy api:3000
+            # Never forward a client-sent learner-edge marker from the Studio host.
+            reverse_proxy api:3000 {
+                header_up -X-Edge
+            }
         }
         import storage_and_spa
     }
-}
-
-# Not-found stub, loopback only (never published). Mirrors what the API answers for an unknown path
-# (Nest's not-found handler + the API's error filter, checked against createApp() on 2026-11-25):
-#   404, Content-Type "application/json; charset=utf-8", Cache-Control no-store,
-#   X-Content-Type-Options nosniff, X-Request-ID <uuid v4>, Content-Length, body
-#   {"message":"Cannot <METHOD> <URL as forwarded, incl. query>","error":"Not Found","statusCode":404,"requestId":"<same uuid>"}
-# Through the learner site's proxy hop both get the same Via header, duplicated site headers and no
-# ETag. Keep this in step with apps/api/src/main.ts (error filter) if the API's 404 ever changes.
-http://:8081 {
-    bind 127.0.0.1
-    header {
-        Content-Type "application/json; charset=utf-8"
-        Cache-Control no-store
-        X-Content-Type-Options nosniff
-        X-Request-ID {http.request.uuid}
-    }
-    respond `\{"message":"Cannot {http.request.method} {http.request.uri}","error":"Not Found","statusCode":404,"requestId":"{http.request.uuid}"\}` 404
 }
 
 http://127.0.0.1:8080 {

@@ -2,8 +2,8 @@
 
 Từ 2.5e ảnh web chứa hai bản build: app học viên (`/srv/learner`) và app Studio cho nhân sự (`/srv/studio`). Một Caddy phục vụ hai site (`deploy/Caddyfile.pilot`):
 
-- **Host học viên** `seafoodeck.tiendn.io.vn` (`SITE_ADDRESS`, `PUBLIC_ORIGIN`): chỉ app học viên. `/api/v1/admin*`, `/api/v1/manager*`, `/api/v1/docs*`, `/api/v1/openapi*` trả 404 giống hệt một đường API không tồn tại (cùng status, cùng dạng body JSON, cùng header); phần còn lại của `/api/*` tới API.
-- **Host Studio** `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`): chỉ app Studio, thêm `X-Robots-Tag: noindex, nofollow` (header bảo mật giống host học viên), toàn bộ `/api/*` tới API.
+- **Host học viên** `seafoodeck.tiendn.io.vn` (`SITE_ADDRESS`, `PUBLIC_ORIGIN`): chỉ app học viên. `/api/v1/admin*`, `/api/v1/manager*`, `/api/v1/docs*`, `/api/v1/openapi*` trả 404 giống hệt một đường API không tồn tại: cùng status, cùng body JSON (`Cannot <METHOD> <đường dẫn>`), cùng header, cùng cách xử lý body lỗi (JSON hỏng → 400, body quá 5 MB → 413). Caddy gắn header `X-Edge: learner` (ghi đè giá trị client gửi) cho mọi request `/api/*` từ host này; API (`apps/api/src/learner-edge.ts`) biến các đường nhân sự thành route không tồn tại sau bộ đọc body và trước khi định tuyến, nên 404 đi đúng pipeline của một đường không tồn tại. Container API không publish cổng nào: Caddy là đường vào duy nhất, nên header này không giả được từ ngoài.
+- **Host Studio** `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`): chỉ app Studio, thêm `X-Robots-Tag: noindex, nofollow` (header bảo mật giống host học viên), toàn bộ `/api/*` tới API (Caddy xóa mọi `X-Edge` client gửi).
 
 Vai trò editor/reviewer/publisher/manager/admin chỉ đăng nhập được ở host Studio; student/learner và mã mời chỉ ở host học viên. Đăng nhập sai host nhận đúng phản hồi của sai mật khẩu. Cookie theo từng host, không dùng chung.
 
@@ -69,9 +69,9 @@ Host học viên không lộ API nhân sự (cả bốn dòng phải là 404):
 
     for p in admin/users manager/learners docs openapi.json; do curl -s -o /dev/null -w "$p %{http_code}\n" https://seafoodeck.tiendn.io.vn/api/v1/$p; done
 
-404 phải giống hệt một đường không tồn tại (chỉ khác đường dẫn trong `message`, độ dài và `requestId`):
+404 phải giống hệt một đường không tồn tại (chỉ khác đường dẫn trong `message`, độ dài, `ETag` và `requestId`):
 
-    n() { curl -s -i "$1" | grep -v -i -E '^(date|x-request-id):' | sed -E 's/"requestId":"[^"]*"//; s#/api/v1/[a-z]+/users#PATH#; s/^Content-Length: .*//I'; }
+    n() { curl -s -i "$1" | grep -v -i -E '^(date|x-request-id|etag):' | sed -E 's/"requestId":"[^"]*"//; s#/api/v1/[a-z]+/users#PATH#; s/^Content-Length: .*//I'; }
     diff <(n https://seafoodeck.tiendn.io.vn/api/v1/admin/users) <(n https://seafoodeck.tiendn.io.vn/api/v1/zzzzz/users) && echo giong-het
 
 Host Studio:
@@ -79,6 +79,11 @@ Host Studio:
     curl -fsSI https://seafoodeckstudio.tiendn.io.vn/ | grep -i -E '^HTTP|x-robots-tag'   # 200, noindex, nofollow, TLS hợp lệ
     curl -fsS https://seafoodeckstudio.tiendn.io.vn/api/v1/health                       # release đúng bản 2.5e
     curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeckstudio.tiendn.io.vn/api/v1/admin/users   # 401 (chưa đăng nhập), không phải 404
+    curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeckstudio.tiendn.io.vn/api/v1/docs          # phải là 404 (EXPOSE_API_DOCS tắt)
+    curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeckstudio.tiendn.io.vn/api/v1/openapi.json  # phải là 404
+    curl -s -o /dev/null -w '%{http_code}\n' -H 'X-Edge: learner' https://seafoodeckstudio.tiendn.io.vn/api/v1/admin/users  # vẫn 401: header client bị xóa
+
+Khác 404 ở hai dòng docs/openapi là lỗi: ở host Studio chỉ cờ `EXPOSE_API_DOCS` (tắt) che tài liệu API; kiểm `.local/pilot.env` không có `EXPOSE_API_DOCS=true` rồi recreate API.
 
 Trong trình duyệt (mật khẩu do chủ dự án nhập, không ghi lại):
 
@@ -91,7 +96,7 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
 ## 5. Quay lại
 
 - Lỗi chỉ ở site Studio (chứng chỉ, DNS): sửa DNS/env rồi `dc up -d --no-deps web`; host học viên không bị ảnh hưởng.
-- Quay về ảnh trước 2.5e: đổi lại `API_IMAGE_REF`, `WEB_IMAGE_REF` về hai dòng đã lưu, **và** xóa (hoặc comment) dòng `STUDIO_ORIGIN` trong `.local/pilot.env` để mọi vai trò đăng nhập lại ở host học viên như cũ (ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng giữ cho chắc). `STUDIO_SITE_ADDRESS` có thể để nguyên: Caddyfile của ảnh cũ không dùng nó. Rồi:
+- Quay về ảnh trước 2.5e: đổi lại `API_IMAGE_REF`, `WEB_IMAGE_REF` về hai dòng đã lưu, **và** xóa (hoặc comment) dòng `STUDIO_ORIGIN` trong `.local/pilot.env` để mọi vai trò đăng nhập lại ở host học viên như cũ (ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng giữ cho chắc). Quay ảnh API và ảnh web **cùng nhau**: ảnh web 2.5e với ảnh API cũ thì host học viên không còn chặn API nhân sự (chặn nằm trong API, Caddy chỉ gắn header) — vì thế khi nâng cấp luôn chạy API trước web. `STUDIO_SITE_ADDRESS` có thể để nguyên: Caddyfile của ảnh cũ không dùng nó. Rồi:
 
         dc pull
         dc up -d --no-deps storage
@@ -102,6 +107,8 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
 
 ## Giới hạn (nói thẳng)
 
+- Ở host Studio, `/api/v1/docs*` và `/api/v1/openapi*` được đưa thẳng tới API: chỉ cờ `EXPOSE_API_DOCS` (mặc định tắt) che chúng. Lớp phòng thủ thêm của Caddy (từ 2.5d) giờ chỉ còn ở host học viên, và nằm trong API (header `X-Edge`), không phải ở Caddy.
+- Việc chặn ở host học viên dựa vào ảnh API 2.5e nhận header `X-Edge`; ảnh API cũ hơn bỏ qua header này.
 - **Ẩn không phải là bảo mật.** Host Studio công khai: mọi chứng chỉ được ghi vào Certificate Transparency log (ví dụ crt.sh), nên ai cũng tìm được tên host, tải được app Studio và thấy trang đăng nhập. Bảo vệ thật vẫn là mật khẩu, giới hạn đăng nhập, phân quyền theo vai trò ở API và kiểm Origin khi ghi.
 - Không có TOTP/MFA, không giới hạn IP, không VPN; nhân sự đăng nhập từ bất kỳ đâu.
 - Ảnh web vẫn chứa file Studio trên đĩa (không được phục vụ ở host học viên).
