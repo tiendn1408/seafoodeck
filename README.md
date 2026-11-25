@@ -19,6 +19,8 @@ Mở http://127.0.0.1:18089. Lấy mã mời hoặc quản trị từ `.local/pi
 
 Production không cần seed: tạo env bằng `--production --origin https://...`, chạy migrations rồi `node dist/bootstrap.js` trong API image, nhập danh mục qua quản trị. [Cài VPS/GHCR](docs/DEPLOY_PILOT.md); bản đã nâng trên VPS và cách vận hành hiện tại ở [demo học viên 20/11](docs/DEPLOY_LEARNER_DEMO_20261120.md).
 
+Tách origin nhân sự (phase 2.5e, API): đặt `STUDIO_ORIGIN` (init-pilot tạo `http://localhost:18090` cho local, `--studio-origin` cho production; cổng `STUDIO_WEB_PORT`). Khi đặt, vai trò editor/reviewer/publisher/manager/admin chỉ đăng nhập từ `STUDIO_ORIGIN`, học viên/mã mời chỉ từ `PUBLIC_ORIGIN`; sai origin trả đúng phản hồi sai mật khẩu. Ghi (`POST`...) chấp nhận cả hai origin, CORS S3 liệt kê cả hai. Không đặt: hành vi cũ (một origin cho mọi vai trò). Giao diện Studio và Caddy cho origin thứ hai đến ở các task sau.
+
 Nâng cấp VPS từ demo học viên 20/11 lên 2.5c (không có migration mới): [runbook](docs/DEPLOY_UPGRADE_25C.md).
 
 Swagger (`/api/v1/docs`, `/api/v1/openapi.json`) mặc định tắt: API chỉ phục vụ khi biến môi trường `EXPOSE_API_DOCS=true` (chỉ dùng khi chạy local), và `deploy/Caddyfile.pilot` luôn trả 404 cho hai đường này. Đặc tả trong repo: `npm run contract:generate` ghi `docs/api/openapi.json`, không cần cờ.

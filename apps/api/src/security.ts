@@ -52,6 +52,25 @@ export function revokeUserSessions(
     where: { userId, ...(keepSessionId ? { id: { not: keepSessionId } } : {}) },
   });
 }
+export type Realm = 'learner' | 'studio';
+/** Learner and account students live on PUBLIC_ORIGIN; every staff/manager role on STUDIO_ORIGIN. */
+export const realmOf = (role: string): Realm =>
+  role === 'learner' || role === 'student' ? 'learner' : 'studio';
+const allowedOrigins = () =>
+  [process.env.PUBLIC_ORIGIN, process.env.STUDIO_ORIGIN].filter((o): o is string => !!o);
+/** Which realm an Origin header belongs to; `none` when the header is absent. */
+export function originRealm(origin: string | undefined): Realm | 'unknown' | 'none' {
+  if (!origin) return 'none';
+  if (origin === process.env.PUBLIC_ORIGIN) return 'learner';
+  if (process.env.STUDIO_ORIGIN && origin === process.env.STUDIO_ORIGIN) return 'studio';
+  return 'unknown';
+}
+/** True when the realms are split (STUDIO_ORIGIN set), the login has an Origin, and it is not the role's realm. */
+export function loginRealmRefused(origin: string | undefined, role: string) {
+  if (!process.env.STUDIO_ORIGIN) return false;
+  const found = originRealm(origin);
+  return found !== 'none' && found !== realmOf(role);
+}
 export type ActorRequest = Request & { actor: AuthSession };
 const cookie = 'seafoodeck_session';
 /** One wording for expired, missing and locked sessions alike, so a lock is never revealed. */
@@ -129,10 +148,16 @@ export class Auth {
       maxAge: ttlMs(),
     });
   }
-  checkWrite(req: Request, actor: AuthSession) {
+  /**
+   * CSRF token, then the Origin allow-list: PUBLIC_ORIGIN or STUDIO_ORIGIN (an absent Origin stays
+   * allowed for scripts). Login passes `skipOrigin` when realms are split, because it answers a bad
+   * Origin like a wrong password instead of with this 403.
+   */
+  checkWrite(req: Request, actor: AuthSession, opts: { skipOrigin?: boolean } = {}) {
     if (req.headers['x-csrf-token'] !== actor.csrf)
       throw new ForbiddenException('CSRF token không hợp lệ.');
-    if (req.headers.origin && req.headers.origin !== process.env.PUBLIC_ORIGIN)
+    const origin = req.headers.origin;
+    if (!opts.skipOrigin && origin && !allowedOrigins().includes(origin))
       throw new ForbiddenException('Origin không hợp lệ.');
   }
   view(actor: AuthSession) {
