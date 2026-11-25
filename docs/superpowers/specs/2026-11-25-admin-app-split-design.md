@@ -54,11 +54,11 @@ Seafood Deck serves two very different audiences from one web app today: learner
 5. **Origin at login** *(my call)*: an absent `Origin` is accepted on login and on writes (scripts); tests assert this deliberately. A login `Origin` that is neither configured origin gets the same generic wrong-password response (not a distinct 403).
 6. **Shell reuse** *(my call)*: do not refactor the live learner shell. `AdminApp` re-implements the thin orchestration (auth bootstrap, forced password, 401 handler, CSRF adoption, leave guard — roughly PilotApp's staff paths) and imports every already-extracted helper from `@web` (`meStore`, `leaveGuard`, `ChangePassword`, `Account`, API client core). Small duplication is accepted; parity is protected by moving the existing admin/manager shell tests into `apps/admin`.
 7. **Unsplit deployments.** Backward compatibility applies to the **API** only (no `ADMIN_ORIGIN` ⇒ single origin, all roles). Once the new web image ships, the split is mandatory: the learner image has no admin UI. If `ADMIN_SITE_ADDRESS` is unset, the admin site is not served and staff have no UI until it is configured; the deploy doc states this.
-8. **Staff "Study"**: awaiting the owner's decision (see Open items). Default if the owner does not object: removed, reversible later.
+8. **Staff "Study"** — decided by the owner (2026-11-25): removed from the admin app. Staff who want to train or preview use a personal learner account on the learner host (an admin creates it in the Users screen with role `student`, or they use an invite code). Their staff account never logs in on the learner host, so learning progress stays separate from the admin identity.
 
 ## Left to the builder
 File-level layout of `apps/admin/src`; how much of PilotApp's shell logic is shared via `@web` versus re-implemented in `AdminApp` (prefer importing); exact alias/tsconfig/vitest wiring; Caddy matcher syntax for the 404 body parity; script details for the marker check; splitting into tasks (suggested order: API → extract admin app → boundaries/CI → hosts/image → e2e/docs).
 
 ## Open items for the owner
 - DNS and certificate for `seafoodeckadmin.tiendn.io.vn` (owner action).
-- Whether staff really can live without Study in the admin app.
+- None left besides DNS/certificate; the Study question is decided (see clarification 8).
