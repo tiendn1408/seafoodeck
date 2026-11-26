@@ -73,3 +73,4 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 - `npm test`: web 327, studio 136, API 433, scripts 43, tất cả pass; build, `check:bundle`, lint, format đạt.
 - `smoke-pilot`: 10/10 PASS. `learner-accounts-check`: 11 pass, 1 skip ((j) chưa đủ 3 bản thu), 0 lỗi, (f) đạt. `browser-pilot-check`: đạt (âm thanh 1×/0,75×, một nguồn phát; câu hỏi đầu 2,5 s ở mạng 1,5 Mbps, CPU ×4).
 - `npm run test:e2e` hai lần cách nhau hơn 10 phút (và hơn 10 phút sau các script trên): lần 1 lúc 11:11 và lần 2 lúc 11:22, đều **52 pass / 6 skip / 0 lỗi**.
+- `smoke-pilot` và `learner-accounts-check` từ nay cần ảnh API có cờ `current` (lượt sửa này trở đi); chạy với ảnh cũ hơn (ví dụ r1) thì báo lỗi, có chủ ý. Hai script chỉ chạy trên stack local, không chạy trên VPS.

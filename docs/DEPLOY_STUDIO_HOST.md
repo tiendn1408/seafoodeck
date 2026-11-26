@@ -54,13 +54,20 @@ Cài mới bằng `node scripts/init-pilot.mjs --production --origin https://<ho
 
 Từ bản đang chạy `learner-demo-20261120-r1` (một origin): 2.5c, 2.5d, 2.5e không thêm migration (vẫn bốn thư mục trong `apps/api/prisma/migrations`, VPS đã chạy đủ), nên nhảy thẳng lên 2.5e, không cần lên 2.5c trước.
 
-Máy build (không phải VPS), từ commit đã merge vào `main` trên origin, tag mới `<TAG-2.5e>`:
+Máy build (không phải VPS), từ commit đã merge vào `main` trên origin, tag mới `<TAG-2.5e>` (thay cho mục 0 của [runbook 2.5c](DEPLOY_UPGRADE_25C.md)):
 
     docker build --platform linux/amd64 --build-arg RELEASE_TAG=<TAG-2.5e> -f apps/api/Dockerfile -t seafoodeck-api:<TAG-2.5e> .
     docker build --platform linux/amd64 --build-arg RELEASE_TAG=<TAG-2.5e> -f apps/web/Dockerfile -t seafoodeck-web:<TAG-2.5e> .
+    echo "$GHCR_TOKEN" | docker login ghcr.io -u tiendn1408 --password-stdin
     sh scripts/publish-pilot.sh <TAG-2.5e>     # in digest hai ảnh; script từ chối ảnh không phải amd64
+    docker buildx imagetools inspect ghcr.io/tiendn1408/seafoodeck-api:<TAG-2.5e>
+    docker buildx imagetools inspect ghcr.io/tiendn1408/seafoodeck-web:<TAG-2.5e>
+    docker buildx imagetools inspect --format '{{.Image.Architecture}}/{{.Image.OS}}' ghcr.io/tiendn1408/seafoodeck-api:<TAG-2.5e>   # phải là amd64/linux
+    docker buildx imagetools inspect --format '{{.Image.Architecture}}/{{.Image.OS}}' ghcr.io/tiendn1408/seafoodeck-web:<TAG-2.5e>   # phải là amd64/linux
 
-Trên VPS: làm [runbook 2.5c](DEPLOY_UPGRADE_25C.md) mục 1–3 (sao lưu, ghi nhớ hai mã ảnh đang chạy, đổi hai mã ảnh), thay `2.5c` bằng `2.5e` ở commit cần kiểm, thư mục sao lưu (`_backups/before-25e`) và digest. **Không** dùng mục 4 và mục 6 của runbook đó cho 2.5e: mục 4 không tạo lại kho S3 (thiếu CORS cho host Studio) và mục 6 mở quản trị ở host học viên. Thay bằng:
+Hai dòng `Digest:` của lệnh inspect (trên registry) phải trùng digest mà `publish-pilot.sh` in ra; chỉ khi trùng và đúng `amd64/linux` mới ghi chúng thành `API_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-api@sha256:<DIGEST-API>` và `WEB_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-web@sha256:<DIGEST-WEB>` (VPS kéo theo digest). Không đưa token vào tài liệu hay lịch sử chia sẻ.
+
+Trên VPS: làm [runbook 2.5c](DEPLOY_UPGRADE_25C.md) mục 1–3 (sao lưu, ghi nhớ hai mã ảnh đang chạy, đổi hai mã ảnh), thay `2.5c` bằng `2.5e` ở commit cần kiểm, thư mục sao lưu (`_backups/before-25e`) và digest. **Bắt buộc** chạy `git pull --ff-only origin main` của mục 1: nó mang về `deploy/compose.pilot.ghcr.yaml` mới (truyền `STUDIO_SITE_ADDRESS` cho Caddy và thêm `STUDIO_ORIGIN` vào CORS của kho S3); Caddyfile nằm sẵn trong ảnh web; thiếu bước này thì ảnh 2.5e chạy với compose cũ, host Studio không được phục vụ. Trước khi đổi ảnh, ghi lại số liệu catalogue (lệnh đếm ở mục 4 bên dưới) để so sau deploy. **Không** dùng mục 4 và mục 6 của runbook đó cho 2.5e: mục 4 không tạo lại kho S3 (thiếu CORS cho host Studio) và mục 6 mở quản trị ở host học viên. Thay bằng:
 
     dc pull
     dc run --rm --no-deps migrate
@@ -74,6 +81,19 @@ Trên VPS: làm [runbook 2.5c](DEPLOY_UPGRADE_25C.md) mục 1–3 (sao lưu, ghi
 Không `down -v`, không xóa volume, không đụng container của dự án khác trên VPS.
 
 ## 4. Kiểm sau deploy
+
+Không chạy `smoke-pilot`, `learner-accounts-check` hay script ghi dữ liệu nào trên VPS. Chỉ các lệnh đọc dưới đây.
+
+Host học viên vẫn chạy, đúng bản:
+
+    curl -fsS https://seafoodeck.tiendn.io.vn/api/v1/health      # "release":"<TAG-2.5e>"
+    curl -fsSI https://seafoodeck.tiendn.io.vn/ | head -1         # HTTP 200, TLS hợp lệ
+    dc ps                                                          # api, web, db, storage healthy
+
+Catalogue không đổi (chỉ đọc): so với số trước nâng cấp (biên bản 20/11: **96 Item, 96 Revision, 94 MediaAsset**, release nội bộ `a6d156c4-02ac-45a8-83ae-9ad5b9f19599`; hoặc số bạn ghi ở mục 3):
+
+    dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select (select count(*) from \"Item\"), (select count(*) from \"Revision\"), (select count(*) from \"MediaAsset\")"'
+    dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select id, value from \"Setting\" where id like '"'"'current:%'"'"'"'   # current:internal phải vẫn là a6d156c4-…
 
 Host học viên không lộ API nhân sự (cả bốn dòng phải là 404):
 
