@@ -1,118 +1,41 @@
-import {
-  test,
-  expect,
-  type APIRequestContext,
-  type BrowserContextOptions,
-  type Page,
-} from '@playwright/test';
-import { randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+// Learner app on the learner origin (projects `desktop` and `mobile`). Staff, manager and admin
+// flows live in studio.spec.ts and run against the Studio origin.
+import { test, expect, type BrowserContextOptions, type Page } from '@playwright/test';
 import type { Game } from '../src/pilot/api';
-const secrets = Object.fromEntries(
-  readFileSync(new URL('../../../.local/pilot.env', import.meta.url), 'utf8')
-    .trim()
-    .split('\n')
-    .map((l) => {
-      const i = l.indexOf('=');
-      return [l.slice(0, i), l.slice(i + 1)];
-    }),
-);
-const pack = JSON.parse(
-  readFileSync(new URL('../../../test-fixtures/pilot-pack.json', import.meta.url), 'utf8'),
-) as {
-  names: { speciesId: string; kind: string; label: string }[];
-  scenarios: {
-    title: string;
-    answerType: string;
-    missingFact?: string;
-    tariffId: string;
-    followUps: { id: string; label: string }[];
-  }[];
-  tariffs: { id: string; code: string }[];
-};
-type QaUser = { username: string; password: string; id?: string };
-// QA accounts are created once per worker (per project) through the admin API and stay in the
-// local DB. Passwords are random, kept in memory only and never printed.
-type QaKey =
-  | 'student'
-  | 'second'
-  | 'persist'
-  | 'must'
-  | 'manager'
-  | 'managerMust'
-  | 'managerAccount'
-  | 'editor';
-const users: Record<QaKey, QaUser> = {} as never;
-/** Role and first-login flag of each QA account (staff roles need 16+ character passwords). */
-const QA_ACCOUNTS: Record<QaKey, { role: string; must?: boolean }> = {
+import {
+  LEARNER,
+  STUDIO,
+  createQaUsers,
+  isDesktop,
+  learnerLogin,
+  newProjectPage,
+  next,
+  pack,
+  rateAll,
+  secret,
+  secrets,
+  start,
+  type QaUser,
+} from './support';
+
+// QA learner accounts, created once per worker (per project) through the admin API on the Studio
+// origin. Passwords are random, kept in memory only and never printed.
+const QA_ACCOUNTS = {
   student: { role: 'student' },
   second: { role: 'student' },
   persist: { role: 'student' },
   must: { role: 'student', must: true },
-  manager: { role: 'manager' },
-  managerMust: { role: 'manager', must: true },
-  // Own account: the account test changes its name and password, so no other test uses it.
-  managerAccount: { role: 'manager' },
-  editor: { role: 'editor' },
 };
-/** Per-project stamp shared by every QA name of this run (`qa-…-<stamp>`). */
-let stamp = '';
-const secret = () => randomBytes(18).toString('base64url');
-/** Admin-created users only ever go to a loopback stack (same guard as scripts/local-origin.mjs). */
-function localOnly(origin: string) {
-  const host = new URL(origin).hostname.toLowerCase();
-  if (!['127.0.0.1', 'localhost', '::1', '[::1]'].includes(host))
-    throw new Error(`E2E tạo người dùng QA; từ chối chạy trên ${origin} (chỉ máy local).`);
-}
+let users: Record<keyof typeof QA_ACCOUNTS, QaUser>;
 test.beforeAll(async ({ playwright }, info) => {
-  const origin = new URL(String(info.project.use.baseURL)).origin;
-  localOnly(origin);
-  const api = await playwright.request.newContext({
-    baseURL: origin,
-    extraHTTPHeaders: { Origin: origin },
-  });
-  try {
-    let csrf = (await (await api.get('/api/v1/auth/me')).json()).csrf as string;
-    const signedIn = await api.post('/api/v1/auth/login', {
-      headers: { 'X-CSRF-Token': csrf },
-      data: { username: secrets.ADMIN_USERNAME, credential: secrets.ADMIN_PASSWORD },
-    });
-    expect(signedIn.status(), 'admin login').toBe(201);
-    csrf = (await signedIn.json()).csrf;
-    stamp = Date.now().toString(36) + info.project.name.slice(0, 1);
-    for (const [key, { role, must }] of Object.entries(QA_ACCOUNTS) as [
-      QaKey,
-      (typeof QA_ACCOUNTS)[QaKey],
-    ][]) {
-      const user: QaUser = { username: `qa-e2e-${stamp}-${key}`, password: secret() };
-      const created = await api.post('/api/v1/admin/users', {
-        headers: { 'X-CSRF-Token': csrf },
-        data: { ...user, role, displayName: 'QA e2e', mustChangePassword: !!must },
-      });
-      expect(created.status(), `create ${user.username}`).toBe(201);
-      user.id = (await created.json()).id;
-      users[key] = user;
-    }
-  } finally {
-    await api.dispose();
-  }
+  users = await createQaUsers(
+    playwright,
+    Date.now().toString(36) + info.project.name.slice(0, 1),
+    QA_ACCOUNTS,
+  );
 });
-/** Account login through the default form (a QA student unless another user is given). */
-async function login(page: Page, user: QaUser = users.student) {
-  await page.goto('/');
-  await page.getByLabel('Tên đăng nhập', { exact: true }).fill(user.username);
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(user.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
-}
-async function adminLogin(page: Page) {
-  await page.goto('/#admin');
-  await page.getByLabel('Tài khoản', { exact: true }).fill(secrets.ADMIN_USERNAME);
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(secrets.ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await page.goto('/#home');
-  await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
-}
+/** Account login through the learner form (a QA student unless another user is given). */
+const login = (page: Page, user: QaUser = users.student) => learnerLogin(page, user);
 type MeProgress = {
   sessions: { sessionId: string; mode: string; answered: number; selfRated: number }[];
   figures: { answered: number; selfRated: number };
@@ -126,37 +49,7 @@ const me = async <T>(page: Page, path: string): Promise<T> => {
 };
 const sessionRow = async (page: Page, id: string) =>
   (await me<MeProgress>(page, 'progress')).sessions.find((s) => s.sessionId === id);
-/** Rates every remaining flashcard "Đã nhớ" and opens the summary. */
-async function rateAll(page: Page) {
-  for (;;) {
-    await page.getByRole('button', { name: 'Chạm để lật thẻ' }).click();
-    await page.getByRole('button', { name: 'Đã nhớ', exact: true }).click();
-    const last = page.getByRole('button', { name: 'Xem tổng kết', exact: true });
-    await expect(
-      last.or(page.getByRole('button', { name: 'Tiếp tục', exact: true })),
-    ).toBeVisible();
-    if (await last.isVisible()) {
-      await last.click();
-      break;
-    }
-    await next(page);
-  }
-  await expect(page.getByRole('heading', { name: 'Tổng kết lượt học' })).toBeVisible();
-}
-async function start(page: Page, name: string) {
-  if (!(await page.getByRole('heading', { name: 'Luyện nghiệp vụ' }).isVisible()))
-    await page.getByRole('link', { name: 'Học', exact: true }).click();
-  const response = page.waitForResponse(
-    (r) => r.url().endsWith('/api/v1/learning/sessions') && r.request().method() === 'POST',
-  );
-  await page.getByRole('button', { name: new RegExp(name) }).click();
-  const game = (await (await response).json()) as Game;
-  await expect(page.locator('.pilot-question')).toBeVisible();
-  return game;
-}
-async function next(page: Page, last = false) {
-  await page.getByRole('button', { name: last ? 'Xem tổng kết' : 'Tiếp tục', exact: true }).click();
-}
+
 test('catalogue uses API paging, Japanese search, signed thumbnails and stable deep links', async ({
   page,
 }) => {
@@ -428,80 +321,6 @@ test('home, library and profile never scroll sideways and show whole photos', as
       await checkLayout(page);
     });
 });
-test('admin can preview CSV errors and publish/rollback a QA draft through the browser', async ({
-  page,
-}) => {
-  await adminLogin(page);
-  const current = await (await page.request.get('/api/v1/catalog/items?limit=1')).json();
-  const auth = await (await page.request.get('/api/v1/auth/me')).json();
-  page.on('dialog', (d) => d.accept());
-  try {
-    await page.getByRole('link', { name: 'Quản trị', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Biên tập và xuất bản' })).toBeVisible();
-    await page.getByLabel('Tìm revision theo ID hoặc tên').fill('atlantic-cod');
-    await page.getByRole('button', { name: 'Tìm revision', exact: true }).click();
-    await expect(
-      page
-        .getByLabel('Chọn revision')
-        .locator('option')
-        .filter({ hasText: 'Cá tuyết Đại Tây Dương' }),
-    ).toHaveCount(1);
-    await page.getByLabel('Tìm revision theo ID hoặc tên').fill('');
-    await page.getByRole('button', { name: 'Tìm revision', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Tìm revision', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Lấy mẫu CSV' }).click();
-    await expect(page.getByLabel('Nội dung CSV')).toHaveValue(/^externalId,/);
-    const csv = await page.getByLabel('Nội dung CSV').inputValue();
-    const id = 'browser-qa-' + Date.now(),
-      row = [
-        id,
-        'QA',
-        'Cá',
-        'SKU QA browser',
-        '',
-        '',
-        '',
-        'Internal synthetic QA only',
-        '',
-        '',
-        '',
-        'Not customer material',
-        '',
-        '',
-        '',
-      ].join(',');
-    await page.getByLabel('Nội dung CSV').fill(csv + row + '\n' + row + '\n');
-    await page.getByRole('button', { name: 'Xem trước lỗi' }).click();
-    await expect(page.getByText('2 dòng · 1 lỗi')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Nhập nháp', exact: true })).toBeDisabled();
-    await page.getByLabel('Nội dung CSV').fill(csv + row + '\n');
-    await page.getByRole('button', { name: 'Xem trước lỗi' }).click();
-    await expect(page.getByText('1 dòng · 0 lỗi')).toBeVisible();
-    await page.getByRole('button', { name: 'Nhập nháp', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Đã lưu.' })).toBeVisible();
-    const rowLabel = page
-      .locator('.pilot-release-items label')
-      .filter({ hasText: 'SKU QA browser' })
-      .first();
-    await rowLabel.getByRole('checkbox').check();
-    await page.getByRole('button', { name: 'Xuất bản thử nội bộ', exact: true }).click();
-    await expect
-      .poll(async () => {
-        const r = await page.request.get('/api/v1/catalog/items?limit=1');
-        return (await r.json()).releaseId;
-      })
-      .not.toBe(current.releaseId);
-    await page.goto('/#library');
-    await expect(page.locator('.library-card')).toHaveCount(1);
-    await expect(page.locator('.library-card')).toContainText('SKU QA browser');
-  } finally {
-    const response = await page.request.post(
-      `/api/v1/admin/releases/${current.releaseId}/rollback`,
-      { headers: { 'X-CSRF-Token': auth.csrf }, data: {} },
-    );
-    expect(response.ok()).toBeTruthy();
-  }
-});
 test('invite code through "Học thử bằng mã mời" opens the reduced trial Home without /me/*', async ({
   page,
 }) => {
@@ -620,7 +439,7 @@ test('logging out and in as another student never shows the first student’s da
   // the display name in the account entry, phones an icon-only "Tài khoản" link.
   await expect(
     page.getByRole('link', {
-      name: info.project.name === 'desktop' ? 'Tài khoản: QA e2e' : 'Tài khoản',
+      name: isDesktop(info) ? 'Tài khoản: QA e2e' : 'Tài khoản',
       exact: true,
     }),
   ).toBeVisible();
@@ -652,658 +471,89 @@ test('logging out and in as another student never shows the first student’s da
 });
 
 // ---------------------------------------------------------------------------------------------
-// Phase 2.5c: admin user management, manager learner table and details.
+// Phase 2.5e: the learner host carries no trace of the Studio app.
 // ---------------------------------------------------------------------------------------------
 
-type Api = Awaited<ReturnType<typeof apiSession>>;
-/** A cookie session against the API (optionally signed in), with the CSRF token kept current. */
-async function apiSession(
-  playwright: { request: { newContext: (o: object) => Promise<APIRequestContext> } },
-  origin: string,
-  credential?: { username?: string; credential: string },
-) {
-  localOnly(origin);
-  const request = await playwright.request.newContext({
-    baseURL: origin,
-    extraHTTPHeaders: { Origin: origin },
-  });
-  let csrf = (await (await request.get('/api/v1/auth/me')).json()).csrf as string;
-  if (credential) {
-    const signedIn = await request.post('/api/v1/auth/login', {
-      headers: { 'X-CSRF-Token': csrf },
-      data: credential,
-    });
-    expect(signedIn.status(), `login ${credential.username ?? 'invite'}`).toBe(201);
-    csrf = (await signedIn.json()).csrf;
-  }
-  const write = (method: 'post' | 'patch' | 'delete') => (path: string, data: object) =>
-    request[method]('/api/v1' + path, { headers: { 'X-CSRF-Token': csrf }, data });
-  return {
-    request,
-    get: (path: string) => request.get('/api/v1' + path),
-    post: write('post'),
-    patch: write('patch'),
-    dispose: () => request.dispose(),
-  };
-}
-const asUser = (u: QaUser) => ({ username: u.username, credential: u.password });
-const asOwner = () => ({ username: secrets.ADMIN_USERNAME, credential: secrets.ADMIN_PASSWORD });
-const originOf = (info: { project: { use: { baseURL?: string } } }) =>
-  new URL(String(info.project.use.baseURL)).origin;
-
-/** Sign in through the default account form when the account must change its password first. */
-async function loginForced(page: Page, username: string, password: string, next: string) {
-  await page.goto('/');
-  await page.getByLabel('Tên đăng nhập', { exact: true }).fill(username);
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Đổi mật khẩu' })).toBeVisible();
-  await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill(password);
-  await page.getByLabel(/^Mật khẩu mới/).fill(next);
-  await page.getByLabel('Nhập lại mật khẩu mới', { exact: true }).fill(next);
-  await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Đổi mật khẩu' })).toHaveCount(0);
-  await page.goto('/#home');
-  await expect(page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
-}
-/** The admin's Users screen filtered to one username (the local DB holds hundreds of QA users). */
-async function findUser(page: Page, username: string) {
-  if (!/#admin\/users$/.test(page.url())) await page.goto('/#admin/users');
-  await expect(page.getByRole('heading', { level: 1, name: 'Người dùng' })).toBeVisible();
-  await page.getByLabel('Tìm theo tên đăng nhập hoặc tên hiển thị').fill(username);
-  const row = page.locator('.users-table tbody tr').filter({ hasText: username });
-  await expect(page.locator('.users-table tbody tr')).toHaveCount(1);
-  await expect(row).toHaveCount(1);
-  return row;
-}
-/** Reads a one-time password panel and closes it. */
-async function takeSecret(page: Page, username: string) {
-  const panel = page.locator('.users-reveal');
-  await expect(
-    panel.getByRole('heading', { name: `Mật khẩu tạm cho ${username}`, exact: true }),
-  ).toBeVisible();
-  const value = (await panel.locator('.users-secret').innerText()).trim();
-  expect(value).toMatch(/^[A-Za-z0-9]{12}$/);
-  await panel.getByRole('button', { name: 'Đóng', exact: true }).click();
-  await expect(panel).toHaveCount(0);
-  return value;
-}
-async function newProjectPage(
-  browser: import('@playwright/test').Browser,
-  info: { project: { use: BrowserContextOptions } },
-) {
-  const { viewport, userAgent, isMobile, hasTouch, deviceScaleFactor, baseURL } = info.project
-    .use as BrowserContextOptions;
-  const context = await browser.newContext({
-    viewport,
-    userAgent,
-    isMobile,
-    hasTouch,
-    deviceScaleFactor,
-    baseURL,
-    acceptDownloads: true,
-  });
-  return { context, page: await context.newPage() };
-}
-
-test('admin creates An in the UI; manager follows An; lock, unlock and password reset', async ({
-  page,
-  browser,
-}, info) => {
-  test.setTimeout(240_000);
-  const desktop = info.project.name === 'desktop';
-  // "An" keeps its capitals on purpose: logins below use other casings of the same name.
-  const an = { username: `qa-An-${stamp}`, password: '' };
-  await adminLogin(page);
-  const student = await newProjectPage(browser, info);
-  const manager = await newProjectPage(browser, info);
-  try {
-    await test.step('(a) admin creates An with a generated password; An signs in and learns', async () => {
-      await page.goto('/#admin/users');
-      await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
-      const dialog = page.getByRole('dialog', { name: 'Tạo người dùng' });
-      await expect(dialog.getByLabel('Vai trò')).toHaveValue('student');
-      await dialog.getByLabel('Tên đăng nhập').fill(an.username);
-      await dialog.getByLabel('Tên hiển thị (không bắt buộc)').fill('An');
-      await dialog.getByRole('button', { name: 'Tạo tự động', exact: true }).click();
-      await dialog.getByRole('button', { name: 'Tạo tài khoản', exact: true }).click();
-      await expect(dialog).toHaveCount(0);
-      const temporary = await takeSecret(page, an.username);
-      // The one-time password is gone from the page once the panel is closed.
-      await expect(page.getByText(temporary)).toHaveCount(0);
-      an.password = secret();
-      await loginForced(student.page, an.username, temporary, an.password);
-      await start(student.page, 'Flashcard tên loài');
-      await rateAll(student.page);
-    });
-
-    let anId = '';
-    await test.step('(b) manager sees An (last study, learning > 0), sorts, opens details, exports CSV', async () => {
-      const m = manager.page;
-      await m.goto('/');
-      await m.getByLabel('Tên đăng nhập', { exact: true }).fill(users.manager.username);
-      await m.getByLabel('Mật khẩu', { exact: true }).fill(users.manager.password);
-      await m.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-      await expect(m).toHaveURL(/#manager$/);
-      await expect(m.getByRole('heading', { level: 1, name: 'Học viên' })).toBeVisible();
-      await m.getByLabel('Tìm theo tên đăng nhập hoặc tên hiển thị').fill(an.username);
-      await expect(m.getByText('1 học viên', { exact: true })).toBeVisible();
-      const entry = m.locator(desktop ? '.manager-table tbody tr' : '.manager-card');
-      await expect(entry).toHaveCount(1);
-      anId = (await entry.getAttribute('data-learner'))!;
-      expect(anId).toBeTruthy();
-      await expect(entry.getByRole('link', { name: 'An', exact: true })).toBeVisible();
-      await expect(entry.getByText('hôm nay', { exact: true })).toBeVisible();
-      const learning = desktop
-        ? entry.locator('td').first()
-        : entry.locator('dl div').filter({ hasText: 'Đang học' }).locator('dd');
-      expect(Number(await learning.innerText())).toBeGreaterThan(0);
-      // Sort by name: desktop through the column header, phones through the select.
-      if (desktop) {
-        const header = m.getByRole('columnheader', { name: 'Tên' });
-        await header.getByRole('button').click();
-        await expect(header).toHaveAttribute('aria-sort', 'ascending');
-        await header.getByRole('button').click();
-        await expect(header).toHaveAttribute('aria-sort', 'descending');
-      } else {
-        // Phones fold sort and filters into one disclosure.
-        await m.locator('.manager-more > summary').click();
-        await m.getByLabel('Sắp xếp theo').selectOption('name');
-        await expect(m.getByLabel('Sắp xếp theo')).toHaveValue('name');
-      }
-      await expect(entry).toHaveCount(1);
-      // CSV export: a download, UTF-8 with BOM, An's row, the same filters as the table.
-      const download = m.waitForEvent('download');
-      await m.getByRole('link', { name: 'Xuất CSV', exact: true }).click();
-      const file = await download;
-      expect(file.suggestedFilename()).toBe('hoc-vien.csv');
-      const bytes = readFileSync((await file.path())!);
-      expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-      const csv = bytes.toString('utf8');
-      expect(csv).toContain('Tên đăng nhập');
-      expect(csv).toContain(an.username);
-      expect(csv.trim().split(/\r?\n/)).toHaveLength(2);
-      // Read-only details of An.
-      await entry.getByRole('link', { name: 'An', exact: true }).click();
-      await expect(m).toHaveURL(new RegExp(`#manager/learner/${anId}$`));
-      await expect(m.getByRole('heading', { level: 1, name: 'Học viên: An' })).toBeVisible();
-      await expect(m.getByRole('heading', { name: 'Tiến độ học' })).toBeVisible();
-      await expect(m.getByRole('heading', { name: 'Lịch ôn tập' })).toBeVisible();
-      const detail = m.locator('.manager-detail');
-      await expect(
-        detail
-          .locator('.progress-figures div')
-          .filter({ has: m.getByText('Thẻ tự đánh giá', { exact: true }) })
-          .locator('dd'),
-      ).not.toHaveText('0');
-      await expect(detail.getByRole('button')).toHaveCount(0);
-      await expect(m.getByRole('heading', { name: 'Tiến độ học của bạn' })).toHaveCount(0);
-    });
-
-    await test.step('(e) learners never reach #manager or #admin/users; managers never reach #admin/users', async () => {
-      for (const route of ['#manager', '#admin/users', `#manager/learner/${anId}`]) {
-        await student.page.goto('/' + route);
-        await expect(student.page).toHaveURL(/#home$/);
-        await expect(student.page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
-      }
-      await manager.page.goto('/#admin/users');
-      await expect(manager.page).toHaveURL(/#manager$/);
-      await expect(manager.page.getByRole('heading', { level: 1, name: 'Người dùng' })).toHaveCount(
-        0,
-      );
-      // A species profile shows no study actions to a manager (canStudy is false).
-      await manager.page.goto('/#profile/atlantic-cod');
-      await expect(manager.page.getByRole('heading', { level: 1 })).toBeVisible();
-      await expect(manager.page.getByRole('button', { name: /Chỉ học flashcard/ })).toHaveCount(0);
-    });
-
-    await test.step('(c) locking An ends the open tab at its next request; unlock keeps progress', async () => {
-      const s = student.page;
-      await s.goto('/#home');
-      await expect(s.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
-      const row = await findUser(page, an.username);
-      await row.getByRole('button', { name: `Khóa ${an.username}` }).click();
-      await page.getByRole('dialog').getByRole('button', { name: 'Khóa tài khoản' }).click();
-      await expect(row.getByText('Đã khóa', { exact: true })).toBeVisible();
-      // An's next request (opening Tiến độ) is refused: back to the sign-in form.
-      await s.getByRole('link', { name: 'Tiến độ', exact: true }).click();
-      await expect(s.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
-      await expect(s.getByRole('heading', { name: 'Tiến độ học của bạn' })).toHaveCount(0);
-      await s.getByLabel('Tên đăng nhập', { exact: true }).fill(an.username);
-      await s.getByLabel('Mật khẩu', { exact: true }).fill(an.password);
-      await s.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-      await expect(s.getByRole('alert')).toHaveText(
-        'Tên đăng nhập hoặc mật khẩu chưa đúng. Hãy thử lại.',
-      );
-      // The manager still sees An, flagged as locked, once locked learners are shown.
-      await manager.page.goto('/#manager');
-      if (!desktop) await manager.page.locator('.manager-more > summary').click();
-      await manager.page.getByLabel('Hiện người đã khóa').check();
-      await manager.page.getByLabel('Tìm theo tên đăng nhập hoặc tên hiển thị').fill(an.username);
-      await expect(
-        manager.page
-          .locator(desktop ? '.manager-table tbody tr' : '.manager-card')
-          .filter({ hasText: an.username })
-          .getByText('Đã khóa', { exact: true }),
-      ).toBeVisible();
-      await row.getByRole('button', { name: `Mở khóa ${an.username}` }).click();
-      await expect(row.getByText('Hoạt động', { exact: true })).toBeVisible();
-      await login(s, an);
-      await s.getByRole('link', { name: 'Tiến độ', exact: true }).click();
-      await expect(s.getByRole('heading', { name: 'Tiến độ học của bạn' })).toBeVisible();
-      await expect(s.locator('.progress-sessions-list li')).toHaveCount(1);
-    });
-
-    await test.step('(d) password reset: temporary password, forced change, then normal use', async () => {
-      const row = await findUser(page, an.username);
-      await row.getByRole('button', { name: `Đặt lại mật khẩu ${an.username}` }).click();
-      await page.getByRole('dialog').getByRole('button', { name: 'Đặt lại mật khẩu' }).click();
-      const temporary = await takeSecret(page, an.username);
-      await expect(row.getByText('Phải đổi mật khẩu', { exact: true })).toBeVisible();
-      // The reset ended An's open session too.
-      await student.page.goto('/#review');
-      await expect(student.page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
-      an.password = secret();
-      await loginForced(student.page, an.username, temporary, an.password);
-      await student.page.getByRole('link', { name: 'Tiến độ', exact: true }).click();
-      await expect(student.page.locator('.progress-sessions-list li')).toHaveCount(1);
-    });
-  } finally {
-    await student.context.close();
-    await manager.context.close();
-  }
-});
-
-test('case-insensitive duplicates and login; bulk create with a duplicate row', async ({
-  page,
-  browser,
-}, info) => {
-  test.setTimeout(180_000);
-  const name = `qa-Dup-${stamp}`;
-  await adminLogin(page);
-  await test.step('(f) creating "dup" when "Dup" exists is refused; "dUP" signs in to Dup', async () => {
-    const password = secret();
-    await page.goto('/#admin/users');
-    for (const [username, ok] of [
-      [name, true],
-      [name.toLowerCase(), false],
-    ] as const) {
-      await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
-      const dialog = page.getByRole('dialog', { name: 'Tạo người dùng' });
-      await dialog.getByLabel('Tên đăng nhập').fill(username);
-      await dialog.getByLabel('Tên hiển thị (không bắt buộc)').fill('QA trùng');
-      await dialog.getByLabel('Mật khẩu', { exact: true }).fill(password);
-      await dialog.getByLabel('Yêu cầu đổi mật khẩu ở lần đăng nhập đầu').uncheck();
-      await dialog.getByRole('button', { name: 'Tạo tài khoản', exact: true }).click();
-      if (ok) await expect(dialog).toHaveCount(0);
-      else {
-        await expect(dialog.getByText('Tên đăng nhập đã tồn tại.')).toBeVisible();
-        await dialog.getByRole('button', { name: 'Hủy', exact: true }).click();
-      }
-    }
-    const other = await newProjectPage(browser, info);
-    try {
-      const mixed = name.replace('Dup', 'dUP');
-      await login(other.page, { username: mixed, password });
-      const me = await (await other.page.request.get('/api/v1/auth/me')).json();
-      const listed = await (
-        await page.request.get(`/api/v1/admin/users?q=${encodeURIComponent(name)}`)
-      ).json();
-      expect(listed.items).toHaveLength(1);
-      expect(listed.items[0].username).toBe(name);
-      expect(me.userId).toBe(listed.items[0].id);
-    } finally {
-      await other.context.close();
-    }
-  });
-
-  await test.step('(g) bulk create: preview, three rows (one duplicate), password CSV', async () => {
-    const fresh = [`qa-bulk1-${stamp}`, `qa-bulk2-${stamp}`];
-    page.on('dialog', (d) => d.accept());
-    await page.goto('/#admin/users');
-    await page.getByRole('button', { name: 'Tạo hàng loạt', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'Tạo hàng loạt' });
-    await dialog
-      .getByLabel('Nội dung CSV')
-      .fill(
-        `username,displayName,password\n${fresh[0]},Bulk một,\n${fresh[1]},Bulk hai,\n${name.toUpperCase()},Trùng,\n`,
-      );
-    await dialog.getByRole('button', { name: 'Xem trước', exact: true }).click();
-    await expect(dialog.getByText(/Xem trước: 2 tạo được · 1 bỏ qua/)).toBeVisible();
-    await dialog.getByRole('button', { name: 'Tạo hàng loạt', exact: true }).click();
-    await expect(dialog.getByText(/Đã tạo 2 tạo được · 1 bỏ qua/)).toBeVisible();
-    const rows = dialog.locator('.users-table tbody tr');
-    await expect(rows).toHaveCount(3);
-    await expect(rows.nth(0)).toContainText('Tạo được');
-    await expect(rows.nth(1)).toContainText('Tạo được');
-    await expect(rows.nth(2)).toContainText('Bỏ qua (đã tồn tại)');
-    const download = page.waitForEvent('download');
-    await dialog.getByRole('button', { name: 'Tải CSV mật khẩu', exact: true }).click();
-    const file = await download;
-    const csv = readFileSync((await file.path())!, 'utf8');
-    expect(csv).toContain(fresh[0]);
-    expect(csv).toContain(fresh[1]);
-    expect(csv.toLowerCase()).not.toContain(name.toLowerCase());
-    await dialog.getByRole('button', { name: 'Đóng', exact: true }).click();
-    await expect(dialog).toHaveCount(0);
-  });
-});
-
-test('manager and admin API over HTTP: roles, 404s, CSV headers, validation, forced change', async ({
-  playwright,
-}, info) => {
-  const origin = originOf(info);
-  const sessions: Api[] = [];
-  const open = async (credential?: { username?: string; credential: string }) => {
-    const s = await apiSession(playwright, origin, credential);
-    sessions.push(s);
-    return s;
-  };
-  try {
-    const admin = await open(asOwner());
-    const manager = await open(asUser(users.manager));
-    const student = await open(asUser(users.student));
-    const editor = await open(asUser(users.editor));
-    const trial = await open({ credential: secrets.LEARNER_INVITE_CODE });
-    const guest = await open();
-    const forced = await open(asUser(users.managerMust));
-    const id = users.student.id!;
-    const paths = [
-      '/manager/learners',
-      '/manager/learners.csv',
-      `/manager/learners/${id}`,
-      `/manager/learners/${id}/progress`,
-      `/manager/learners/${id}/review`,
-      `/manager/learners/${id}/mastery`,
-    ];
-    for (const path of paths) {
-      for (const [who, s] of [
-        ['admin', admin],
-        ['manager', manager],
-      ] as const)
-        expect((await s.get(path)).status(), `${who} ${path}`).toBe(200);
-      for (const [who, s] of [
-        ['student', student],
-        ['editor', editor],
-        ['trial', trial],
-      ] as const)
-        expect((await s.get(path)).status(), `${who} ${path}`).toBe(403);
-      expect((await guest.get(path)).status(), `guest ${path}`).toBe(401);
-      const blocked = await forced.get(path);
-      expect(blocked.status(), `must-change manager ${path}`).toBe(403);
-      expect((await blocked.json()).code).toBe('MUST_CHANGE_PASSWORD');
-    }
-    // The manager's view of a learner is that learner's own /me/progress.
-    expect(await (await manager.get(`/manager/learners/${id}/progress`)).json()).toEqual(
-      await (await student.get('/me/progress')).json(),
-    );
-    // CSV: UTF-8 with BOM, attachment, Vietnamese header row.
-    const csv = await manager.get('/manager/learners.csv?sort=name&dir=asc');
-    expect(csv.headers()['content-type']).toBe('text/csv; charset=utf-8');
-    expect(csv.headers()['content-disposition']).toBe('attachment; filename="hoc-vien.csv"');
-    const body = await csv.body();
-    expect([...body.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-    expect(body.toString('utf8').slice(1).split(/\r?\n/)[0]).toMatch(
-      /^Tên đăng nhập,Tên hiển thị,/,
-    );
-    // Only students are addressable: staff accounts and unknown ids are 404.
-    const ownerId = (await (await admin.get('/auth/me')).json()).userId as string;
-    for (const other of [users.manager.id!, users.editor.id!, ownerId, randomUUID(), 'x'])
-      for (const suffix of ['', '/progress', '/review', '/mastery'])
-        expect(
-          (await manager.get(`/manager/learners/${other}${suffix}`)).status(),
-          `404 ${suffix}`,
-        ).toBe(404);
-    // The real ValidationPipe on the query.
-    for (const bad of ['sort=bogus', 'dir=up', 'filter=x', 'limit=201', 'page=0', 'limit=abc'])
-      expect((await manager.get(`/manager/learners?${bad}`)).status(), bad).toBe(400);
-    const page = await (
-      await manager.get(`/manager/learners?limit=1&page=1&sort=name&includeDisabled=true`)
-    ).json();
-    expect(page).toMatchObject({ page: 1, limit: 1 });
-    expect(page.items).toHaveLength(1);
-    // Managers never reach the account admin API.
-    expect((await manager.get('/admin/users')).status()).toBe(403);
-    expect((await manager.patch(`/admin/users/${id}`, { disabled: true })).status()).toBe(403);
-  } finally {
-    for (const s of sessions) await s.dispose();
-  }
-});
-
-// Two admins locking each other at once needs two admin accounts, which the admin API cannot create
-// (admins come from bootstrap only): see scripts/admin-lock-race-check.mjs (local stack only).
-test('admin user search treats _ and % literally on real Postgres', async ({
-  playwright,
-}, info) => {
-  const owner = await apiSession(playwright, originOf(info), asOwner());
-  try {
-    const underscore = `qa_us_${stamp}`;
-    expect(
-      (
-        await owner.post('/admin/users', {
-          username: underscore,
-          password: secret(),
-          role: 'student',
-        })
-      ).status(),
-    ).toBe(201);
-    const all = (await (await owner.get('/admin/users?limit=1')).json()).total as number;
-    type Row = { username: string; displayName: string | null };
-    const literal = await (await owner.get('/admin/users?q=_&limit=200')).json();
-    expect(literal.total).toBeGreaterThan(0);
-    expect(literal.total).toBeLessThan(all);
-    for (const u of literal.items as Row[])
-      expect(`${u.username} ${u.displayName ?? ''}`).toContain('_');
-    expect((literal.items as Row[]).map((u) => u.username)).toContain(underscore);
-    const percent = await (await owner.get('/admin/users?q=%25&limit=200')).json();
-    for (const u of percent.items as Row[])
-      expect(`${u.username} ${u.displayName ?? ''}`).toContain('%');
-    // The manager table filters in memory: '_' is literal there too.
-    const learners = await (await owner.get('/manager/learners?q=_&limit=200')).json();
-    for (const u of learners.items as Row[])
-      expect(`${u.username} ${u.displayName ?? ''}`).toContain('_');
-    expect((learners.items as Row[]).map((u) => u.username)).toContain(underscore);
-  } finally {
-    await owner.dispose();
-  }
-});
-
-/** Interactive controls smaller than 44×44 px (inline text links in tables and cards excluded). */
-async function smallTargets(page: Page) {
-  return page.evaluate(() =>
-    [
-      ...document.querySelectorAll<HTMLElement>(
-        'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), label:has(> input[type=checkbox]), a.users-secondary, a.manager-csv, .admin-tabs > *, .manager-more > summary',
-      ),
-    ]
-      .filter((el) => el.getClientRects().length > 0 && !el.closest('.users-sr'))
-      .map((el) => {
-        const r = el.getBoundingClientRect();
-        return { what: `${el.className}:${el.innerText.trim()}`, w: r.width, h: r.height };
-      })
-      .filter((t) => t.w < 44 || t.h < 44)
-      .map((t) => `${t.what} ${Math.round(t.w)}×${Math.round(t.h)}`),
-  );
-}
-/** Wider than the device: on phones the layout viewport grows with the page, so compare with the
- * configured viewport width rather than innerWidth. */
-const scrollsSideways = async (page: Page) => {
-  const width = page.viewportSize()!.width;
-  return page.evaluate(
-    (w) => Math.max(document.documentElement.scrollWidth, window.innerWidth) > w,
-    width,
-  );
-};
-
-test('manager and admin screens: no sideways scroll, touch targets of at least 44 px', async ({
-  page,
-}, info) => {
-  await adminLogin(page);
-  const screens: [string, () => Promise<void>][] = [
-    [
-      '#admin/users',
-      async () => {
-        await page.goto('/#admin/users');
-        await expect(page.locator('.users-table tbody tr').first()).toBeVisible();
-      },
-    ],
-    [
-      'create dialog',
-      async () => {
-        await page.getByRole('button', { name: 'Tạo người dùng', exact: true }).click();
-        await expect(page.getByRole('dialog')).toBeVisible();
-      },
-    ],
-    [
-      'bulk dialog',
-      async () => {
-        await page.keyboard.press('Escape');
-        await page.getByRole('button', { name: 'Tạo hàng loạt', exact: true }).click();
-        await expect(page.getByRole('dialog')).toBeVisible();
-      },
-    ],
-    [
-      '#manager',
-      async () => {
-        await page.goto('/#manager');
-        await expect(page.locator('.users-count')).toBeVisible();
-        await expect(page.locator('[data-learner]').first()).toBeVisible();
-      },
-    ],
-  ];
-  for (const [name, open] of screens)
-    await test.step(`${name} (${info.project.name})`, async () => {
-      await open();
-      expect(await scrollsSideways(page), `${name} scrolls sideways`).toBe(false);
-      expect(await smallTargets(page), `${name} small targets`).toEqual([]);
-    });
-});
-
-test('manager learner detail never scrolls sideways', async ({ page }) => {
-  // The full-bleed `.ice-hero` bands of Tiến độ / Lịch ôn tập (`::after` inset -100vmax) must be
-  // clipped by the ice stage here too.
-  await page.goto('/');
-  await page.getByLabel('Tên đăng nhập', { exact: true }).fill(users.manager.username);
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(users.manager.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page).toHaveURL(/#manager$/);
-  const id = users.student.id!;
-  await page.goto(`/#manager/learner/${id}`);
-  await expect(page.locator('.manager-detail h1')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Lịch ôn tập' })).toBeVisible();
-  expect(await scrollsSideways(page)).toBe(false);
-});
-
-test('manager opens their account, renames, changes password and keeps working', async ({
-  page,
-}) => {
-  const user = users.managerAccount;
-  await page.goto('/');
-  await page.getByLabel('Tên đăng nhập', { exact: true }).fill(user.username);
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(user.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page).toHaveURL(/#manager$/);
-  await page.getByRole('link', { name: /^Tài khoản/ }).click();
-  await expect(page).toHaveURL(/#account$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Tài khoản' })).toBeVisible();
-  // Nothing learner-specific on a manager's account.
-  await expect(page.getByText(/tiến độ/i)).toHaveCount(0);
-  await test.step('display name', async () => {
-    await page.getByLabel('Tên hiển thị').fill('Quản lý QA');
-    await page.getByRole('button', { name: 'Lưu tên', exact: true }).click();
-    await expect(page.getByText('Đã lưu tên hiển thị.')).toBeVisible();
-  });
-  await test.step('password change, then the next request works with the new session', async () => {
-    const next = secret();
-    await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
-    await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill(user.password);
-    await page.getByLabel(/^Mật khẩu mới/).fill(next);
-    await page.getByLabel('Nhập lại mật khẩu mới', { exact: true }).fill(next);
-    await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
-    user.password = next;
-    await expect(page.getByText('Đã đổi mật khẩu.')).toBeVisible();
-    // A mutating request after the change still passes CSRF (the shell adopted the new session).
-    await page.getByLabel('Tên hiển thị').fill('Quản lý QA 2');
-    await page.getByRole('button', { name: 'Lưu tên', exact: true }).click();
-    await expect(page.getByText('Đã lưu tên hiển thị.')).toBeVisible();
-    const me = await (await page.request.get('/api/v1/me')).json();
-    expect(me.displayName).toBe('Quản lý QA 2');
-    await page.goto('/#manager');
-    await expect(page).toHaveURL(/#manager$/);
-  });
-});
-
-// Phase 2.5d: admin and manager code ships as role-gated lazy chunks.
-const LAZY_CHUNK =
-  /\/assets\/(Admin|AdminTabs|UsersAdmin|ManagerLearners|ManagerLearnerDetail)-[\w-]+\.js/;
-const chunkRequests = (page: Page) => {
+/** Studio screen/chunk file names and staff API paths: none may ever be requested by a learner page. */
+const STUDIO_FILE =
+  /\/(Admin|HsAdmin|UsersAdmin|BulkUsers|AdminTabs|ManagerLearners|ManagerLearnerDetail|StudioApp|StaffLogin|admin|users)-[\w-]+\.\w+$/;
+const STAFF_API = /^\/api\/v1\/(admin|manager|docs|openapi)/i;
+/** Every request a page makes that points at the Studio origin, a studio file or a staff endpoint. */
+function studioRequests(page: Page) {
   const seen: string[] = [];
   page.on('request', (r) => {
-    const m = LAZY_CHUNK.exec(new URL(r.url()).pathname);
-    if (m) seen.push(m[1]);
+    const url = new URL(r.url());
+    if (url.origin === STUDIO || STUDIO_FILE.test(url.pathname) || STAFF_API.test(url.pathname))
+      seen.push(r.url());
   });
   return seen;
-};
+}
 
-test('a student session and a signed-out visitor never request the admin or manager chunks', async ({
+test('learner journeys (visitor, trial, student) never request Studio assets or endpoints', async ({
   page,
   browser,
 }, info) => {
-  const seen = chunkRequests(page);
+  test.setTimeout(150_000);
+  const seen = studioRequests(page);
+  // Signed-out visitor, including staff-looking hash routes.
+  await page.goto('/');
+  await expect(page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+  for (const route of ['#admin', '#admin/users', '#manager', '#study'])
+    await page.goto('/' + route);
+  await expect(page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+  // Student: every screen, a profile, a study round; staff routes bounce to Home.
   await login(page);
-  await page.goto('/#library');
-  await expect(page.locator('.library-card').first()).toBeVisible();
-  await page.goto('/#progress');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  // Staff routes bounce a learner to Home without fetching their code.
-  await page.goto('/#admin/users');
-  await expect(page).toHaveURL(/#home$/);
-  await page.goto('/#manager');
-  await expect(page).toHaveURL(/#home$/);
-  expect(seen).toEqual([]);
-
-  const trial = await newProjectPage(browser, info);
+  for (const [route, ready] of [
+    ['#library', '.library-card'],
+    ['#progress', 'h1'],
+    ['#review', 'h1'],
+    ['#account', 'h1'],
+    ['#profile/atlantic-cod', '.cover-photo img'],
+  ] as const) {
+    await page.goto('/' + route);
+    await expect(page.locator(ready).first()).toBeVisible();
+  }
+  await start(page, 'Flashcard tên loài');
+  for (const route of ['#admin', '#admin/users', '#manager', '#manager/learner/x']) {
+    await page.goto('/' + route);
+    await expect(page).toHaveURL(/#home$/);
+  }
+  // Invite-code trial.
+  const trial = await newProjectPage(browser, info, LEARNER);
   try {
-    const seenTrial = chunkRequests(trial.page);
+    const seenTrial = studioRequests(trial.page);
     await trial.page.goto('/');
-    await expect(trial.page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+    await trial.page.getByRole('button', { name: 'Học thử bằng mã mời', exact: true }).click();
+    await trial.page.getByLabel('Mã mời', { exact: true }).fill(secrets.LEARNER_INVITE_CODE);
+    await trial.page.getByRole('button', { name: 'Vào bộ học', exact: true }).click();
+    await expect(trial.page.getByRole('heading', { name: 'Luyện nghiệp vụ' })).toBeVisible();
+    await trial.page.goto('/#library');
+    await expect(trial.page.locator('.library-card').first()).toBeVisible();
     await trial.page.goto('/#admin');
-    await trial.page.goto('/#manager');
-    await expect(trial.page.getByLabel('Tên đăng nhập', { exact: true })).toBeVisible();
+    await expect(trial.page).toHaveURL(/#home$/);
     expect(seenTrial).toEqual([]);
   } finally {
     await trial.context.close();
   }
+  expect(seen).toEqual([]);
+  // No learner page links to the Studio host or names it.
+  const html = await page.content();
+  expect(html).not.toContain(new URL(STUDIO).host);
+  expect(html).not.toMatch(/Seafood Deck Studio|Quản trị/);
 });
 
-test('an admin session loads the admin chunks and a manager session the manager chunks', async ({
-  page,
-  browser,
-}, info) => {
-  const seenAdmin = chunkRequests(page);
-  await adminLogin(page);
-  await page.goto('/#admin/users');
-  await expect(page.getByRole('heading', { level: 1, name: 'Người dùng' })).toBeVisible();
-  expect(seenAdmin).toEqual(expect.arrayContaining(['UsersAdmin']));
-  expect(seenAdmin.some((n) => n.startsWith('Manager'))).toBe(false);
-
-  const manager = await newProjectPage(browser, info);
-  try {
-    const seenManager = chunkRequests(manager.page);
-    const m = manager.page;
-    await m.goto('/');
-    await m.getByLabel('Tên đăng nhập', { exact: true }).fill(users.manager.username);
-    await m.getByLabel('Mật khẩu', { exact: true }).fill(users.manager.password);
-    await m.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-    await expect(m).toHaveURL(/#manager$/);
-    await expect(m.locator('.manager-table, .manager-card').first()).toBeVisible();
-    await m.goto(`/#manager/learner/${users.student.id}`);
-    await expect(m.locator('.manager-detail h1')).toBeVisible();
-    expect(seenManager).toEqual(
-      expect.arrayContaining(['ManagerLearners', 'ManagerLearnerDetail']),
-    );
-    expect(seenManager).not.toContain('UsersAdmin');
-  } finally {
-    await manager.context.close();
+test('the learner host serves no Studio file and none of its entry assets', async ({ request }) => {
+  const studioIndex = await (await request.get(STUDIO + '/')).text();
+  expect(studioIndex).toContain('<div id="root">');
+  const assets = [...studioIndex.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
+  expect(assets.length).toBeGreaterThan(0);
+  const learnerIndex = await (await request.get(LEARNER + '/')).text();
+  // Content-hashed files both builds share byte for byte (the bundler runtime) are not Studio code.
+  const studioOnly = assets.filter((path) => !learnerIndex.includes(path));
+  expect(studioOnly.some((path) => /\/assets\/index-[\w-]+\.js$/.test(path))).toBe(true);
+  for (const path of studioOnly) {
+    // The learner host answers 404 for the Studio's own files (hashed assets have no SPA fallback).
+    const response = await request.get(LEARNER + path);
+    expect(response.status(), path).toBe(404);
   }
 });
