@@ -60,5 +60,16 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 - Metadata của media chưa duyệt vẫn nằm trong DTO danh mục: **vẫn mở**, cần chủ sản phẩm quyết.
 - `ALLOW_INTERNAL_DEMO` phải tắt trên bản cho người ngoài.
 - Ảnh minh họa của app học viên (~3,4 MB) cũng nằm trong build Studio do dùng chung thư mục `public`.
-- `scripts/smoke-pilot.mjs` và mục (f) của `scripts/learner-accounts-check.mjs` báo lỗi trên DB local nhiều lần chạy: release hiện tại không còn trong 20 release gần nhất mà màn tổng quan trả về (giới hạn có từ trước 2.5e). Phần đăng nhập Studio của các script đã chạy được; `admin-lock-race-check` đạt 2/2 vòng. `browser-pilot-check` đã sửa cho hai host nhưng chưa chạy lại.
+- ~~`smoke-pilot` và mục (f) của `learner-accounts-check` lỗi trên DB local; `browser-pilot-check` chưa chạy~~: đã sửa và chạy đạt ở lượt trước deploy bên dưới.
 - Mỗi lần chạy e2e dùng 8 trong 20 lượt đăng nhập sai/IP/10 phút: hai lần liên tiếp vừa đủ, lần thứ ba trong 10 phút sẽ gặp 429 (khởi động lại API để xóa bộ đếm).
+
+## Lượt sửa trước deploy (26/11/2026, branch `fix/predeploy-25e`, tag local `studio-split-25e-r3-local`)
+
+- **Release hiện hành biến khỏi màn tổng quan (lỗi sản phẩm, có từ trước 2.5e).** `GET /admin/overview` trả 20 release mới nhất. Mỗi lần đăng thử rồi quay lại (smoke, learner-accounts-check f, hay nhân sự bấm "Quay về bộ này") làm release học viên đang dùng già đi; sau 20 lần đăng mới nó không còn trong danh sách (DB local: hạng 65/134). Hệ quả: Studio không cho biết bộ nào đang chạy, và hai script không tìm thấy release nền. Sửa API: vẫn 20 release mới nhất trước, nối thêm release `current:internal`/`current:public` nếu cũ hơn; mọi release có `current: boolean`. Studio ghi "Hiện hành" cạnh release đó. Hai script kiểm thêm cờ `current`. Không migration, hợp đồng OpenAPI không đổi.
+- ESLint: cảnh báo `react-hooks/exhaustive-deps` cuối cùng (màn Quản trị) đã sửa bằng hàm nạp ổn định `load(query)`; hành vi giữ nguyên (nạp một lần khi mở, tìm chỉ khi bấm Tìm), có test. `npm run lint`: 0 lỗi, 0 cảnh báo.
+- `browser-pilot-check` cần bản thu QA mà smoke chỉ tải khi có `/tmp/seafoodeck-audio-check.mp3`; thiếu file thì script giờ báo rõ thay vì chờ 30 s rồi lỗi. Ghi trong README.
+- Runbook: DEPLOY_STUDIO_HOST mục 3 có lệnh build ảnh amd64 và nói rõ từ r1 lên thẳng 2.5e (không migration); DEPLOY_UPGRADE_25C ghi rõ chỉ dùng mục 1–3 và 7 cho 2.5e (mục 4 thiếu bước tạo lại kho S3, mục 6 mở quản trị ở host học viên).
+- Sao lưu `sh scripts/backup-pilot.sh _backups/before-25e-r3-20261126`, rồi `API_TAG=studio-split-25e-r3-local WEB_TAG=studio-split-25e-r3-local docker compose --env-file .local/pilot.env up -d --build` (không `down`, giữ volume, không migration mới). Health hai host: `release: studio-split-25e-r3-local`.
+- `npm test`: web 327, studio 136, API 433, scripts 43, tất cả pass; build, `check:bundle`, lint, format đạt.
+- `smoke-pilot`: 10/10 PASS. `learner-accounts-check`: 11 pass, 1 skip ((j) chưa đủ 3 bản thu), 0 lỗi, (f) đạt. `browser-pilot-check`: đạt (âm thanh 1×/0,75×, một nguồn phát; câu hỏi đầu 2,5 s ở mạng 1,5 Mbps, CPU ×4).
+- `npm run test:e2e` hai lần cách nhau hơn 10 phút (và hơn 10 phút sau các script trên): lần 1 lúc 11:11 và lần 2 lúc 11:22, đều **52 pass / 6 skip / 0 lỗi**.
