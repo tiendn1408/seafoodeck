@@ -25,6 +25,7 @@
     "smoke:pilot": "node scripts/smoke-pilot.mjs",
     "contract:generate": "node scripts/export-contract.mjs",
     "check:bundle": "node scripts/check-bundles.mjs",
+    "check:web-tier": "node scripts/web-tier-check.mjs",
     "test:scripts": "node --test \"scripts/prototype/*.test.mjs\" \"scripts/*.test.mjs\""
   },
   "devDependencies": {

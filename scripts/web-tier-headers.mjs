@@ -85,7 +85,23 @@ export async function capture(baseUrls) {
 
 /** Differences between two captures, one message each; an empty array means identical. */
 export function diff(expected, actual) {
-  throw new Error('not implemented');
+  const out = [];
+  for (const key of Object.keys(expected)) {
+    const e = expected[key];
+    const a = actual[key];
+    if (!a) {
+      out.push(`${key}: missing from the capture`);
+      continue;
+    }
+    if (e.status !== a.status) out.push(`${key}: status ${a.status}, expected ${e.status}`);
+    for (const h of new Set([...Object.keys(e.headers), ...Object.keys(a.headers)])) {
+      if (e.headers[h] === a.headers[h]) continue;
+      const show = (v) => (v === undefined ? '(absent)' : JSON.stringify(v));
+      out.push(`${key}: ${h} ${show(a.headers[h])}, expected ${show(e.headers[h])}`);
+    }
+  }
+  for (const key of Object.keys(actual)) if (!(key in expected)) out.push(`${key}: not in the baseline`);
+  return out;
 }
 
 async function main(argv) {
