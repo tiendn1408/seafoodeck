@@ -71,7 +71,7 @@ node scripts/resilience-pilot.mjs
 node scripts/browser-pilot-check.mjs
 ```
 
-Smoke/E2E/resilience dùng stack Docker nội bộ đã seed 1000 mục và `.local/pilot.env`; có tạo nháp QA, kiểm publish/rollback, dừng/khởi động DB/API. Chỉ chạy ở môi trường kiểm thử. Playwright cần Chromium (`npx playwright install chromium`). `playwright.legacy.config.ts` chỉ dành cho kiểm mốc di chuyển FE cũ, không chạy với API app mới.
+`browser-pilot-check` cần bản thu QA mà smoke chỉ tải lên khi có file `/tmp/seafoodeck-audio-check.mp3` (MP3 tiếng nói tổng hợp bất kỳ, không phải nội dung khóa học): đặt file đó, chạy smoke rồi mới chạy kiểm trình duyệt. Smoke/E2E/resilience dùng stack Docker nội bộ đã seed 1000 mục và `.local/pilot.env`; có tạo nháp QA, kiểm publish/rollback, dừng/khởi động DB/API. Chỉ chạy ở môi trường kiểm thử. Playwright cần Chromium (`npx playwright install chromium`). `playwright.legacy.config.ts` chỉ dành cho kiểm mốc di chuyển FE cũ, không chạy với API app mới.
 
 Web không chứa catalog/đáp án/ảnh khách. Nội dung và tên đến từ API/DB; byte media ở private S3, signed URL ngắn hạn. API lỗi phải hiển thị lỗi, không dùng fixture dự phòng. `_inbox`, `_outbox`, `_archive`, `_backups`, `.local` không thuộc runtime/image. Dữ liệu mẫu được giữ ở `test-fixtures` để seed kiểm thử, không COPY vào image.
 

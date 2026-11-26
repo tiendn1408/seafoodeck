@@ -6,6 +6,9 @@ const env=Object.fromEntries(readFileSync('.local/pilot.env','utf8').trim().spli
 // Phase 2.5e: the admin part runs in the Studio app (STUDIO_ORIGIN); learning runs on the learner origin
 // with the invite code (staff no longer study).
 const origin=env.PUBLIC_ORIGIN,studio=env.STUDIO_ORIGIN??origin,qa=JSON.parse(readFileSync('.local/smoke-evidence.json')).qa;
+// The audio part needs the QA pronunciation the smoke uploads only when /tmp/seafoodeck-audio-check.mp3 exists
+// (any short synthetic MP3 speech, not course content); without it the smoke skips audio and this check cannot run.
+assert.ok(qa.audioId,'No QA pronunciation in .local/smoke-evidence.json: put a synthetic MP3 at /tmp/seafoodeck-audio-check.mp3 and rerun node scripts/smoke-pilot.mjs first.');
 mkdirSync('.local/screenshots',{recursive:true});
 const browser=await chromium.launch();
 const evidence={};
