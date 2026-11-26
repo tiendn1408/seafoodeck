@@ -13,7 +13,9 @@ import {randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {isLoopbackOrigin} from './local-origin.mjs';
 
-const origin = process.env.PILOT_ORIGIN ?? 'http://127.0.0.1:18089';
+// Phase 2.5e: admins sign in on the Studio host (the learner host answers 404 for /admin and refuses
+// staff logins). PILOT_STUDIO_ORIGIN overrides the local default.
+const origin = process.env.PILOT_STUDIO_ORIGIN ?? 'http://localhost:18090';
 if (!isLoopbackOrigin(origin)) {
   console.error(`Từ chối chạy: ${origin} không phải máy local. Script này tạo quản trị QA.`);
   process.exit(2);

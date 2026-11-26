@@ -2,7 +2,14 @@ import { Body, Controller, Get, Post, Req, Res, UnauthorizedException } from '@n
 import { IsString, MaxLength, IsOptional } from 'class-validator';
 import { ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { Auth, LoginLimiter, passwordCheck, hash, AllowWhilePasswordChange } from './security';
+import {
+  Auth,
+  LoginLimiter,
+  passwordCheck,
+  hash,
+  loginRealmRefused,
+  AllowWhilePasswordChange,
+} from './security';
 import { AuthMeResponse } from './contract';
 import { Db } from './db';
 import { findUserByUsername } from './users';
@@ -41,7 +48,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const before = await this.auth.actor(req);
-    this.auth.checkWrite(req, before);
+    // With split realms a bad Origin is answered like a wrong password below, not with a 403.
+    this.auth.checkWrite(req, before, { skipOrigin: !!process.env.STUDIO_ORIGIN });
+    const origin = req.headers.origin;
     const ip = req.ip ?? 'unknown';
     const username = data.username || undefined;
     this.limiter.check(ip, username);
@@ -53,14 +62,20 @@ export class AuthController {
       userId: string | undefined;
     if (data.username) {
       const user = await findUserByUsername(this.db, data.username);
-      // Disabled accounts share the wrong-password response and its scrypt cost.
-      if (!passwordCheck(data.credential, user?.passwordHash) || !user || user.disabledAt)
+      // Disabled accounts and wrong-realm logins share the wrong-password response and its scrypt cost.
+      if (
+        !passwordCheck(data.credential, user?.passwordHash) ||
+        !user ||
+        user.disabledAt ||
+        loginRealmRefused(origin, user.role)
+      )
         return reject('Thông tin đăng nhập không hợp lệ.');
       role = user.role;
       userId = user.id;
     } else if (
       !process.env.LEARNER_INVITE_CODE ||
-      hash(data.credential) !== hash(process.env.LEARNER_INVITE_CODE)
+      hash(data.credential) !== hash(process.env.LEARNER_INVITE_CODE) ||
+      loginRealmRefused(origin, role)
     )
       return reject('Mã mời không hợp lệ.');
     this.limiter.succeed(ip, username);

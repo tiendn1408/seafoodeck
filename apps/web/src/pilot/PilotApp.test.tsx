@@ -33,7 +33,6 @@ const profileItem = {
   media: [],
   taxonomicGroup: 'mollusc',
 };
-const LEARNERS = 'GET /manager/learners?sort=lastStudyAt&dir=desc&page=1&limit=20';
 const MUST = { message: 'Cần đổi mật khẩu trước.', code: 'MUST_CHANGE_PASSWORD' };
 const meHome = (activeSessionId: string | null) => ({
   releaseId: 'rel1',
@@ -122,7 +121,7 @@ describe('PilotApp forced password flow', () => {
     routes['GET /auth/me'] = () => json(view('student', { mustChangePassword: true }));
     const host = mount(<PilotApp />);
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu bạn đặt mật khẩu mới');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(tone(host)).toBe('deep');
     expect(navCount(host)).toBe(0);
     expect(host.textContent).not.toContain('Hủy');
@@ -177,7 +176,7 @@ describe('PilotApp forced password flow', () => {
     const host = mount(<PilotApp />);
     await tick();
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.querySelector('.pilot-error')).toBeNull();
     const n = calls.filter((c) => c.includes('/learning/')).length;
     await tick();
@@ -193,7 +192,7 @@ describe('PilotApp forced password flow', () => {
     const host = mount(<PilotApp />);
     await tick();
     await tick();
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).toContain('Bạn cần đặt mật khẩu mới');
     expect(host.querySelector('.pilot-error')).toBeNull();
     expect(calls.filter((c) => c.includes('/learning/'))).toEqual([]);
   });
@@ -218,7 +217,7 @@ describe('PilotApp forced password flow', () => {
     await tick();
     // The response is the new session view: no second /auth/me round trip.
     expect(calls.filter((c) => c === 'GET /auth/me').length).toBe(1);
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 
   const headerOf = (key: string) =>
@@ -303,7 +302,7 @@ describe('PilotApp forced password flow', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     expect(host.textContent).not.toContain('Đổi mật khẩu');
   });
 
@@ -320,19 +319,17 @@ describe('PilotApp forced password flow', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     await tick();
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
   });
 });
 
 describe('PilotApp role-aware routes', () => {
-  it('trial, staff and admin never request /me*; a manager reads only GET /me, on its account screen', async () => {
+  it('trial sessions never request /me*; a student reads only its own learner views', async () => {
     // Every allowed route comes from the route table, so new routes are covered automatically.
     const views: [string, AuthView][] = [
       ['trial', view('learner')],
       ['trial (no userId)', { ...view('learner'), userId: undefined }], // real invite sessions
-      ['manager', view('manager')],
-      ['editor', view('editor')], // staff sessions carry a userId, but /me/* admits students only
-      ['admin', view('admin')], // admin kind, with a userId, including #admin/users
+      ['student', view('student')],
     ];
     const isMe = (c: string) => {
       const p = c.split(' ')[1].split('?')[0];
@@ -340,91 +337,53 @@ describe('PilotApp role-aware routes', () => {
     };
     /** `/me*` calls per session label, then per route visited. */
     const meCalls: Record<string, Record<string, string[]>> = {};
-    const visited: string[] = [];
     for (const [label, v] of views) {
       const kind = kindOf(v);
       const hashes = [...routesFor(kind), 'profile/x'].filter((r) => routeAllowed(kind, r));
       expect(hashes.length).toBeGreaterThan(1);
       routes['GET /auth/me'] = () => json(v);
       routes['GET /catalog/items/x'] = () => json(profileItem);
-      routes[LEARNERS] = () => json({ items: [], total: 0, page: 1, limit: 20 });
       routes['GET /me'] = () =>
-        json({ username: 'hà', displayName: null, role: 'manager', mustChangePassword: false });
-      routes['GET /manager/learners/x'] = () =>
-        json({ id: 'x', username: 'x', displayName: 'Lan', disabled: false });
+        json({ username: 'an', displayName: null, role: 'student', mustChangePassword: false });
       meCalls[label] = {};
-      for (const hash of [
-        ...hashes,
-        ...(kind === 'manager' || kind === 'admin' ? ['manager/learner/x'] : []),
-      ]) {
+      for (const hash of hashes) {
         location.hash = '#' + hash;
         const before = calls.length;
         const host = mount(<PilotApp />);
         await tick();
         await tick();
-        // A manager's home is the learner table.
-        const expected = kind === 'manager' && hash === 'home' ? 'manager' : hash;
-        expect(location.hash, `${label} ${hash}`).toBe('#' + expected);
+        expect(location.hash, `${label} ${hash}`).toBe('#' + hash);
         expect(host.querySelector('.shell')).not.toBeNull();
-        visited.push(`${v.role} ${hash}`);
         unmountAll();
         meCalls[label][hash] = calls.slice(before).filter(isMe);
       }
     }
-    expect(visited).toContain('admin admin/users');
-    expect(visited).toContain('admin manager');
-    expect(visited).toContain('manager manager');
-    expect(visited).toContain('manager manager/learner/x');
-    expect(visited).toContain('manager account');
-    expect(visited).not.toContain('editor admin/users');
-    expect(calls).toContain('GET /admin/users?page=1&limit=20');
-    expect(calls).toContain(LEARNERS);
     const flat = (label: string) => Object.values(meCalls[label]).flat();
-    for (const label of ['trial', 'trial (no userId)', 'editor', 'admin'])
-      expect(flat(label), label).toEqual([]);
-    // A manager's own account screen reads the account itself, never the learner views
-    // (/me/home, /me/review, /me/progress, /me/mastery); no other manager screen reads /me*.
-    expect(meCalls.manager.account).toEqual(['GET /me']);
-    for (const [hash, list] of Object.entries(meCalls.manager))
-      if (hash !== 'account') expect(list, `manager ${hash}`).toEqual([]);
+    for (const label of ['trial', 'trial (no userId)']) expect(flat(label), label).toEqual([]);
+    // A student reads only the learner's own views and account, never another path under /me.
+    const own = [
+      'GET /me',
+      'GET /me/home',
+      'GET /me/review',
+      'GET /me/progress',
+      'GET /me/mastery',
+    ];
+    for (const c of flat('student')) expect(own, c).toContain(c);
+    expect(meCalls.student.account).toContain('GET /me');
   });
-
-  it('a manager on a species profile has no study start and never opens a session', async () => {
-    location.hash = '#profile/x';
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes['GET /catalog/items/x'] = () => json(profileItem);
-    routes['POST /learning/sessions'] = () => json({ id: 'g1' });
-    const host = mount(<PilotApp />);
-    await tick();
-    expect(host.textContent).toContain('Vẹm xanh');
-    const startButton = host.querySelector<HTMLButtonElement>('.profile-primary');
-    if (startButton) await click(startButton);
-    await tick();
-    expect(calls.filter((c) => c.startsWith('POST /learning/'))).toEqual([]);
-    expect(startButton).toBeNull();
-  });
-
   it('routes not allowed for the kind go back to home', async () => {
     const cases: [string, string][] = [
       ['learner', '#review'],
       ['learner', '#progress'],
       ['learner', '#account'],
-      ['manager', '#review'],
-      ['manager', '#study'],
-      ['manager', '#manager/other'],
-      ['student', '#manager'],
       ['learner', '#manager'],
-      ['editor', '#manager'],
+      ['learner', '#admin'],
+      ['learner', '#admin/users'],
+      ['student', '#manager'],
       ['student', '#manager/learner/x'],
       ['student', '#admin'],
       ['student', '#admin/users'],
-      ['learner', '#admin/users'],
-      ['manager', '#admin/users'],
-      ['editor', '#admin/users'],
-      ['publisher', '#admin/users'],
-      ['admin', '#account'],
-      ['admin', '#review'],
-      ['admin', '#progress'],
+      ['student', '#nowhere'],
     ];
     for (const [role, hash] of cases) {
       routes['GET /auth/me'] = () => json(view(role));
@@ -432,104 +391,12 @@ describe('PilotApp role-aware routes', () => {
       const host = mount(<PilotApp />);
       await tick();
       await tick();
-      // Home for everyone but a manager, whose home is the learner table.
-      expect(location.hash, `${role} ${hash}`).toBe(role === 'manager' ? '#manager' : '#home');
-      expect(host.querySelector('.home-stage') !== null, `${role} ${hash}`).toBe(
-        role !== 'manager',
-      );
+      expect(location.hash, `${role} ${hash}`).toBe('#home');
+      expect(host.querySelector('.home-stage'), `${role} ${hash}`).not.toBeNull();
       expect(host.querySelector('#account-title, .ice-stage')).toBeNull();
       unmountAll();
     }
   });
-
-  it('an admin on #admin/users sees the users screen under the Nội dung | Người dùng tabs', async () => {
-    location.hash = '#admin/users';
-    routes['GET /auth/me'] = () => json(view('admin'));
-    routes['GET /admin/users?page=1&limit=20'] = () =>
-      json({ items: [], total: 0, page: 1, limit: 20 });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    expect(location.hash).toBe('#admin/users');
-    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
-    expect([...tabs!.querySelectorAll('a')].map((a) => a.textContent)).toEqual([
-      'Nội dung',
-      'Người dùng',
-      'Học viên',
-    ]);
-    expect(tabs!.querySelector('[aria-current="page"]')?.textContent).toBe('Người dùng');
-    expect(host.querySelector('h1')?.textContent).toBe('Người dùng');
-  });
-
-  it('an admin resetting their own password keeps the one-time password until closing it', async () => {
-    location.hash = '#admin/users';
-    routes['GET /auth/me'] = () => json(view('admin'));
-    let mustChange = false;
-    routes['GET /admin/users?page=1&limit=20'] = () =>
-      mustChange
-        ? json(MUST, 403)
-        : json({
-            items: [
-              {
-                id: 'u-admin',
-                username: 'owner',
-                displayName: null,
-                role: 'admin',
-                disabled: false,
-                mustChangePassword: false,
-                createdAt: '2026-11-01T00:00:00.000Z',
-                lastLoginAt: null,
-              },
-            ],
-            total: 1,
-            page: 1,
-            limit: 20,
-          });
-    routes['POST /admin/users/u-admin/reset-password'] = () => {
-      mustChange = true; // the server now answers MUST_CHANGE_PASSWORD on guarded routes
-      return json({ temporaryPassword: 'OwnTmp7xKq9Rz2aBcDeF' });
-    };
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    const row = host.querySelector<HTMLElement>('[data-user="u-admin"]')!;
-    await click(button(row, 'Đặt lại mật khẩu'));
-    await click(button(host.querySelector<HTMLElement>('[role="dialog"]')!, 'Đặt lại'));
-    await tick();
-    await tick();
-    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
-    expect(calls.filter((c) => c === 'GET /admin/users?page=1&limit=20')).toHaveLength(1);
-    await click(button(host.querySelector<HTMLElement>('.users-reveal')!, 'Đóng'));
-    await tick();
-    await tick();
-    expect(calls.filter((c) => c === 'GET /admin/users?page=1&limit=20')).toHaveLength(2);
-    expect(host.textContent).toContain('Quản trị viên yêu cầu');
-    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
-    expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain('OwnTmp');
-    expect(location.href).not.toContain('OwnTmp');
-  });
-
-  it('an editor on #admin gets the content page without the users tab', async () => {
-    location.hash = '#admin';
-    routes['GET /auth/me'] = () => json(view('editor'));
-    const host = mount(<PilotApp />);
-    await tick();
-    expect(host.textContent).toContain('Biên tập và xuất bản');
-    expect(host.querySelector('a[href="#admin/users"]')).toBeNull();
-  });
-
-  it('an admin on #admin gets the content page with both tabs', async () => {
-    location.hash = '#admin';
-    routes['GET /auth/me'] = () => json(view('admin'));
-    const host = mount(<PilotApp />);
-    await tick();
-    expect(host.textContent).toContain('Biên tập và xuất bản');
-    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
-    expect(tabs?.querySelector('[aria-current="page"]')?.textContent).toBe('Nội dung');
-    expect(tabs?.querySelector('a[href="#admin/users"]')).not.toBeNull();
-  });
-
   it('student home resumes the server session id; a legacy local key is ignored', async () => {
     localStorage.setItem(
       'seafood-deck:pilot:v1',
@@ -630,135 +497,6 @@ describe('PilotApp role-aware routes', () => {
     await click(button(host, 'Đăng xuất'));
     await tick();
     expect(sessionStorage.getItem(TRIAL_SESSION_KEY)).toBeNull();
-  });
-
-  it('manager on home goes straight to the learner table (no notice, no learner home)', async () => {
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes[LEARNERS] = () =>
-      json({
-        items: [
-          {
-            id: 'a1',
-            username: 'lan',
-            displayName: 'Lan',
-            disabled: false,
-            learning: 1,
-            solid: 0,
-            avgLevel: 1,
-            lastStudyAt: null,
-            overdue: 0,
-            sessions7d: 0,
-          },
-        ],
-        total: 1,
-        page: 1,
-        limit: 20,
-      });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    expect(location.hash).toBe('#manager');
-    expect(host.querySelector('h1')?.textContent).toBe('Học viên');
-    expect(host.textContent).toContain('Lan');
-    expect(tone(host)).toBe('ice');
-    expect(host.textContent).not.toContain('Trang quản lý sẽ có ở bản sau');
-    expect(calls.some((c) => c.includes('/catalog/items?learnable'))).toBe(false);
-    expect(host.querySelector('nav a[href="#manager"]')).not.toBeNull();
-  });
-
-  it('manager on #account sees the account screen without learner views', async () => {
-    location.hash = '#account';
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes['GET /me'] = () =>
-      json({ username: 'ha', displayName: 'Hà', role: 'manager', mustChangePassword: false });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    expect(location.hash).toBe('#account');
-    expect(host.querySelector('#account-title')?.textContent).toBe('Tài khoản');
-    expect(host.querySelector('.account-stage')).not.toBeNull();
-    expect(calls).toContain('GET /me');
-    expect(calls.filter((c) => /\/me\/(progress|review|mastery|home)/.test(c))).toEqual([]);
-    expect(host.textContent).not.toMatch(/tiến độ|theo dõi/i);
-    expect(host.querySelector('a[href="#account"][aria-current="page"]')).not.toBeNull();
-  });
-
-  it('manager password change from the account page adopts the new csrf (16+ characters)', async () => {
-    location.hash = '#account';
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes['GET /me'] = () =>
-      json({ username: 'ha', displayName: 'Hà', role: 'manager', mustChangePassword: false });
-    routes['POST /me/password'] = () =>
-      json({ ...view('manager'), csrf: 'c-new-m', displayName: 'Hà', mustChangePassword: false });
-    routes['PATCH /me'] = () =>
-      json({ username: 'ha', displayName: 'Hà Nội', role: 'manager', mustChangePassword: false });
-    const host = mount(<PilotApp />);
-    await tick();
-    await click(button(host, 'Đổi mật khẩu'));
-    setValue(field(host, 'Mật khẩu hiện tại'), 'dummy-old-pass-manager');
-    setValue(field(host, 'Mật khẩu mới'), 'short-pass1');
-    setValue(field(host, 'Nhập lại mật khẩu mới'), 'short-pass1');
-    await submit(host);
-    await tick();
-    expect(host.textContent).toContain('ít nhất 16');
-    expect(calls).not.toContain('POST /me/password');
-    setValue(field(host, 'Mật khẩu mới'), 'dummy-new-pass-manager1');
-    setValue(field(host, 'Nhập lại mật khẩu mới'), 'dummy-new-pass-manager1');
-    await submit(host);
-    await tick();
-    expect(host.textContent).toContain('Đã đổi mật khẩu');
-    setValue(field(host, 'Tên hiển thị'), 'Hà Nội');
-    await submit(host);
-    await tick();
-    expect(
-      (inits[calls.lastIndexOf('PATCH /me')]?.headers as Record<string, string>)['X-CSRF-Token'],
-    ).toBe('c-new-m');
-  });
-
-  it('manager with a forced password change still gets the global password screen', async () => {
-    location.hash = '#manager';
-    routes['GET /auth/me'] = () => json(view('manager', { mustChangePassword: true }));
-    const host = mount(<PilotApp />);
-    await tick();
-    expect(host.querySelector('form')).not.toBeNull();
-    expect(host.textContent).toContain('mật khẩu');
-    expect(host.querySelector('nav')).toBeNull();
-    expect(calls.some((c) => c.startsWith('GET /manager/'))).toBe(false);
-  });
-
-  it('a manager opening a learner sees the detail with the name and a way back', async () => {
-    location.hash = '#manager/learner/a1';
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes['GET /manager/learners/a1'] = () =>
-      json({ id: 'a1', username: 'lan', displayName: 'Lan Nguyễn', disabled: false });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    expect(host.querySelector('h1')?.textContent).toBe('Học viên: Lan Nguyễn');
-    expect(host.querySelector('a[href="#manager"]')).not.toBeNull();
-    // The embedded Tiến độ / Lịch ôn tập heroes bleed to the edges: only the ice stage clips
-    // them (overflow-x: clip), so the detail must sit in it like the learner's own pages.
-    expect(host.querySelector('.manager-detail')?.parentElement?.className).toBe('ice-stage');
-  });
-
-  it('decodes the learner id from the hash once, so reserved characters survive', async () => {
-    location.hash = '#manager/learner/a%2Fb%20c';
-    routes['GET /auth/me'] = () => json(view('manager'));
-    routes['GET /manager/learners/a%2Fb%20c'] = () =>
-      json({ id: 'a/b c', username: 'lan', displayName: 'Lan Nguyễn', disabled: false });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    expect(calls).toContain('GET /manager/learners/a%2Fb%20c');
-    expect(calls.some((c) => c.includes('%25'))).toBe(false);
-    expect(host.querySelector('h1')?.textContent).toBe('Học viên: Lan Nguyễn');
-  });
-
-  it('an admin on home keeps the learner home (only managers are redirected)', async () => {
-    routes['GET /auth/me'] = () => json(view('admin'));
-    mount(<PilotApp />);
-    await tick();
-    expect(location.hash).toBe('#home');
   });
 
   it('student reaches the account page; shell gets the display name', async () => {
@@ -1098,103 +836,5 @@ describe('PilotApp 401 on a signed-in route', () => {
     await tick();
     const body = JSON.parse(String(inits[calls.indexOf('POST /learning/sessions')]!.body));
     expect(body).toEqual({ mode: 'review', kind: 'en', limit: 1 });
-  });
-});
-
-describe('PilotApp admin one-time password guard', () => {
-  async function selfReset() {
-    location.hash = '#admin/users';
-    routes['GET /auth/me'] = () => json(view('admin'));
-    routes['POST /auth/logout'] = () => json(view('guest'));
-    routes['GET /admin/users?page=1&limit=20'] = () =>
-      json({
-        items: [
-          {
-            id: 'u-admin',
-            username: 'owner',
-            displayName: null,
-            role: 'admin',
-            disabled: false,
-            mustChangePassword: false,
-            createdAt: '2026-11-01T00:00:00.000Z',
-            lastLoginAt: null,
-          },
-        ],
-        total: 1,
-        page: 1,
-        limit: 20,
-      });
-    routes['POST /admin/users/u-admin/reset-password'] = () =>
-      json({ temporaryPassword: 'OwnTmp7xKq9Rz2aBcDeF' });
-    const host = mount(<PilotApp />);
-    await tick();
-    await tick();
-    const row = host.querySelector<HTMLElement>('[data-user="u-admin"]')!;
-    await click(button(row, 'Đặt lại mật khẩu'));
-    await click(button(host.querySelector<HTMLElement>('[role="dialog"]')!, 'Đặt lại'));
-    await tick();
-    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
-    return host;
-  }
-  const loggedOut = () => calls.filter((c) => c === 'POST /auth/logout').length;
-
-  it('logout asks first; declining keeps the password on screen', async () => {
-    const confirm = vi.fn(() => false);
-    vi.stubGlobal('confirm', confirm);
-    const host = await selfReset();
-    await click(button(host.querySelector('.shell-header')!, 'Đăng xuất'));
-    await tick();
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(loggedOut()).toBe(0);
-    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
-  });
-
-  it('confirming the logout discards the password and signs out', async () => {
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    );
-    const host = await selfReset();
-    await click(button(host.querySelector('.shell-header')!, 'Đăng xuất'));
-    await tick();
-    expect(loggedOut()).toBe(1);
-    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
-  });
-
-  it('navigating to another route asks first; declining stays on the users screen', async () => {
-    const confirm = vi.fn(() => false);
-    vi.stubGlobal('confirm', confirm);
-    const host = await selfReset();
-    location.hash = '#library';
-    await tick();
-    await tick();
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(location.hash).toBe('#admin/users');
-    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
-  });
-
-  it('confirming the navigation leaves the screen and drops the password', async () => {
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    );
-    const host = await selfReset();
-    location.hash = '#library';
-    await tick();
-    await tick();
-    expect(location.hash).toBe('#library');
-    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
-  });
-
-  it('once the panel is closed nothing asks any more', async () => {
-    const confirm = vi.fn(() => false);
-    vi.stubGlobal('confirm', confirm);
-    const host = await selfReset();
-    await click(button(host.querySelector<HTMLElement>('.users-reveal')!, 'Đóng'));
-    await tick();
-    location.hash = '#library';
-    await tick();
-    expect(confirm).not.toHaveBeenCalled();
-    expect(location.hash).toBe('#library');
   });
 });

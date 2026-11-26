@@ -66,7 +66,7 @@ export function ChangePassword({
     <section className="pilot-login change-password">
       <div>
         <h1>Đổi mật khẩu</h1>
-        {forced && <p>Quản trị viên yêu cầu bạn đặt mật khẩu mới trước khi tiếp tục.</p>}
+        {forced && <p>Bạn cần đặt mật khẩu mới trước khi tiếp tục.</p>}
         <form
           onSubmit={(e) => {
             e.preventDefault();

@@ -6,15 +6,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -p tsconfig.build.json && vite build",
-    "check:bundle": "node scripts/check-bundle-split.mjs",
-    "build:check": "npm run build && npm run check:bundle",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write src e2e scripts *.ts *.js *.json",
-    "format:check": "prettier --check src e2e scripts *.ts *.js *.json",
+    "format": "prettier --write src e2e *.ts *.js *.json",
+    "format:check": "prettier --check src e2e *.ts *.js *.json",
     "test:e2e": "playwright test",
     "test:e2e:legacy": "playwright test --config playwright.legacy.config.ts"
   },

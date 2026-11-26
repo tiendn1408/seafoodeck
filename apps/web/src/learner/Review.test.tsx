@@ -198,6 +198,9 @@ describe('Review with a custom source, read-only', () => {
     await tick();
     await tick();
     expect(host.textContent).toContain('Chưa có mục ôn tập');
+    // Neutral copy: the shared screen never names who is reading it.
+    expect(host.textContent).toContain('Chưa có lượt nào hoàn thành.');
+    expect(host.textContent).not.toMatch(/học viên/i);
     expect(host.querySelector('a[href="#home"]')).toBeNull();
   });
   it('read-only fresh list has no empty note when there is nothing to say', async () => {

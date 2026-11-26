@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, ApiError, type LearnerSummary } from '../pilot/api';
-import { ErrorNote } from '../learner/ErrorNote';
-import { Progress } from '../learner/Progress';
-import { Review } from '../learner/Review';
-import type { LearnerSource } from '../learner/meStore';
-import '../pilot/users.css';
+import { api, ApiError } from '@web/pilot/api';
+import type { LearnerSummary } from '../api';
+import { ErrorNote } from '@web/learner/ErrorNote';
+import { Progress } from '@web/learner/Progress';
+import { Review } from '@web/learner/Review';
+import type { LearnerSource } from '@web/learner/meStore';
+import './users.css';
 import './manager.css';
 
 const stamp = new Intl.DateTimeFormat('vi-VN', {

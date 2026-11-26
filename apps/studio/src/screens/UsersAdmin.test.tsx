@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { UsersAdmin, generatePassword, PASSWORD_ALPHABET } from './UsersAdmin';
-import { button, click, field, mount, setValue, submit, unmountAll } from '../learner/testDom';
+import { button, click, field, mount, setValue, submit, unmountAll } from '@web/learner/testDom';
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -502,22 +502,12 @@ describe('UsersAdmin row actions', () => {
       'Khi đóng khung này bạn sẽ phải đổi mật khẩu; dùng mật khẩu tạm này ở ô "Mật khẩu hiện tại".',
     );
     expect(reveal.textContent).toContain('Đừng rời trang này trước khi ghi lại mật khẩu.');
-    // Leaving the page asks first; the admin tabs are off.
+    // Leaving the page asks first (the shell's tabs are guarded: see StudioApp.test).
     const unload = added.mock.calls.find(([t]) => t === 'beforeunload')?.[1];
     expect(unload).toBeTypeOf('function');
     const ev = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
-    // Disabled tabs are inert spans, not anchors without an href.
-    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a[aria-disabled]')).toHaveLength(
-      0,
-    );
-    const tabs = host.querySelectorAll('nav[aria-label="Khu quản trị"] > *');
-    expect(tabs).toHaveLength(3);
-    for (const a of tabs) {
-      expect(a.tagName, a.textContent!).toBe('SPAN');
-      expect(a.getAttribute('aria-disabled'), a.textContent!).toBe('true');
-    }
     // Typing, filtering and paging are off.
     const search = field(host, 'Tìm');
     expect(search.disabled).toBe(true);
@@ -551,8 +541,7 @@ describe('UsersAdmin row actions', () => {
       'GET /admin/users?page=1&limit=20',
     ]);
     expect(removed.mock.calls.some(([t, f]) => t === 'beforeunload' && f === unload)).toBe(true);
-    expect(host.querySelector('nav[aria-label="Khu quản trị"] [aria-disabled]')).toBeNull();
-    expect(host.querySelectorAll('nav[aria-label="Khu quản trị"] a')).toHaveLength(3);
+    expect(host.querySelector('nav[aria-label="Khu quản trị"]')).toBeNull();
   });
 
   it('the reset confirm waits while the list is loading', async () => {

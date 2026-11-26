@@ -35,8 +35,10 @@ Ghi lại để rollback: tên container/compose của web 0.5 và digest/tag đ
 ## 2. Sinh secrets (chỉ một lần, script từ chối ghi đè)
 
     cd /opt/seafoodeck-pilot
-    sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24-alpine node scripts/init-pilot.mjs --production --origin https://seafoodeck.tiendn.io.vn
+    sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24-alpine node scripts/init-pilot.mjs --production --origin https://seafoodeck.tiendn.io.vn --studio-origin https://seafoodeckstudio.tiendn.io.vn
     ls -l .local/    # pilot.env và s3.json phải mode 600
+
+`--studio-origin` bật host Studio cho nhân sự (không có cờ này thì không có Studio, chỉ có app học viên); DNS và kiểm sau deploy: [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md).
 
 ## 3. Đăng nhập GHCR (PAT read:packages)
 

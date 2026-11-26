@@ -1,8 +1,8 @@
 import { useEffect, useId, useState } from 'react';
-import { api, ApiError } from './api';
+import { api, ApiError } from '@web/pilot/api';
 import { Dialog } from './Dialog';
-import { setLeaveGuard } from './leaveGuard';
-import { ErrorNote } from '../learner/ErrorNote';
+import { setLeaveGuard } from '@web/pilot/leaveGuard';
+import { ErrorNote } from '@web/learner/ErrorNote';
 import './users.css';
 
 /** Server limit per request (about 9 s per 500 rows). */

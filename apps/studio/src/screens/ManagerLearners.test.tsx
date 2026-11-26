@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { ManagerLearners } from './ManagerLearners';
-import { button, click, mount, setValue, unmountAll } from '../learner/testDom';
+import { button, click, mount, setValue, unmountAll } from '@web/learner/testDom';
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -63,8 +63,8 @@ const lists = () => calls.filter((c) => c.startsWith('GET /manager/learners?'));
 const last = () => lists()[lists().length - 1];
 const th = (host: HTMLElement, label: string) =>
   [...host.querySelectorAll('th')].find((x) => x.textContent?.includes(label))!;
-async function open(admin = false) {
-  const host = mount(<ManagerLearners admin={admin} />);
+async function open() {
+  const host = mount(<ManagerLearners />);
   await tick();
   return host;
 }
@@ -218,13 +218,9 @@ describe('ManagerLearners table', () => {
     expect(host.querySelector('[role="status"]')?.textContent).toContain('Đang tải');
   });
 
-  it('admins get the admin tabs including a way back to #manager', async () => {
-    const host = await open(true);
-    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]')!;
-    expect(tabs.querySelector('a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
-    const plain = mount(<ManagerLearners />);
-    await tick();
-    expect(plain.querySelector('nav[aria-label="Khu quản trị"]')).toBeNull();
+  it('has no in-page admin tabs (the Studio shell has the one navigation)', async () => {
+    const host = await open();
+    expect(host.querySelector('nav[aria-label="Khu quản trị"]')).toBeNull();
   });
 });
 

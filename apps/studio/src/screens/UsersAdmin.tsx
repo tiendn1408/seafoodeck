@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
-import { api, type AdminUserPage, type AdminUserRow } from './api';
-import { AdminTabs } from './AdminTabs';
-import { setLeaveGuard } from './leaveGuard';
+import { api } from '@web/pilot/api';
+import type { AdminUserPage, AdminUserRow } from '../api';
+import { setLeaveGuard } from '@web/pilot/leaveGuard';
 import { Dialog } from './Dialog';
 import { BulkDialog } from './BulkUsers';
-import { ErrorNote } from '../learner/ErrorNote';
-import { minPasswordLength } from '../learner/ChangePassword';
+import { ErrorNote } from '@web/learner/ErrorNote';
+import { minPasswordLength } from '@web/learner/ChangePassword';
 import './users.css';
 
 const LIMIT = 20;
@@ -223,7 +223,6 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
 
   return (
     <div className="users-admin">
-      <AdminTabs current="users" disabled={paused} />
       <header className="users-head">
         <div>
           <h1 ref={head} tabIndex={-1}>

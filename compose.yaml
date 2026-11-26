@@ -26,7 +26,7 @@ services:
     restart: 'no'
   storage:
     image: chrislusf/seaweedfs:4.20@sha256:cea8339d21dad1b200adce581dd7434d254b8f5975f142c3b4c930ba78647eef
-    command: [server, '-s3', '-filer', '-ip=storage', '-ip.bind=0.0.0.0', '-dir=/data', '-s3.config=/etc/seaweedfs/auth/s3.json', '-master.volumeSizeLimitMB=256', '-volume.max=4', '-s3.allowedOrigins=${PUBLIC_ORIGIN}']
+    command: [server, '-s3', '-filer', '-ip=storage', '-ip.bind=0.0.0.0', '-dir=/data', '-s3.config=/etc/seaweedfs/auth/s3.json', '-master.volumeSizeLimitMB=256', '-volume.max=4', '-s3.allowedOrigins=${PUBLIC_ORIGIN}${STUDIO_ORIGIN:+,${STUDIO_ORIGIN}}']
     volumes:
       - pilot_storage:/data
       - pilot_storage_config:/etc/seaweedfs/auth:ro
@@ -60,8 +60,9 @@ services:
     platform: linux/amd64
     image: seafoodeck-web:${WEB_TAG:-pilot-internal-20261118-r2}
     build: {context: ., dockerfile: apps/web/Dockerfile, args: {RELEASE_TAG: "${WEB_TAG:-pilot-internal-20261118-r2}"}}
-    environment: {SITE_ADDRESS: '${SITE_ADDRESS:-:80}',S3_BUCKET: '${S3_BUCKET:-seafoodeck-private}'}
-    ports: ['127.0.0.1:${WEB_PORT:-18089}:80']
+    # Unset STUDIO_SITE_ADDRESS -> placeholder host (Studio site off); an empty value would break the Caddyfile.
+    environment: {SITE_ADDRESS: '${SITE_ADDRESS:-:80}',STUDIO_SITE_ADDRESS: '${STUDIO_SITE_ADDRESS:-http://studio.invalid}',S3_BUCKET: '${S3_BUCKET:-seafoodeck-private}'}
+    ports: ['127.0.0.1:${WEB_PORT:-18089}:80', '127.0.0.1:${STUDIO_WEB_PORT:-18090}:8090']
     depends_on: {api: {condition: service_healthy}}
     mem_limit: 96m
     restart: unless-stopped

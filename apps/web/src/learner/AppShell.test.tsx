@@ -63,10 +63,10 @@ describe('AppShell navigation by kind (phone)', () => {
     expect(account?.getAttribute('aria-label')).toBe('Tài khoản');
     expect(host.querySelector('nav a[href="#account"]')).toBeNull();
   });
-  it('manager: account as a header icon (not a tab) with a 44px-capable icon button', () => {
-    const host = shell('ice', 'manager', 'account');
+  it('student on #account: account as a header icon (not a tab) with a 44px-capable icon button', () => {
+    const host = shell('ice', 'student', 'account');
     expect(host.querySelectorAll('nav')).toHaveLength(1);
-    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
+    expect(navLabels(host)).toEqual(['Học', 'Thư viện', 'Ôn tập', 'Tiến độ']);
     const account = host.querySelector('.shell-actions a[href="#account"]');
     expect(account?.getAttribute('aria-label')).toBe('Tài khoản');
     expect(account?.className).toBe('shell-icon-button');
@@ -74,36 +74,10 @@ describe('AppShell navigation by kind (phone)', () => {
     expect(host.querySelector('nav a[href="#account"]')).toBeNull();
     expect(host.querySelector('nav [aria-current]')).toBeNull();
   });
-  it('staff and admin: no account entry', () => {
-    for (const kind of ['staff', 'admin'] as Kind[])
-      expect(shell('ice', kind).querySelector('a[href="#account"]')).toBeNull();
-  });
   it('trial: Học and Thư viện only, no account entry', () => {
     const host = shell('deep', 'trial');
     expect(host.querySelectorAll('nav')).toHaveLength(1);
     expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
-    expect(host.querySelector('a[href="#account"]')).toBeNull();
-  });
-  it('manager: Học viên and Thư viện in one bottom bar', () => {
-    const host = shell('ice', 'manager', 'manager');
-    expect(host.querySelectorAll('nav')).toHaveLength(1);
-    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
-    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
-    expect(host.querySelector('nav a[href="#account"]')).toBeNull();
-    expect(host.querySelector('a[href="#admin"]')).toBeNull();
-  });
-  it('staff: Học and Thư viện plus the admin shield icon (no Ôn tập / Tiến độ)', () => {
-    const host = shell('ice', 'staff');
-    expect(host.querySelectorAll('nav')).toHaveLength(1);
-    expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
-    expect(host.querySelector('a[href="#review"], a[href="#progress"]')).toBeNull();
-    expect(host.querySelector('.shell-actions a[href="#admin"]')).not.toBeNull();
-    expect(host.querySelector('a[href="#account"]')).toBeNull();
-  });
-  it('admin: same as staff (Học, Thư viện, admin shield icon)', () => {
-    const host = shell('ice', 'admin', 'admin/users');
-    expect(navLabels(host)).toEqual(['Học', 'Thư viện']);
-    expect(host.querySelector('.shell-actions a[href="#admin"]')).not.toBeNull();
     expect(host.querySelector('a[href="#account"]')).toBeNull();
   });
   it('guest: no navigation and no logout', () => {
@@ -132,33 +106,8 @@ describe('AppShell navigation by kind (desktop)', () => {
     const host = desktop('student');
     expect(host.querySelector('a[href="#account"]')?.textContent).toContain('Tài khoản');
   });
-  it('manager: one top nav; account shown as icon + name beside logout', () => {
-    const host = desktop('manager', 'account', 'Hà');
-    expect(host.querySelectorAll('nav')).toHaveLength(1);
-    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
-    const account = host.querySelector('.shell-actions a[href="#account"]');
-    expect(account?.textContent).toContain('Hà');
-    expect(account?.nextElementSibling?.getAttribute('aria-label')).toBe('Đăng xuất');
-  });
   it('trial: Học and Thư viện', () => {
     expect(navLabels(desktop('trial'))).toEqual(['Học', 'Thư viện']);
-  });
-  it('manager: Học viên and Thư viện in one top nav; learner details keep Học viên current', () => {
-    const host = desktop('manager', 'manager/learner/x');
-    expect(host.querySelectorAll('nav')).toHaveLength(1);
-    expect(host.querySelector('.shell-tabbar')).toBeNull();
-    expect(navLabels(host)).toEqual(['Học viên', 'Thư viện']);
-    expect(tabFor('manager/learner/x')).toBe('manager');
-    expect(host.querySelector('nav a[href="#manager"]')?.getAttribute('aria-current')).toBe('page');
-  });
-  it('staff: Học, Thư viện plus Quản trị', () => {
-    expect(navLabels(desktop('staff'))).toEqual(['Học', 'Thư viện', 'Quản trị']);
-  });
-  it('admin: Học, Thư viện plus Quản trị, current on the users screen too', () => {
-    expect(tabFor('admin/users')).toBe('admin');
-    const host = desktop('admin', 'admin/users');
-    expect(navLabels(host)).toEqual(['Học', 'Thư viện', 'Quản trị']);
-    expect(host.querySelector('nav a[href="#admin"]')?.getAttribute('aria-current')).toBe('page');
   });
   it('on #account no tab is current; the account entry is', () => {
     expect(tabFor('account')).toBe('account');

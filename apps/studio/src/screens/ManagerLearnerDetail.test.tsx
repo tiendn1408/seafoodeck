@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, useState } from 'react';
 import { ManagerLearnerDetail } from './ManagerLearnerDetail';
-import { clearMe } from '../learner/meStore';
-import { mount, unmountAll } from '../learner/testDom';
+import { clearMe } from '@web/learner/meStore';
+import { mount, unmountAll } from '@web/learner/testDom';
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));

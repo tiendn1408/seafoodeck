@@ -1,0 +1,136 @@
+/* Content area (#admin): moved out of the learner stylesheet with the screens that use it. */
+.pilot-admin label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.pilot-admin input:not([type='checkbox']),
+.pilot-admin textarea {
+  border: 1px solid #bdcfc5;
+  border-radius: 6px;
+  padding: 11px 12px;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+  font: inherit;
+  min-width: 0;
+}
+.pilot-text-button {
+  display: inline-flex;
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.pilot-admin > section {
+  border: 1px solid var(--line);
+  padding: 22px;
+  border-radius: 10px;
+  background: #fff;
+  margin: 20px 0;
+}
+.pilot-admin h2 {
+  margin-bottom: 12px;
+}
+.pilot-admin label {
+  margin: 14px 0;
+}
+.pilot-admin fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.pilot-admin textarea {
+  resize: vertical;
+  font-family: monospace;
+  font-size: 12px;
+}
+.pilot-admin-media {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.pilot-admin-media article {
+  border: 1px solid var(--line);
+  padding: 12px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.pilot-admin-media img {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+}
+.pilot-release-items {
+  max-height: 280px;
+  overflow: auto;
+}
+.pilot-release-items label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pilot-admin .btn {
+  font-size: 12px;
+}
+.pilot-upload {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.pilot-admin-media {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 600px) {
+  .pilot-admin-media {
+    grid-template-columns: 1fr;
+  }
+}
+.pilot-edit-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+}
+.pilot-admin {
+  overflow-wrap: anywhere;
+}
+.pilot-tariffs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.pilot-tariffs article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 12px;
+}
+.pilot-admin details {
+  margin: 12px 0;
+}
+.pilot-admin summary {
+  cursor: pointer;
+  color: var(--green);
+}
+@media (max-width: 600px) {
+  .pilot-edit-fields,
+  .pilot-tariffs {
+    grid-template-columns: 1fr;
+  }
+}
+.pilot-extra-fields {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.pilot-extra-fields dt {
+  font-weight: 600;
+}
+.pilot-extra-fields dd {
+  margin: 0 0 6px;
+}
+.pilot-unsourced {
+  color: #b45309;
+}

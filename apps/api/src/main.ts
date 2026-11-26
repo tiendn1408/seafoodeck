@@ -19,6 +19,8 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { Db } from './db';
 import { errorBody, errorStatus } from './errors';
+import { learnerEdge } from './learner-edge';
+import { studioOriginProblem } from './security';
 import {
   DatabaseModule,
   AuthModule,
@@ -74,6 +76,11 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
 }
 /** The configured API application (not listening yet). */
 export async function createApp(env: NodeJS.ProcessEnv = process.env): Promise<INestApplication> {
+  const problem = studioOriginProblem(env);
+  if (problem) {
+    console.error(`API startup refused: ${problem}`);
+    throw new Error(problem);
+  }
   const server = express();
   server.disable('x-powered-by');
   // API is private behind exactly one Caddy hop; do not group every learner under its IP.
@@ -104,6 +111,8 @@ export async function createApp(env: NodeJS.ProcessEnv = process.env): Promise<I
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
+  // Learner host: staff paths become unknown routes (after the body parser, before every route).
+  app.use(learnerEdge);
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

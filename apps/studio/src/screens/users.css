@@ -1,46 +1,9 @@
 /*
- * Admin area: the "Nội dung | Người dùng" switch and the users screen. A reading surface, so it
+ * Admin area: the users screen. A reading surface, so it
  * uses the "Băng" (ice) tokens and follows the theme; salmon only for the one primary action.
  */
 .shell:has(.users-admin) {
   background: var(--ice-bg);
-}
-
-/* Tab switch at the top of the admin area. */
-.admin-tabs {
-  display: flex;
-  gap: var(--space-1);
-  margin: 0 0 var(--space-5);
-  border-bottom: 1px solid var(--ice-line);
-  overflow-x: auto;
-}
-.admin-tabs a,
-.admin-tabs span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
-  color: var(--ice-muted);
-  font-weight: 700;
-  white-space: nowrap;
-}
-.admin-tabs a:hover {
-  color: var(--ice-ink);
-}
-/* Ink, not salmon: salmon on the ice background is under 3:1 for this thin mark. */
-.admin-tabs a[aria-current='page'],
-.admin-tabs span[aria-current='page'] {
-  color: var(--ice-ink);
-  border-bottom-color: var(--ice-ink);
-}
-.admin-tabs span[aria-disabled='true'] {
-  cursor: not-allowed;
-}
-.admin-tabs a:focus-visible {
-  outline: 3px solid var(--ice-focus);
-  outline-offset: 3px;
 }
 
 .users-admin {
@@ -560,14 +523,6 @@
   .users-primary:active:not(:disabled) {
     transform: none;
   }
-}
-
-/* The content page (#admin) has not moved to the ice theme yet: keep its switch on light ice. */
-.pilot-admin .admin-tabs {
-  --ice-ink: #0b2230;
-  --ice-muted: #4c5e66;
-  --ice-line: #d4e0e3;
-  --ice-focus: #0b6a7c;
 }
 
 /* Bulk creation dialog: wider, the result table scrolls inside. */

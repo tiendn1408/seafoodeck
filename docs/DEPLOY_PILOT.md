@@ -16,8 +16,10 @@ sudo mkdir -p seafoodeck-pilot
 sudo chown shin:shin seafoodeck-pilot
 git clone --branch main https://github.com/tiendn1408/seafoodeck.git seafoodeck-pilot
 cd /opt/seafoodeck-pilot
-sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24-alpine node scripts/init-pilot.mjs --production --origin https://seafoodeck.tiendn.io.vn
+sudo docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:24-alpine node scripts/init-pilot.mjs --production --origin https://seafoodeck.tiendn.io.vn --studio-origin https://seafoodeckstudio.tiendn.io.vn
 ```
+
+`--studio-origin` bật host Studio cho nhân sự (bỏ cờ này thì không có Studio); DNS, biến môi trường và kiểm sau deploy: [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md).
 
 Nếu thư mục đã có repo, dùng `git pull --ff-only` trên đúng branch thay vì clone lại. Init cố ý từ chối ghi đè secrets đã có. File `.local/pilot.env` và `.local/s3.json` có mật khẩu thật, giữ riêng và backup an toàn. Không gửi nội dung cho agent. Mở env riêng để lấy tài khoản `owner`, mật khẩu quản trị, mã mời học viên. Mặc định production không cho truy cập nội dung fixture. Kho SeaweedFS này dành cho dev/test nội bộ; phải chọn/duyệt kho sử dụng thực tế và smoke test trước pilot khách.
 

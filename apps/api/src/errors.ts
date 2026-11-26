@@ -11,5 +11,5 @@ export function errorStatus(error: unknown): number {
 export function errorBody(error: unknown): { message: string; code?: 'BUSY' } {
   return isSerializationConflict(error)
     ? { message: BUSY, code: 'BUSY' }
-    : { message: 'Lỗi máy chủ. Thử lại hoặc liên hệ quản trị.' };
+    : { message: 'Lỗi máy chủ. Thử lại sau.' };
 }

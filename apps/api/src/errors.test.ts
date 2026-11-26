@@ -20,6 +20,6 @@ test('the Errors filter maps every serialization conflict to 409 with a retry me
   assert.equal(errorStatus(Object.assign(new Error('down'), { code: 'P1001' })), 503);
   assert.equal(errorStatus(new Error('boom')), 500);
   assert.deepEqual(errorBody(new Error('boom')), {
-    message: 'Lỗi máy chủ. Thử lại hoặc liên hệ quản trị.',
+    message: 'Lỗi máy chủ. Thử lại sau.',
   });
 });

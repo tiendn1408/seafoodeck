@@ -4,6 +4,8 @@ Từ bản đang chạy trên VPS `learner-demo-20261120-r1` (đã nâng ngày 2
 
 **Không có migration mới.** Đã kiểm trong repo: `apps/api/prisma/migrations` có đúng bốn thư mục `202611170001_initial`, `202611180001_alias_search`, `202611190001_learner_accounts`, `202611200001_username_ci`; tài liệu demo 20/11 ghi VPS đã chạy hai migration cuối (`202611190001_learner_accounts`, `202611200001_username_ci`). `git diff --stat 1692138 HEAD -- apps/api/prisma` (source của bản r1) rỗng, tức schema không đổi. Vì vậy bước `migrate` bên dưới chỉ để xác nhận "không có gì để áp dụng". Trước khi chạy thật, chạy lại lệnh `git diff` trên commit release 2.5c thực tế để chắc chắn.
 
+> **Từ 2.5e** ảnh web có hai site: host học viên và host Studio riêng cho nhân sự. Màn quản trị không còn ở `https://seafoodeck.tiendn.io.vn/#admin` (mục 6 bên dưới chỉ đúng cho 2.5c/2.5d). Nâng lên 2.5e: làm DNS và biến môi trường theo [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) trước, rồi mới deploy theo các mục dưới.
+
 Mã nhận diện hai ảnh (điền sau khi push GHCR và kiểm bằng `docker buildx imagetools inspect`):
 
     API_IMAGE_REF=ghcr.io/tiendn1408/seafoodeck-api@sha256:<DIGEST-API>
@@ -70,7 +72,7 @@ Không `down -v`, không xóa volume `pilot_db`, `pilot_storage`, không đụng
     curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeck.tiendn.io.vn/api/v1/docs          # phải là 404
     curl -s -o /dev/null -w '%{http_code}\n' https://seafoodeck.tiendn.io.vn/api/v1/openapi.json  # phải là 404
 
-Hai dòng cuối kiểm rằng tài liệu API (Swagger, liệt kê mọi route `/admin/*`, `/manager/*`) không lộ ra ngoài: API chỉ phục vụ khi `EXPOSE_API_DOCS=true` (mặc định tắt, không đặt trong `.local/pilot.env`), và `deploy/Caddyfile.pilot` (từ 2.5d) trả 404 cho `/api/v1/docs*`, `/api/v1/openapi*` dù API có bật. Khác 404 là lỗi: kiểm `.local/pilot.env` không có `EXPOSE_API_DOCS=true` rồi recreate API. Ảnh API trước 2.5d luôn phục vụ hai đường này (chưa có cờ), chỉ chặn được ở Caddy.
+Từ 2.5e host học viên trả 404 cho cả `/api/v1/admin*` và `/api/v1/manager*`, giống hệt đường không tồn tại (từ 2.5e việc chặn, kể cả docs/openapi, nằm trong API theo header `X-Edge` do Caddy gắn, không còn ở `respond 404` của Caddy); kiểm thêm ở [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 4. Hai dòng cuối kiểm rằng tài liệu API (Swagger, liệt kê mọi route `/admin/*`, `/manager/*`) không lộ ra ngoài: API chỉ phục vụ khi `EXPOSE_API_DOCS=true` (mặc định tắt, không đặt trong `.local/pilot.env`). Lịch sử: ở ảnh 2.5d, `deploy/Caddyfile.pilot` còn trả 404 cho `/api/v1/docs*`, `/api/v1/openapi*` dù API có bật; từ 2.5e Caddy không còn tự trả 404 cho các đường này, việc đó do API làm trên host học viên (header `X-Edge`), còn host Studio chỉ dựa vào `EXPOSE_API_DOCS` tắt. Khác 404 là lỗi: kiểm `.local/pilot.env` không có `EXPOSE_API_DOCS=true` rồi recreate API. Ảnh API trước 2.5d luôn phục vụ hai đường này (chưa có cờ), chỉ chặn được ở Caddy.
 
 Sau đó làm mục 6. So số liệu catalogue trước/sau bằng tay: 96 Item, 96 Revision, 94 MediaAsset, release nội bộ giữ nguyên. Số trước nâng cấp đọc trong [biên bản demo 20/11](DEPLOY_LEARNER_DEMO_20261120.md) (mục kiểm sau nâng cấp); số sau nâng cấp đếm trong DB, ví dụ:
 

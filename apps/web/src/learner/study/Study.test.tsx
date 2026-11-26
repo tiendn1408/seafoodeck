@@ -114,7 +114,7 @@ const serverScore = (questionId: string, skill: string, extra: Partial<Score> = 
 
 let latest: Game;
 const seen = (g: Game) => void (latest = g);
-function Host({ initial, userKind }: { initial: Game; userKind: 'student' | 'trial' | 'staff' }) {
+function Host({ initial, userKind }: { initial: Game; userKind: 'student' | 'trial' }) {
   const [g, setG] = useState(initial);
   // "Tạm dừng" then back: PilotApp keeps the game while Study unmounts and mounts again.
   const [shown, setShown] = useState(true);
@@ -378,8 +378,8 @@ describe('Study session summary after a reload', () => {
     expect(calls.filter((c) => c === 'GET /learning/sessions/g1/summary')).toHaveLength(1);
     expect(host.querySelector('.haul-note')?.textContent).toContain('ôn lại sau 9 ngày');
   });
-  it.each(['trial', 'staff'] as const)('a re-opened %s session never asks for it', async (k) => {
-    const host = mount(<Host initial={answered} userKind={k} />);
+  it('a re-opened trial session never asks for it', async () => {
+    const host = mount(<Host initial={answered} userKind="trial" />);
     await tick();
     await tick();
     expect(calls.filter((c) => c.includes('/summary') || c.includes('/me'))).toEqual([]);

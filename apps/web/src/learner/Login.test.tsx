@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Login, StaffLogin } from './Login';
+import { Login } from './Login';
 import { button, click, field, mount, setValue, submit, unmountAll } from './testDom';
 
 const reply = (body: unknown, status = 200) =>
@@ -28,15 +28,6 @@ describe('Login screens', () => {
     expect(html).not.toContain('Mã mời</label>');
     expect(html).not.toMatch(/quản trị|admin/i);
   });
-  it('staff login has username and password', () => {
-    const html = renderToString(<StaffLogin onLogin={() => {}} />);
-    expect(html).toContain('Đăng nhập quản trị');
-    expect(html).toContain('Tài khoản');
-    expect(html).toContain('Mật khẩu');
-    expect(html).not.toContain('<a ');
-    expect(html).not.toContain('Mã mời');
-    expect(html).not.toContain('Học thử');
-  });
   it('account login sends username and credential', async () => {
     fetchMock.mockReturnValue(reply(auth));
     const onLogin = vi.fn();
@@ -59,16 +50,6 @@ describe('Login screens', () => {
     setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
     await submit(host);
     expect(sent()).toEqual({ username: 'hoa', credential: 'dummy-pass-123' });
-  });
-  it('staff login trims the username too', async () => {
-    fetchMock.mockReturnValue(reply({ ...auth, role: 'admin' }));
-    const html = renderToString(<StaffLogin onLogin={() => {}} />);
-    expect(html).toMatch(/autoCapitalize="none"|autocapitalize="none"/);
-    const host = mount(<StaffLogin onLogin={() => {}} />);
-    setValue(field(host, 'Tài khoản'), ' admin ');
-    setValue(field(host, 'Mật khẩu'), 'dummy-pass-123');
-    await submit(host);
-    expect(sent()).toEqual({ username: 'admin', credential: 'dummy-pass-123' });
   });
   it('switches to the invite form and back, moving focus to the first field', async () => {
     fetchMock.mockReturnValue(reply({ ...auth, role: 'learner' }));
@@ -142,9 +123,7 @@ describe('error contrast on the deep login screen', () => {
       for (const bg of grounds) expect(ratio(token(fg), bg)).toBeGreaterThanOrEqual(4.5);
     // input text and placeholder on the white field
     expect(ratio(ink, '#ffffff')).toBeGreaterThanOrEqual(4.5);
-    expect(css).toMatch(
-      /\.pilot-login input,[^{]*\{[^}]*background: #fff;[^}]*color: var\(--ink\)/,
-    );
+    expect(css).toMatch(/\.pilot-login input \{[^}]*background: #fff;[^}]*color: var\(--ink\)/);
     expect(css).toMatch(/::placeholder \{\s*color: #526777/);
     expect(ratio(muted, '#ffffff')).toBeGreaterThanOrEqual(4.5);
     // primary button: enabled, hover, disabled

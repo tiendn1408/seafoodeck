@@ -113,7 +113,7 @@ describe('Account', () => {
     const host = await account();
     await click(button(host, 'Đổi mật khẩu'));
     expect(host.textContent).toContain('Mật khẩu hiện tại');
-    expect(host.textContent).not.toContain('Quản trị viên yêu cầu');
+    expect(host.textContent).not.toContain('Bạn cần đặt mật khẩu mới');
     await click(button(host, 'Hủy'));
     expect(host.textContent).not.toContain('Mật khẩu hiện tại');
     await click(button(host, 'Đổi mật khẩu'));

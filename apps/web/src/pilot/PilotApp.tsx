@@ -10,25 +10,16 @@ import {
 } from './api';
 import { confirmLeave, leaveGuarded, setLeaveGuard } from './leaveGuard';
 import { stopAudio } from './Media';
-import { lazyScreen } from './lazyScreen';
-import { roleChunks } from './roleChunks';
-// The admin and manager styles stay in the main stylesheet, at the place they had before those
-// screens became lazy chunks, so the cascade (and every screen's look) is unchanged. They hold
-// class rules only, no admin code or endpoints. Progress and Review are imported where the
-// manager detail used to pull them in, for the same reason (the built CSS is byte-identical).
-import './users.css';
 import { ErrorNote } from '../learner/ErrorNote';
 import { ChangePassword } from '../learner/ChangePassword';
 import { AppShell } from '../learner/AppShell';
-import { Login, StaffLogin } from '../learner/Login';
+import { Login } from '../learner/Login';
 import { clearMe, refreshMe } from '../learner/meStore';
 import { Home } from '../learner/Home';
 import { Account } from '../learner/Account';
-import '../manager/manager.css';
 import { Progress } from '../learner/Progress';
 import { Review } from '../learner/Review';
 import { kindOf, routeAllowed } from '../learner/role';
-import { loginKind } from '../learner/loginKind';
 import { LIBRARY_START, openGroup, type LibraryView } from '../learner/libraryView';
 import { Profile } from '../learner/Profile';
 import { Library } from '../learner/Library';
@@ -38,7 +29,7 @@ import { ignoreVersion } from '../learner/useOverview';
 import { Study, type GameUpdate } from '../learner/study/Study';
 import { adoptingTotal, disposeAll, flushAll, pendingTotal } from '../learner/study/submitQueues';
 /**
- * The session a trial (or staff) tab is studying, so a reload on #study reopens it. Tab-scoped
+ * The session a trial tab is studying, so a reload on #study reopens it. Tab-scoped
  * and ephemeral; a student's active session always comes from `GET /me/home` instead.
  */
 export const TRIAL_SESSION_KEY = 'seafood-deck:study-session';
@@ -62,12 +53,6 @@ function rememberedSession(): string | null {
 function refreshProgress() {
   for (const path of ['/me/home', '/me/review', '/me/progress', '/me/mastery']) refreshMe(path);
 }
-// Staff and manager screens: separate chunks, downloaded only when the route below renders them,
-// which happens after the login, forced-password and `permitted` checks for the signed-in kind.
-const Admin = lazyScreen(() => roleChunks.admin());
-const UsersAdmin = lazyScreen(() => roleChunks.users());
-const ManagerLearners = lazyScreen(() => roleChunks.learners());
-const ManagerLearnerDetail = lazyScreen(() => roleChunks.learner());
 /** Library with server mastery for students; other kinds pass an idle id, so no /me request is made. */
 function LibraryRoute({
   userId,
@@ -75,15 +60,6 @@ function LibraryRoute({
 }: { userId: string | undefined } & Omit<Parameters<typeof Library>[0], 'mastery'>) {
   const mastery = useMe<MeMastery>('/me/mastery', userId).data;
   return <Library {...props} mastery={userId === undefined ? null : mastery} />;
-}
-/** The learner id in `manager/learner/<id>`: the hash carries it percent-encoded, decode it once. */
-function routeId(route: string) {
-  const raw = route.split('/')[2] ?? '';
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
 }
 function currentRoute() {
   return window.location.hash.slice(1) || 'home';
@@ -109,7 +85,7 @@ export default function PilotApp() {
         undoing.current = false;
         return;
       }
-      // Something that cannot be shown again (an admin's own temporary password) is on screen.
+      // Something that cannot be shown again is on screen.
       if (next !== shown.current && leaveGuarded() && !confirmLeave()) {
         undoing.current = true;
         location.replace('#' + shown.current);
@@ -136,24 +112,22 @@ export default function PilotApp() {
   // the sign-in as a guest, quietly. Set below, once the helpers it resets exist.
   const sessionLost = useRef<() => void>(() => {});
   useEffect(() => setUnauthorizedHandler(() => sessionLost.current()), []);
-  const signedIn = !!auth && auth.role !== 'guest';
+  const kind = kindOf(auth);
+  // Any session that is not a learner's is treated exactly like a signed-out visitor.
+  const signedIn = kind !== 'guest';
   // Only an authenticated session can be forced; a flag raised while a guest never sticks.
   const forced = !!auth && signedIn && (mustChange || auth.mustChangePassword === true);
-  const loginShown = !!auth && !forced && !!loginKind(route, auth.role);
-  const kind = kindOf(auth);
+  const loginShown = !!auth && !forced && !signedIn;
   // A route this kind may not open goes back to home (replace, so Back does not bounce).
-  // A manager's home is the learner table: its own rule, ahead of the general redirect.
-  const managerHome = !!auth && !forced && kind === 'manager' && route === 'home';
-  const permitted = !auth || forced || managerHome || routeAllowed(kind, route);
+  const permitted = !auth || forced || routeAllowed(kind, route);
   // Stage wrappers follow the route only once it is signed in, permitted for this kind and not
-  // forced: the forced password screen uses the plain content wrapper, like the login screens.
-  const staged = signedIn && permitted && !forced && !managerHome;
+  // forced: the forced password screen uses the plain content wrapper, like the login screen.
+  const staged = signedIn && permitted && !forced;
   const canStudy = routeAllowed(kind, 'study');
   useEffect(() => {
-    if (managerHome) location.replace('#manager');
-    else if (!permitted) location.replace('#home');
-  }, [permitted, managerHome]);
-  // Only students have server-side progress; trial and staff keep the tab's session id.
+    if (!permitted) location.replace('#home');
+  }, [permitted]);
+  // Only students have server-side progress; trial tabs keep the tab's session id.
   const student = kind === 'student';
   function opened(g: Game) {
     // Reopening the session this tab already holds keeps answers whose save is still queued.
@@ -179,7 +153,7 @@ export default function PilotApp() {
     reviewTargets?: { targetId: string; skill: string }[],
     limit?: number,
   ) {
-    // Kinds without the study route (managers) never open a learning session.
+    // Kinds without the study route never open a learning session.
     if (!canStudy) return;
     setPending(true);
     setError('');
@@ -212,12 +186,12 @@ export default function PilotApp() {
     }
   }
   // A reload on #study reopens the session being studied: a student's from /me/home
-  // (activeSessionId), a trial or staff tab's from sessionStorage. Tried once per sign-in.
+  // (activeSessionId), a trial tab's from sessionStorage. Tried once per sign-in.
   const restoreTried = useRef<string | null>(null);
   // Bumped on logout so a restore still in flight never reopens the previous user's session.
   const signIns = useRef(0);
   const [restoreSettled, setRestoreSettled] = useState<string | null>(null);
-  const restoreFor = auth && auth.role !== 'guest' ? `${auth.role}:${auth.userId ?? ''}` : null;
+  const restoreFor = auth && signedIn ? `${auth.role}:${auth.userId ?? ''}` : null;
   const restoring =
     restoreFor !== null &&
     restoreSettled !== restoreFor &&
@@ -270,8 +244,6 @@ export default function PilotApp() {
     refreshed.current = game.id;
     refreshProgress();
   }, [game]);
-  // Admins are staff-like everywhere (content area, no /me/*) and also manage accounts.
-  const staff = kind === 'staff' || kind === 'admin';
   // True while logout waits for self-ratings still being saved in the background.
   const [saving, setSaving] = useState(false);
   const leaving = useRef(false);
@@ -391,9 +363,7 @@ export default function PilotApp() {
                 ? 'study-stage'
                 : staged && route === 'account'
                   ? 'account-stage'
-                  : staged &&
-                      (['library', 'review', 'progress'].includes(route) ||
-                        route.startsWith('manager/learner/'))
+                  : staged && ['library', 'review', 'progress'].includes(route)
                     ? 'ice-stage'
                     : 'content home-content'
         }
@@ -413,28 +383,19 @@ export default function PilotApp() {
               setMustChange(false);
             }}
           />
-        ) : loginKind(route, auth.role) ? (
-          (() => {
-            const onLogin = (a: AuthView) => {
+        ) : !signedIn ? (
+          <Login
+            onLogin={(a) => {
               setCsrf(a.csrf);
               setMustChange(false);
               setAuth(a);
-            };
-            return loginKind(route, auth.role) === 'staff' ? (
-              <StaffLogin onLogin={onLogin} />
-            ) : (
-              <Login onLogin={onLogin} />
-            );
-          })()
-        ) : !permitted || managerHome ? null : (
+            }}
+          />
+        ) : !permitted ? null : (
           <>
-            {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
-            {route.startsWith('manager/learner/') && auth.userId !== undefined && (
-              <ManagerLearnerDetail key={route} id={routeId(route)} userId={auth.userId} />
-            )}
-            {route === 'home' && kind !== 'manager' && (
+            {route === 'home' && (
               <Home
-                kind={kind === 'student' || kind === 'trial' ? kind : 'staff'}
+                kind={student ? 'student' : 'trial'}
                 userId={auth.userId}
                 pending={pending}
                 onStart={start}
@@ -468,7 +429,7 @@ export default function PilotApp() {
                 <Study
                   key={game.id}
                   game={game}
-                  userKind={student ? 'student' : kind === 'trial' ? 'trial' : 'staff'}
+                  userKind={student ? 'student' : 'trial'}
                   onChange={changeGame}
                   onRetry={() => start('review', undefined, 'en', game.id)}
                   pending={pending}
@@ -491,8 +452,6 @@ export default function PilotApp() {
                 onPasswordChanged={adoptSession}
               />
             )}
-            {route === 'admin' && staff && <Admin usersTab={kind === 'admin'} />}
-            {route === 'admin/users' && kind === 'admin' && <UsersAdmin selfId={auth.userId} />}
           </>
         )}
       </div>

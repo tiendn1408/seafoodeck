@@ -4,18 +4,21 @@ import {randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 const env=Object.fromEntries(readFileSync('.local/pilot.env','utf8').trim().split('\n').map(l=>{const p=l.indexOf('=');return [l.slice(0,p),l.slice(p+1)];}));
 const origin=process.env.PILOT_ORIGIN??env.PUBLIC_ORIGIN;
+// Phase 2.5e: staff/admin calls go to the Studio host (the learner host answers 404 for them).
+const studio=process.env.PILOT_STUDIO_ORIGIN??env.STUDIO_ORIGIN??origin;
 const evidence=[];
 function pass(name,details={}){evidence.push({name,...details});console.log('PASS',name,JSON.stringify(details));}
 class Client {
  cookie='';csrf='';
- async req(path,body,options={}){const headers={...(this.cookie?{Cookie:this.cookie}:{}),...(body===undefined?{}:{'X-CSRF-Token':this.csrf,...(body instanceof FormData?{}:{'Content-Type':'application/json'})}),...options.headers};const response=await fetch(origin+'/api/v1'+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:body instanceof FormData?body:JSON.stringify(body)});const cookie=response.headers.getSetCookie()[0];if(cookie)this.cookie=cookie.split(';')[0];const text=await response.text();let data;try{data=JSON.parse(text);}catch{data={message:text};}if(data.csrf)this.csrf=data.csrf;return {status:response.status,data,bytes:Buffer.byteLength(text),headers:response.headers};}
+ constructor(base=origin){this.base=base;}
+ async req(path,body,options={}){const headers={...(this.cookie?{Cookie:this.cookie}:{}),...(body===undefined?{}:{'X-CSRF-Token':this.csrf,...(body instanceof FormData?{}:{'Content-Type':'application/json'})}),...options.headers};const response=await fetch(this.base+'/api/v1'+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:body instanceof FormData?body:JSON.stringify(body)});const cookie=response.headers.getSetCookie()[0];if(cookie)this.cookie=cookie.split(';')[0];const text=await response.text();let data;try{data=JSON.parse(text);}catch{data={message:text};}if(data.csrf)this.csrf=data.csrf;return {status:response.status,data,bytes:Buffer.byteLength(text),headers:response.headers};}
  async ok(path,body){const r=await this.req(path,body);assert.equal(r.status,body===undefined?200:201,`Unexpected ${r.status} at ${path}: ${r.data.message}`);return r.data;}
  async login(admin=false){await this.ok('/auth/me');return this.ok('/auth/login',admin?{username:env.ADMIN_USERNAME,credential:env.ADMIN_PASSWORD}:{credential:env.LEARNER_INVITE_CODE});}
 }
-const learner=new Client(),admin=new Client();
+const learner=new Client(),admin=new Client(studio);
 assert.equal((await learner.req('/catalog/items')).status,401);
 await learner.ok('/auth/me');assert.equal((await learner.req('/auth/login',{credential:env.LEARNER_INVITE_CODE},{headers:{'X-CSRF-Token':''}})).status,403);
-await learner.login();assert.equal((await learner.req('/admin/overview')).status,403);
+await learner.login();assert.equal((await learner.req('/admin/overview')).status,studio===origin?403:404);
 pass('invite, cookie scope, CSRF and learner/admin separation');
 let at=performance.now();const page=await learner.req('/catalog/items?limit=12');assert.equal(page.status,200);assert.ok(page.data.total>=1000);assert.equal(page.data.items.length,12);assert.ok(page.bytes<100000);const elapsed=performance.now()-at;
 const all=await learner.ok('/catalog/items?learnable=true&limit=50');assert.equal(all.items.length,6);
@@ -77,5 +80,5 @@ try {
  const round=await learner.ok('/learning/sessions',{mode:'hs'});assert.ok(round.questions.some(q=>q.prompt===overview.scenarios.find(s=>s.data.kind==='insufficient').data.prompt));
  pass('HS retains missing-fact coverage and due review resolves the requested case among four or more');
 } finally {await admin.ok(`/admin/releases/${original.id}/rollback`,{});}
-writeFileSync('.local/smoke-evidence.json',JSON.stringify({at:new Date().toISOString(),origin,evidence,qa:{revisionId,photoId:photo.data.id,audioId,releaseId:published.id}},null,2)+'\n',{mode:0o600});
+writeFileSync('.local/smoke-evidence.json',JSON.stringify({at:new Date().toISOString(),origin,studio,evidence,qa:{revisionId,photoId:photo.data.id,audioId,releaseId:published.id}},null,2)+'\n',{mode:0o600});
 console.log('All internal smoke checks passed. No real content was approved.');
