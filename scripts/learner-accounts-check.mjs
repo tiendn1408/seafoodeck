@@ -114,7 +114,7 @@ await check('e','a new login (new session) still sees the progress',async()=>{
 });
 await check('f','new internal release with the same revisions: /me/mastery unchanged',async()=>{
  const current=(await student.ok('/me/home')).releaseId;const overview=await admin.ok('/admin/overview');const original=overview.releases.find(r=>r.id===current);
- assert.ok(original,'current release must be among the 20 latest releases');assert.equal(original.internal,true,'local stack serves an internal release');
+ assert.ok(original,'overview must list the release learners are served');assert.equal(original.current,true,'overview flags it as current');assert.equal(original.internal,true,'local stack serves an internal release');
  const published=await admin.ok('/admin/releases',{revisionIds:original.items.map(i=>i.revisionId),internal:true});
  try{
   assert.equal((await student.ok('/me/home')).releaseId,published.id,'student now sees the new release');

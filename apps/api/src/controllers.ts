@@ -241,15 +241,32 @@ export class AdminController {
         take: 100,
         include: { names: true, media: { include: { asset: true } } },
       }),
-      releases: await this.db.contentRelease.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        include: { items: true },
-      }),
+      releases: await this.releaseHistory(),
       tariffs: await this.db.tariffReference.findMany({ take: 100 }),
       scenarios: await this.db.tradeScenario.findMany({ take: 100, include: { tariff: true } }),
       audit: await this.db.audit.findMany({ take: 50, orderBy: { at: 'desc' } }),
     };
+  }
+  /**
+   * The 20 newest releases, then any release learners are served (`current:*`) that is older
+   * (a rollback can make the live release older than 20 later publishes); `current` marks them.
+   */
+  private async releaseHistory() {
+    const include = { items: true } as const;
+    const [recent, settings] = await Promise.all([
+      this.db.contentRelease.findMany({ take: 20, orderBy: { createdAt: 'desc' }, include }),
+      this.db.setting.findMany({ where: { id: { in: ['current:internal', 'current:public'] } } }),
+    ]);
+    const current = new Set(settings.map((s) => s.value));
+    const older = [...current].filter((id) => !recent.some((r) => r.id === id));
+    const rest = older.length
+      ? await this.db.contentRelease.findMany({
+          where: { id: { in: older } },
+          orderBy: { createdAt: 'desc' },
+          include,
+        })
+      : [];
+    return [...recent, ...rest].map((r) => ({ ...r, current: current.has(r.id) }));
   }
   @Get('csv-template') template(@Req() req: ActorRequest) {
     requireRole(req, ['editor', 'admin']);
