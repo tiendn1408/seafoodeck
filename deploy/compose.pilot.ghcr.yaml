@@ -75,8 +75,8 @@ services:
   # Web tier: `edge` is the only way in (ports 80/443, TLS, headers, /api/*, S3 proxy, Studio guard) and proxies
   # the rest by host to `web-learner` or `web-studio`, each holding one app build only. Three images, three
   # digests (EDGE_IMAGE_REF, LEARNER_IMAGE_REF, STUDIO_IMAGE_REF) so either app can roll back alone.
-  # Switching from the old single `web` container: it still owns 80/443, so remove it first
-  # (`docker rm -f <project>-web-1`), then `up -d edge web-learner web-studio`. Never `down -v`.
+  # Switching from the old single `web`: follow docs/DEPLOY_STUDIO_HOST.md sections 3.5-3.6 exactly
+  # (`--no-deps --force-recreate edge`). Never `down -v`.
   edge:
     <<: *web-tier
     image: ${EDGE_IMAGE_REF:?Set EDGE_IMAGE_REF in .local/pilot.env}

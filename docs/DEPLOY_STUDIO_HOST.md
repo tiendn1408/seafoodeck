@@ -95,6 +95,7 @@ Script dừng API vài chục giây trong lúc sao lưu, nên làm lúc không c
     git rev-parse --short HEAD  # ghi lại: đây là <previous-commit> cho phần Quay lại (mục 5)
     sudo env PILOT_COMPOSE_FILE=deploy/compose.pilot.ghcr.yaml sh scripts/backup-pilot.sh _backups/before-web-split
     ls -la _backups/before-web-split      # phải thấy db.sql, objects.json và images.txt
+    # Ghi lại số liệu catalogue TRƯỚC khi đổi ảnh (lệnh đếm ở mục 4, đang chạy ảnh cũ) để so sau deploy.
     git pull --ff-only origin main        # BẮT BUỘC: mang về compose mới (ba dịch vụ web, ba biến *_IMAGE_REF); thiếu bước này thì ảnh mới chạy với compose cũ
 
 ### 3.3 Ghi nhớ bản đang chạy rồi đổi mã ảnh (VPS)
@@ -124,8 +125,6 @@ DỪNG nếu `compose-ok` không hiện hoặc `dc config --images` còn tag gi�
 
 Từ bước này, mỗi lệnh `dc up` in cảnh báo `Found orphan containers (<project>-web-1)`: bình thường (compose mới không còn tên `web`). **Đừng** thêm `--remove-orphans` và đừng chạy `dc up -d` không kèm tên service trước bước 3.6: cả hai sẽ gỡ `web` cũ hoặc thử bật `edge` sớm (`edge` không bind được cổng, xem 3.6).
 
-Trước khi đổi ảnh, ghi lại số liệu catalogue (lệnh đếm ở mục 4) để so sau deploy.
-
 ### 3.5 Hai container web mới (VPS, chưa có gián đoạn)
 
 Hai container này không publish cổng nên chạy được song song với `web` cũ:
@@ -151,7 +150,7 @@ Gỡ container `web` cũ. Lý do: file compose mới không còn tên `web` (nê
     dc ps                                  # edge healthy VÀ cột PORTS của edge có 80/443 (chỉ ở edge)
     dc logs --since 5m edge | grep -i -E 'certificate|error' | tail -20
 
-Lý do `--force-recreate`: nếu `edge` từng được tạo khi `web` cũ còn giữ cổng (một lần `dc up` sớm, báo `port is already allocated`), container đó nằm lại ở trạng thái Created; `dc up -d --no-deps edge` không kèm cờ sẽ bật lại đúng container đó và Docker có thể bật nó **không publish cổng nào** (diễn tập: `edge` healthy nhưng cả hai host từ chối kết nối). `--force-recreate` luôn tạo container mới, vô hại khi chưa có. Vì vậy `edge` healthy chưa đủ: cột PORTS của `edge` trong `dc ps` phải có 80 và 443.
+Lý do `--force-recreate`: nếu `edge` từng được tạo khi `web` cũ còn giữ cổng (một lần `dc up` sớm, báo `port is already allocated`), container đó nằm lại ở trạng thái Created; `dc up -d --no-deps edge` không kèm cờ sẽ bật lại đúng container đó và Docker có thể bật nó **không publish cổng nào** (quan sát được trong diễn tập trên Docker Desktop, chưa tái hiện trên Docker Linux; `edge` healthy nhưng cả hai host từ chối kết nối). `--force-recreate` luôn tạo container mới, vô hại khi chưa có. Vì vậy `edge` healthy chưa đủ: cột PORTS của `edge` trong `dc ps` phải có 80 và 443.
 
 DỪNG và đọc mục 5 nếu dòng lọc đầu tiên không phải đúng một container `web` hoặc `edge` không healthy (hoặc không có cổng) sau vài chục giây. `dc ps` chạy sau khi `edge` lên; từ giờ làm tiếp mục 4.
 
@@ -208,15 +207,17 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
 - Quay về bản một container `web` (trước tách ba ảnh): ảnh API và ảnh web quay **cùng nhau** (ảnh web cũ với API mới, hoặc ngược lại, chưa được kiểm). Làm theo thứ tự này, `<previous-commit>` là commit đã ghi ở mục 3.2:
 
         P=seafoodeck-pilot    # đúng tên project (mục 3.6)
+        git checkout <previous-commit> -- deploy/compose.pilot.ghcr.yaml
+        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF; nếu quay về ảnh trước 2.5e thì CŨNG xóa (hoặc comment) dòng STUDIO_ORIGIN trước khi chạy tiếp (còn đặt thì nhân sự không đăng nhập được ở host học viên và CORS kho S3 vẫn nhận nó)
+        dc pull                      # kéo ảnh cũ TRƯỚC khi gỡ gì; lỗi ở đây (đăng nhập GHCR hết hạn, mạng) thì web mới vẫn đang chạy, dừng lại xử lý
         for svc in edge web-learner web-studio; do
           sudo docker rm -f $(sudo docker ps -aq --filter label=com.docker.compose.project=$P --filter label=com.docker.compose.service=$svc)
         done
-        git checkout <previous-commit> -- deploy/compose.pilot.ghcr.yaml
-        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF; nếu quay về ảnh trước 2.5e thì CŨNG xóa (hoặc comment) dòng STUDIO_ORIGIN trước khi chạy tiếp (còn đặt thì nhân sự không đăng nhập được ở host học viên và CORS kho S3 vẫn nhận nó)
-        dc pull
         dc up -d --no-deps storage
         dc up -d --no-deps api
         dc up -d --no-deps web
+
+  Cả hai host ngừng từ vòng `rm` cho tới khi `web` lên (vài giây ở local; sẽ lâu hơn nếu còn phải kéo ảnh, vì thế `dc pull` chạy trước). Đổi compose và env trước khi gỡ là vô hại: lúc đó ba container mới chỉ thành container mồ côi của file compose cũ, vẫn chạy cho tới vòng `rm`. Thứ tự này đã suy luận từ các lệnh đã diễn tập, chưa diễn tập lại nguyên thứ tự mới.
 
   Vòng lặp xử lý từng service vì nhiều `--filter label=` trong một lệnh được hiểu là VÀ, không phải HOẶC. Service nào không có container thì `docker rm -f` của vòng đó báo `requires at least 1 argument`: vô hại, vòng lặp chạy tiếp. Lý do dùng `docker rm` thay `dc rm`: compose cũ không còn tên ba service này. **Giữ nguyên file compose cũ** (working tree lệch một file, `git status` hiện `M deploy/compose.pilot.ghcr.yaml`) chừng nào bản một container `web` còn chạy: trả file về bản mới khi env vẫn là `WEB_IMAGE_REF` thì mọi lệnh `dc` (kể cả `backup-pilot.sh`) lỗi `required variable LEARNER_IMAGE_REF is missing a value`. Khi nâng cấp lại sau một lần quay lại: ở mục 3.2, `git status --short` chỉ được hiện đúng dòng này; chạy `backup-pilot.sh` như viết (nó cần file cũ vì bản cũ đang chạy), rồi `git checkout HEAD -- deploy/compose.pilot.ghcr.yaml` ngay trước `git pull --ff-only`; `<previous-commit>` vẫn là commit đã ghi lần đầu (HEAD lúc này đã là commit mới). Cũng cần **xóa (hoặc comment) dòng `STUDIO_ORIGIN`** trong `.local/pilot.env` nếu quay về ảnh trước 2.5e (ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng giữ cho chắc); `STUDIO_SITE_ADDRESS` để nguyên được vì ảnh cũ không dùng nó. Ảnh web 2.5e với ảnh API cũ thì host học viên không còn chặn API nhân sự (chặn nằm trong API, edge chỉ gắn header): vì thế nâng cấp luôn chạy API trước web.
 - Bản ghi DNS của host Studio có thể giữ; không có site nào trả lời cho nó khi bản cũ chạy.
