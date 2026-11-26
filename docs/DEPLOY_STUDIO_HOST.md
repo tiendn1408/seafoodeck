@@ -208,7 +208,7 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
           sudo docker rm -f $(sudo docker ps -aq --filter label=com.docker.compose.project=$P --filter label=com.docker.compose.service=$svc)
         done      # verified in Task 4 rehearsal
         git checkout <previous-commit> -- deploy/compose.pilot.ghcr.yaml    # verified in Task 4 rehearsal
-        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF
+        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF; nếu quay về ảnh trước 2.5e thì CŨNG xóa (hoặc comment) dòng STUDIO_ORIGIN trước khi chạy tiếp (còn đặt thì nhân sự không đăng nhập được ở host học viên và CORS kho S3 vẫn nhận nó)
         dc pull
         dc up -d --no-deps storage
         dc up -d --no-deps api
