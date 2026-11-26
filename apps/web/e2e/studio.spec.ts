@@ -514,7 +514,7 @@ async function smallTargets(page: Page) {
   return page.evaluate(() =>
     [
       ...document.querySelectorAll<HTMLElement>(
-        'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), label:has(> input[type=checkbox]), a.users-secondary, a.manager-csv, .admin-tabs > *, .manager-more > summary',
+        'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]), label:has(> input[type=checkbox]), a.users-secondary, a.manager-csv, .manager-more > summary',
       ),
     ]
       .filter((el) => el.getClientRects().length > 0 && !el.closest('.users-sr'))

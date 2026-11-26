@@ -199,7 +199,17 @@ test('startup validation of STUDIO_ORIGIN', () => {
     ({ PUBLIC_ORIGIN: pub, STUDIO_ORIGIN: studio }) as NodeJS.ProcessEnv;
   assert.equal(studioOriginProblem(env(undefined)), undefined);
   assert.equal(studioOriginProblem(env(STUDIO)), undefined);
-  assert.equal(studioOriginProblem(env(`${STUDIO.toUpperCase()}:443/`)), undefined);
+  for (const loose of [
+    `${STUDIO}/`,
+    'https://STUDIO.example.test',
+    `${STUDIO}:443`,
+    `${STUDIO.toUpperCase()}:443/`,
+  ])
+    assert.match(
+      studioOriginProblem(env(loose)) ?? '',
+      new RegExp(`written exactly as ${STUDIO.replace(/\./g, '\\.')}\\b`),
+      loose,
+    );
   for (const bad of [
     'studio.example.test',
     'ftp://studio.example.test',

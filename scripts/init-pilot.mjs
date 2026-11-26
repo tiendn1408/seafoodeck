@@ -18,9 +18,10 @@ const studioFlag=process.argv.indexOf('--studio-origin');
 const studioOrigin=studioFlag>=0?bareOrigin('--studio-origin',process.argv[studioFlag+1]):production?undefined:'http://localhost:18090';
 if(production&&!origin.startsWith('https://'))throw Error('Production origin must use HTTPS.');
 if(production&&studioOrigin&&!studioOrigin.startsWith('https://'))throw Error('Production studio origin must use HTTPS.');
+if(studioFlag>=0&&process.argv[studioFlag+1]!==studioOrigin)throw Error(`STUDIO_ORIGIN must be written exactly as ${studioOrigin} (it is also the S3 CORS entry).`);
 if(studioOrigin===origin)throw Error('Studio origin must differ from the learner origin.');
 // Caddy address of the Studio site: production = its host name (automatic HTTPS); local = plain HTTP
-// on container port 8090 (published as 127.0.0.1:STUDIO_WEB_PORT), answering to the origin's host.
+// on container port 8090 (local compose.yaml publishes it as 127.0.0.1:STUDIO_WEB_PORT; the VPS compose publishes no Studio port), answering to the origin's host.
 const studioSiteAddress=o=>production?new URL(o).hostname:`http://${new URL(o).hostname}:8090`;
 const secret=()=>randomBytes(24).toString('hex');
 const db=secret(),key='sd'+secret().slice(0,18),s3=secret();

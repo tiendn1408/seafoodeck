@@ -73,8 +73,9 @@ const publicOrigin = () => configured(process.env.PUBLIC_ORIGIN);
 const studioOrigin = () => configured(process.env.STUDIO_ORIGIN);
 /**
  * Startup check for STUDIO_ORIGIN (unset is fine): it must be a bare http(s) origin (a trailing slash,
- * capitals and a default port are normalised away; a path, query or credentials are not) and differ
- * from PUBLIC_ORIGIN. Returns the problem text, or undefined.
+ * capitals and a default port are normalised when matching, but the value itself must already be
+ * canonical because compose copies it into the S3 CORS list; a path, query or credentials are
+ * refused) and differ from PUBLIC_ORIGIN. Returns the problem text, or undefined.
  */
 export function studioOriginProblem(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const raw = env.STUDIO_ORIGIN;
@@ -96,6 +97,8 @@ export function studioOriginProblem(env: NodeJS.ProcessEnv = process.env): strin
     return 'STUDIO_ORIGIN must be a bare http(s) origin (scheme and host, no path, query or credentials).';
   if (url.origin === normalizeOrigin(env.PUBLIC_ORIGIN))
     return 'STUDIO_ORIGIN must differ from PUBLIC_ORIGIN.';
+  if (raw !== url.origin)
+    return `STUDIO_ORIGIN must be written exactly as ${url.origin} (it is also the S3 CORS entry).`;
   return undefined;
 }
 const allowedOrigins = () => [publicOrigin(), studioOrigin()].filter((o): o is string => !!o);

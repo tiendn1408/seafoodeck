@@ -299,7 +299,7 @@ describe('StudioApp role-aware routes', () => {
     expect(host.querySelector('h1')?.textContent).toBe('Người dùng');
   });
 
-  it('with the admin own own one-time password on screen, the tabs cannot leave unless confirmed', async () => {
+  it('with the own one-time password of an admin on screen, the tabs cannot leave unless confirmed', async () => {
     routes[USERS] = () => json({ items: [ownAdmin], total: 1, page: 1, limit: 20 });
     routes['POST /admin/users/u-admin/reset-password'] = () =>
       json({ temporaryPassword: 'OwnTmp7xKq9Rz2aBcDeF' });
