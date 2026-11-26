@@ -56,13 +56,55 @@ export type Realm = 'learner' | 'studio';
 /** Learner and account students live on PUBLIC_ORIGIN; every staff/manager role on STUDIO_ORIGIN. */
 export const realmOf = (role: string): Realm =>
   role === 'learner' || role === 'student' ? 'learner' : 'studio';
-const allowedOrigins = () =>
-  [process.env.PUBLIC_ORIGIN, process.env.STUDIO_ORIGIN].filter((o): o is string => !!o);
+/** `new URL(v).origin` (lowercase host, default port dropped); null when v is not a URL. */
+export function normalizeOrigin(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const origin = new URL(value.trim()).origin;
+    return origin === 'null' ? null : origin;
+  } catch {
+    return null;
+  }
+}
+/** An operator-set origin in its comparable form; an unparsable value is kept raw (never matches a browser). */
+const configured = (value: string | undefined) =>
+  value ? (normalizeOrigin(value) ?? value) : undefined;
+const publicOrigin = () => configured(process.env.PUBLIC_ORIGIN);
+const studioOrigin = () => configured(process.env.STUDIO_ORIGIN);
+/**
+ * Startup check for STUDIO_ORIGIN (unset is fine): it must be a bare http(s) origin (a trailing slash,
+ * capitals and a default port are normalised away; a path, query or credentials are not) and differ
+ * from PUBLIC_ORIGIN. Returns the problem text, or undefined.
+ */
+export function studioOriginProblem(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const raw = env.STUDIO_ORIGIN;
+  if (!raw) return undefined;
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return 'STUDIO_ORIGIN is not a valid URL; use a bare origin such as https://studio.example.com.';
+  }
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  )
+    return 'STUDIO_ORIGIN must be a bare http(s) origin (scheme and host, no path, query or credentials).';
+  if (url.origin === normalizeOrigin(env.PUBLIC_ORIGIN))
+    return 'STUDIO_ORIGIN must differ from PUBLIC_ORIGIN.';
+  return undefined;
+}
+const allowedOrigins = () => [publicOrigin(), studioOrigin()].filter((o): o is string => !!o);
 /** Which realm an Origin header belongs to; `none` when the header is absent. */
 export function originRealm(origin: string | undefined): Realm | 'unknown' | 'none' {
   if (!origin) return 'none';
-  if (origin === process.env.PUBLIC_ORIGIN) return 'learner';
-  if (process.env.STUDIO_ORIGIN && origin === process.env.STUDIO_ORIGIN) return 'studio';
+  const seen = normalizeOrigin(origin) ?? origin;
+  if (seen === publicOrigin()) return 'learner';
+  if (studioOrigin() && seen === studioOrigin()) return 'studio';
   return 'unknown';
 }
 /** True when the realms are split (STUDIO_ORIGIN set), the login has an Origin, and it is not the role's realm. */
@@ -157,7 +199,7 @@ export class Auth {
     if (req.headers['x-csrf-token'] !== actor.csrf)
       throw new ForbiddenException('CSRF token không hợp lệ.');
     const origin = req.headers.origin;
-    if (!opts.skipOrigin && origin && !allowedOrigins().includes(origin))
+    if (!opts.skipOrigin && origin && !allowedOrigins().includes(normalizeOrigin(origin) ?? origin))
       throw new ForbiddenException('Origin không hợp lệ.');
   }
   view(actor: AuthSession) {

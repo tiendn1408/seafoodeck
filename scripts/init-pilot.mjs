@@ -5,10 +5,17 @@ await mkdir(dir,{recursive:true,mode:0o700});
 try { await access(new URL('pilot.env',dir)); throw Error('pilot.env already exists; keep existing credentials.'); } catch(e) { if(e.code!=='ENOENT') throw e; }
 const production=process.argv.includes('--production');
 const originFlag=process.argv.indexOf('--origin');
-const origin=originFlag>=0?new URL(process.argv[originFlag+1]).origin:'http://127.0.0.1:18089';
+// Same rule as the API's startup check: a bare http(s) origin; slash, capitals and default port are normalised away, and the
+// normalised value is what lands in PUBLIC_ORIGIN/STUDIO_ORIGIN and in the S3 CORS list built from them.
+const bareOrigin=(flag,v)=>{
+  let u;try{u=new URL(v);}catch{throw Error(`${flag} is not a valid URL.`);}
+  if(!['http:','https:'].includes(u.protocol)||u.username||u.password||u.pathname!=='/'||u.search||u.hash)throw Error(`${flag} must be a bare http(s) origin (scheme and host, no path, query or credentials).`);
+  return u.origin;
+};
+const origin=originFlag>=0?bareOrigin('--origin',process.argv[originFlag+1]):'http://127.0.0.1:18089';
 const studioFlag=process.argv.indexOf('--studio-origin');
 // Staff realm: its own origin (local: the second published port, addressed as localhost). Production needs --studio-origin.
-const studioOrigin=studioFlag>=0?new URL(process.argv[studioFlag+1]).origin:production?undefined:'http://localhost:18090';
+const studioOrigin=studioFlag>=0?bareOrigin('--studio-origin',process.argv[studioFlag+1]):production?undefined:'http://localhost:18090';
 if(production&&!origin.startsWith('https://'))throw Error('Production origin must use HTTPS.');
 if(production&&studioOrigin&&!studioOrigin.startsWith('https://'))throw Error('Production studio origin must use HTTPS.');
 if(studioOrigin===origin)throw Error('Studio origin must differ from the learner origin.');

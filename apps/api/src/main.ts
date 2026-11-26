@@ -20,6 +20,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { Db } from './db';
 import { errorBody, errorStatus } from './errors';
 import { learnerEdge } from './learner-edge';
+import { studioOriginProblem } from './security';
 import {
   DatabaseModule,
   AuthModule,
@@ -75,6 +76,11 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
 }
 /** The configured API application (not listening yet). */
 export async function createApp(env: NodeJS.ProcessEnv = process.env): Promise<INestApplication> {
+  const problem = studioOriginProblem(env);
+  if (problem) {
+    console.error(`API startup refused: ${problem}`);
+    throw new Error(problem);
+  }
   const server = express();
   server.disable('x-powered-by');
   // API is private behind exactly one Caddy hop; do not group every learner under its IP.

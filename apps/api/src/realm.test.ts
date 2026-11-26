@@ -3,7 +3,16 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { HttpException } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { Auth, LoginLimiter, passwordHash, realmOf, originRealm } from './security';
+import {
+  Auth,
+  LoginLimiter,
+  passwordHash,
+  realmOf,
+  originRealm,
+  normalizeOrigin,
+  studioOriginProblem,
+} from './security';
+import { createApp } from './main';
 import { AuthController } from './auth.controller';
 import type { Db } from './db';
 
@@ -166,4 +175,52 @@ test('STUDIO_ORIGIN unset: exactly the old behaviour', async () => {
   assert.equal((await attempt('student', 'https://evil.test')).status, 403);
   assert.equal((await attempt('student', STUDIO)).status, 403);
   assert.throws(() => auth.checkWrite(reqWith(STUDIO), { csrf } as never), /Origin/);
+});
+
+test('operator origins with trailing slash, capitals or default port still match the browser Origin', async () => {
+  process.env.PUBLIC_ORIGIN = 'HTTPS://Learn.Example.test:443/';
+  process.env.STUDIO_ORIGIN = 'https://STUDIO.example.test:443/';
+  assert.equal(normalizeOrigin(process.env.STUDIO_ORIGIN), STUDIO);
+  assert.equal(originRealm(LEARNER), 'learner');
+  assert.equal(originRealm(STUDIO), 'studio');
+  assert.equal(originRealm('https://evil.test'), 'unknown');
+  for (const origin of [LEARNER, STUDIO])
+    assert.doesNotThrow(() => auth.checkWrite(reqWith(origin), { csrf } as never));
+  assert.throws(() => auth.checkWrite(reqWith('https://evil.test'), { csrf } as never), /Origin/);
+  assert.equal((await attempt('admin', STUDIO)).status, 201);
+  assert.equal((await attempt('student', LEARNER)).status, 201);
+  assert.equal((await attempt('admin', LEARNER)).status, 401);
+  process.env.STUDIO_ORIGIN = 'http://localhost:80/';
+  assert.equal(originRealm('http://localhost'), 'studio');
+});
+
+test('startup validation of STUDIO_ORIGIN', () => {
+  const env = (studio: string | undefined, pub = LEARNER) =>
+    ({ PUBLIC_ORIGIN: pub, STUDIO_ORIGIN: studio }) as NodeJS.ProcessEnv;
+  assert.equal(studioOriginProblem(env(undefined)), undefined);
+  assert.equal(studioOriginProblem(env(STUDIO)), undefined);
+  assert.equal(studioOriginProblem(env(`${STUDIO.toUpperCase()}:443/`)), undefined);
+  for (const bad of [
+    'studio.example.test',
+    'ftp://studio.example.test',
+    'https://studio.example.test/app',
+    'https://studio.example.test/?x=1',
+    'https://user:pw@studio.example.test',
+  ])
+    assert.match(studioOriginProblem(env(bad)) ?? '', /STUDIO_ORIGIN/, bad);
+  assert.match(studioOriginProblem(env(LEARNER)) ?? '', /differ/);
+  assert.match(studioOriginProblem(env('HTTPS://LEARN.example.test:443/')) ?? '', /differ/);
+});
+
+test('createApp refuses to start on an invalid STUDIO_ORIGIN', async () => {
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      createApp({ ...process.env, STUDIO_ORIGIN: `${LEARNER}/x` }),
+      /bare http\(s\) origin/,
+    );
+  } finally {
+    console.error = quiet;
+  }
 });
