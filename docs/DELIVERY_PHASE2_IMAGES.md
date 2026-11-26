@@ -1,5 +1,7 @@
 # Image 0.6 + giao diện học viên mới (phase 2)
 
+> **Lịch sử.** Biên bản của một bản phát hành cũ với một ảnh web (`seafoodeck-web`, `WEB_IMAGE_REF`, `apps/web/Dockerfile`, Caddyfile trong ảnh web). Từ 2.5e tầng web là ba ảnh `edge`, `web-learner`, `web-studio` và `Dockerfile` ở gốc có ba target; xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md). Không dùng các lệnh trong tài liệu này cho bản hiện tại.
+
 Ngày 19/11/2026. Dựng từ `main` tại merge commit `92ca3e5`.
 
 ## Đã build

@@ -1,5 +1,7 @@
 # Demo học viên — 20/11/2026
 
+> **Lịch sử.** Biên bản của một bản phát hành cũ với một ảnh web (`seafoodeck-web`, `WEB_IMAGE_REF`, `apps/web/Dockerfile`, Caddyfile trong ảnh web). Từ 2.5e tầng web là ba ảnh `edge`, `web-learner`, `web-studio` và `Dockerfile` ở gốc có ba target; xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md). Không dùng các lệnh trong tài liệu này cho bản hiện tại.
+
 Phạm vi chốt theo người dùng: tài khoản học viên → đổi mật khẩu lần đầu → bốn chế độ học → tổng kết → ôn và tiến độ lưu server. Quản trị có màn Người dùng để tạo/khóa/reset tài khoản. Không gọi đây là hoàn thành toàn bộ phase 2.5c: manager xem nhóm và bulk CSV ở giao diện chưa có. Bộ mẫu và media/HS chưa được khách duyệt vẫn là nội bộ.
 
 Hai image amd64 cùng tag `learner-demo-20261120-r1`:

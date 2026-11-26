@@ -1,5 +1,7 @@
 # Mốc triển khai monorepo/pilot
 
+> **Lịch sử.** Dòng `docker build -f apps/web/Dockerfile` bên dưới là của mốc di chuyển web; `apps/web/Dockerfile` đã bị xóa, nay dùng `Dockerfile` ở gốc với `--target`. Xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md).
+
 ## Baseline và mốc 1 — dời frontend
 
 Baseline 7840e41 / tag baseline-0.5.1; remote origin chưa có refs trước khi khởi tạo. npm 11.19.1, Node 24.22.3, một package-lock. Không thay package manager hoặc nâng dependency FE.

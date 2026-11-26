@@ -6,10 +6,10 @@ Mục tiêu của chủ dự án: **giảm số người biết là có khu qu�
 
 ## Đã giao
 
-**Hai app, hai host, một API, một DB, một ảnh web**
+**Hai app, hai host, một API, một DB, ba ảnh web (xem "Tách tầng web" cuối tài liệu; ban đầu 2.5e giao một ảnh web)**
 - `apps/web`: app học viên (khách, học thử bằng mã mời, student). Không còn route, tab, chữ, tên file chunk hay đường API nào của quản trị/quản lý. Mở `#admin`, `#manager`… trên app học viên chỉ về Trang chủ (hoặc form đăng nhập nếu chưa đăng nhập).
 - `apps/studio` (`@seafoodeck/studio`): app Studio cho editor/reviewer/publisher (Quản trị + Thư viện), manager (Học viên + Thư viện + Tài khoản), admin (Quản trị + Người dùng + Học viên + Thư viện). Đủ các tính năng cũ: nhập CSV, revision/media, xuất bản/rollback, người dùng (tạo, tạo hàng loạt, khóa/mở khóa, đặt lại mật khẩu, xóa), bảng học viên và chi tiết, CSV học viên, màn Tài khoản của manager, buộc đổi mật khẩu, 401 → đăng nhập lại, CSRF sau đổi mật khẩu, chặn rời trang khi đang hiện mật khẩu tạm.
-- Ảnh web chứa hai bản build (`/srv/learner`, `/srv/studio`); Caddy có hai site. Host học viên `seafoodeck.tiendn.io.vn`, host Studio `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`).
+- (Lịch sử, trước tách tầng web) Ảnh web chứa hai bản build (`/srv/learner`, `/srv/studio`); Caddy có hai site. Host học viên `seafoodeck.tiendn.io.vn`, host Studio `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`).
 
 **API**
 - Đăng nhập kiểm "realm" theo `Origin`: student/mã mời chỉ ở origin học viên, editor/reviewer/publisher/manager/admin chỉ ở origin Studio. Sai host → **đúng status, đúng body, cùng chi phí bộ giới hạn đăng nhập như sai mật khẩu**. Không đặt `STUDIO_ORIGIN` thì hành vi như cũ (một origin cho mọi vai trò).
@@ -74,3 +74,22 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 - `smoke-pilot`: 10/10 PASS. `learner-accounts-check`: 11 pass, 1 skip ((j) chưa đủ 3 bản thu), 0 lỗi, (f) đạt. `browser-pilot-check`: đạt (âm thanh 1×/0,75×, một nguồn phát; câu hỏi đầu 2,5 s ở mạng 1,5 Mbps, CPU ×4).
 - `npm run test:e2e` hai lần cách nhau hơn 10 phút (và hơn 10 phút sau các script trên): lần 1 lúc 11:11 và lần 2 lúc 11:22, đều **52 pass / 6 skip / 0 lỗi**.
 - `smoke-pilot` và `learner-accounts-check` từ nay cần ảnh API có cờ `current` (lượt sửa này trở đi); chạy với ảnh cũ hơn (ví dụ r1) thì báo lỗi, có chủ ý. Hai script chỉ chạy trên stack local, không chạy trên VPS.
+
+## Tách tầng web (26/11/2026, branch `feat/web-tier-split`)
+
+Chủ dự án chọn tách thật: container học viên chỉ chứa bản build học viên, container Studio chỉ chứa bản build Studio, một `edge` đứng trước. Các mục "ảnh web chứa hai bản build" ở trên là lịch sử của lượt giao đầu 2.5e.
+
+**Đã đổi**
+- Service `web` thành `edge` (Caddy: cổng, TLS, header bảo mật, `/api/*`, proxy S3, site Studio chưa cấu hình thì đóng kết nối; không chứa file app), `web-learner` và `web-studio` (Caddy HTTP thuần, mỗi cái chỉ có bản build của mình, không publish cổng). Ba ảnh `seafoodeck-edge`, `seafoodeck-web-learner`, `seafoodeck-web-studio` build từ một `Dockerfile` ở gốc (ba target), `check:bundle` chạy một lần trong stage build nên cả ba build đều hỏng nếu bundle lẫn mã. `apps/web/Dockerfile` và `deploy/Caddyfile.pilot` đã xóa (thay bằng `deploy/edge/Caddyfile`, `deploy/web/Caddyfile`).
+- Chỉ `edge` mở cổng (VPS: 80, 443, 443/udp; local: 18089, 18090). Hành vi nhìn từ ngoài giữ nguyên ở cả hai host (status, header, cache, SPA fallback, `X-Edge`, guard Studio).
+- Dừng hoặc quay lại một container web không ảnh hưởng host kia (host bị dừng trả 502). Học viên và Studio quay lại riêng được bằng `LEARNER_IMAGE_REF` / `STUDIO_IMAGE_REF`.
+- VPS: `EDGE_IMAGE_REF`, `LEARNER_IMAGE_REF`, `STUDIO_IMAGE_REF` thay `WEB_IMAGE_REF`; `scripts/publish-pilot.sh` đẩy bốn ảnh. Runbook nâng cấp và quay lại: [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 3 và 5. Chuyển từ `web` cũ cần gỡ container `web` (đang giữ 80/443) rồi bật `edge`: vài giây ngừng cho cả hai host.
+
+**Không đổi (nói thẳng)**
+- `edge` hỏng thì **cả hai host cùng ngừng**: vẫn một VPS, một `edge`, một API, một DB, không HA, không VPS thứ hai, không TLS riêng mỗi app. Tách tầng web chỉ tách ảnh và vòng đời của hai app web, không tăng độ sẵn sàng của hệ thống.
+- Không đổi API, DB, vai trò, `/admin*`, kiểm Origin/realm, `learner-edge.ts` hay mã app nào. Chặn đường nhân sự ở host học viên vẫn nằm trong API (header `X-Edge`).
+- Caddy volumes `caddy_data`/`caddy_config` giữ nguyên, do đó chứng chỉ không mất khi chuyển.
+
+### Bằng chứng
+
+_(điền ở bước kiểm Task 4)_

@@ -1,5 +1,7 @@
 # Nâng cấp VPS từ r1 lên r2 (tag `pilot-internal-20261119-r2`)
 
+> **Lịch sử.** Biên bản của một bản phát hành cũ với một ảnh web (`seafoodeck-web`, `WEB_IMAGE_REF`, `apps/web/Dockerfile`, Caddyfile trong ảnh web). Từ 2.5e tầng web là ba ảnh `edge`, `web-learner`, `web-studio` và `Dockerfile` ở gốc có ba target; xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md). Không dùng các lệnh trong tài liệu này cho bản hiện tại.
+
 Thay đổi so với r1: chỉ phía web. Trang quản trị có địa chỉ riêng `https://seafoodeck.tiendn.io.vn/#admin`; màn đăng nhập của người học chỉ có ô mã mời, không còn link quản trị. API không đổi code, không có migration mới. Chạy trên VPS qua SSH, từng đoạn một.
 
 Mã nhận diện hai ảnh (đã push GHCR và kiểm bằng `docker buildx imagetools inspect`):
