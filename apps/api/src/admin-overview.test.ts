@@ -95,3 +95,27 @@ test('overview without any current release lists the 20 newest, none flagged', a
   assert.equal(list.length, 20);
   assert.ok(list.every((r) => r.current === false));
 });
+
+test('overview lists an old release once when both current settings point to it', async () => {
+  const { releases: list } = await overview([
+    { id: 'current:internal', value: 'rel-03' },
+    { id: 'current:public', value: 'rel-03' },
+  ]);
+  assert.equal(list.length, 21);
+  assert.deepEqual(
+    list.filter((r) => r.id === 'rel-03').map((r) => r.current),
+    [true],
+  );
+});
+
+test('overview ignores a current setting that points to a missing release', async () => {
+  const { releases: list } = await overview([{ id: 'current:internal', value: 'no-such-release' }]);
+  assert.deepEqual(
+    list.map((r) => r.id),
+    releases
+      .slice(10)
+      .reverse()
+      .map((r) => r.id),
+  );
+  assert.ok(list.every((r) => r.current === false));
+});
