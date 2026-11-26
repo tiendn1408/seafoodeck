@@ -51,7 +51,9 @@ function request(url, acceptEncoding) {
     const req = lib.request(u, { method: 'GET', headers, agent: false }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
-      res.on('end', () => done({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+      res.on('end', () =>
+        done({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }),
+      );
       res.on('error', fail);
     });
     req.setTimeout(10_000, () => req.destroy(new Error(`timeout: ${url}`)));
@@ -100,13 +102,16 @@ export function diff(expected, actual) {
       out.push(`${key}: ${h} ${show(a.headers[h])}, expected ${show(e.headers[h])}`);
     }
   }
-  for (const key of Object.keys(actual)) if (!(key in expected)) out.push(`${key}: not in the baseline`);
+  for (const key of Object.keys(actual))
+    if (!(key in expected)) out.push(`${key}: not in the baseline`);
   return out;
 }
 
 async function main(argv) {
   if (argv[0] !== '--record' || argv.length !== 3) {
-    console.error('usage: node scripts/web-tier-headers.mjs --record <learner-base-url> <studio-base-url>');
+    console.error(
+      'usage: node scripts/web-tier-headers.mjs --record <learner-base-url> <studio-base-url>',
+    );
     process.exit(2);
   }
   const result = await capture({ learner: argv[1], studio: argv[2] });

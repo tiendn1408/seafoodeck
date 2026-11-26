@@ -24,7 +24,10 @@ test('a missing key gives one message', () => {
 });
 
 test('an extra key, an extra header, a missing header and a status change are each reported', () => {
-  const actual = { a: { status: 502, headers: { 'content-encoding': 'gzip' } }, b: { status: 200, headers: {} } };
+  const actual = {
+    a: { status: 502, headers: { 'content-encoding': 'gzip' } },
+    b: { status: 200, headers: {} },
+  };
   const out = diff(base(), actual);
   assert.equal(out.length, 4, out.join('\n'));
   assert.ok(out.some((m) => /\bb\b/.test(m)));

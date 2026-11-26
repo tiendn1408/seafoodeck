@@ -45,15 +45,17 @@ function compose(...args) {
 
 const execIn = (service, ...cmd) => compose('exec', '-T', service, ...cmd);
 const filesUnderSrv = (service) =>
-  execIn(service, 'find', '/srv', '-type', 'f')
-    .split('\n')
-    .filter(Boolean);
+  execIn(service, 'find', '/srv', '-type', 'f').split('\n').filter(Boolean);
 const STRING_MARKERS = MARKERS.filter((m) => typeof m.test === 'string');
 
 async function checkHeaders() {
-  const expected = JSON.parse(readFileSync(join(root, 'scripts/web-tier-headers.expected.json'), 'utf8'));
+  const expected = JSON.parse(
+    readFileSync(join(root, 'scripts/web-tier-headers.expected.json'), 'utf8'),
+  );
   const problems = diff(expected, await capture({ learner: learnerUrl, studio: studioUrl }));
-  return problems.length ? problems : `${Object.keys(expected).length} matrix entries equal the baseline`;
+  return problems.length
+    ? problems
+    : `${Object.keys(expected).length} matrix entries equal the baseline`;
 }
 
 function parsePs(out) {
@@ -70,7 +72,11 @@ function checkPorts() {
     problems.push('service edge is not running with published ports');
   for (const r of rows)
     if (r.Service !== 'edge' && published(r).length)
-      problems.push(`service ${r.Service} publishes ${published(r).map((p) => `${p.URL}:${p.PublishedPort}`).join(', ')}`);
+      problems.push(
+        `service ${r.Service} publishes ${published(r)
+          .map((p) => `${p.URL}:${p.PublishedPort}`)
+          .join(', ')}`,
+      );
   return problems.length ? problems : `only edge publishes ports (${rows.length} running services)`;
 }
 
@@ -78,10 +84,15 @@ function checkFiles() {
   const problems = [];
   const learner = filesUnderSrv('web-learner');
   const studio = filesUnderSrv('web-studio');
-  for (const [service, files] of [['web-learner', learner], ['web-studio', studio]]) {
-    if (!files.includes('/srv/app/index.html')) problems.push(`${service}: /srv/app/index.html is missing`);
+  for (const [service, files] of [
+    ['web-learner', learner],
+    ['web-studio', studio],
+  ]) {
+    if (!files.includes('/srv/app/index.html'))
+      problems.push(`${service}: /srv/app/index.html is missing`);
     const outside = files.filter((f) => !f.startsWith('/srv/app/'));
-    if (outside.length) problems.push(`${service}: files outside /srv/app: ${outside.slice(0, 3).join(', ')}`);
+    if (outside.length)
+      problems.push(`${service}: files outside /srv/app: ${outside.slice(0, 3).join(', ')}`);
   }
   // Learner: no studio-named chunk and no studio marker in any file (same lists as check-bundles.mjs).
   for (const f of learner)
@@ -89,7 +100,13 @@ function checkFiles() {
       problems.push(`web-learner: file name looks like a studio chunk: ${f}`);
   const hits = (() => {
     try {
-      return execIn('web-learner', 'grep', '-rlF', ...STRING_MARKERS.flatMap((m) => ['-e', m.test]), '/srv').trim();
+      return execIn(
+        'web-learner',
+        'grep',
+        '-rlF',
+        ...STRING_MARKERS.flatMap((m) => ['-e', m.test]),
+        '/srv',
+      ).trim();
     } catch (e) {
       if (e.status === 1) return ''; // grep: no match
       throw e;
@@ -106,15 +123,31 @@ function checkFiles() {
     'sh',
     ...required,
   ).trim();
-  if (missing) problems.push(`web-studio: studio markers missing: ${missing.split('\n').join(', ')}`);
-  // Neither holds the other's build: hashed JS/CSS chunk names are disjoint (fonts and media are shared
-  // content-hashed files, so they are not compared).
-  const chunks = (files) => new Set(files.filter((f) => /\/assets\/.+\.(?:js|css)$/.test(f)));
-  const studioChunks = chunks(studio);
-  const shared = [...chunks(learner)].filter((f) => studioChunks.has(f));
-  if (shared.length) problems.push(`web-learner and web-studio share build chunks: ${shared.slice(0, 3).join(', ')}`);
+  if (missing)
+    problems.push(`web-studio: studio markers missing: ${missing.split('\n').join(', ')}`);
+  // Neither holds the other's build: the JS/CSS files only one index.html loads are absent from the other
+  // container. (Files both index.html load, e.g. vendor/runtime chunks, are content-hashed and
+  // byte-identical in both builds: the same bytes, not the other app.)
+  const entries = (service) =>
+    [
+      ...execIn(service, 'cat', '/srv/app/index.html').matchAll(
+        /["'](\/assets\/[^"']+\.(?:js|css))["']/g,
+      ),
+    ].map((m) => `/srv/app${m[1]}`);
+  const learnerEntries = entries('web-learner');
+  const studioEntries = entries('web-studio');
+  for (const [service, own, mine, theirs, other, otherFiles] of [
+    ['web-learner', 'learner', learnerEntries, studioEntries, 'web-studio', studio],
+    ['web-studio', 'Studio', studioEntries, learnerEntries, 'web-learner', learner],
+  ]) {
+    const list = mine.filter((f) => !theirs.includes(f));
+    if (!list.length) problems.push(`${service}: index.html loads no ${own}-only JS or CSS`);
+    const leaked = list.filter((f) => otherFiles.includes(f));
+    if (leaked.length) problems.push(`${other} holds ${own} entry files: ${leaked.join(', ')}`);
+  }
   const edgeFiles = filesUnderSrv('edge');
-  if (edgeFiles.length) problems.push(`edge: app files under /srv: ${edgeFiles.slice(0, 3).join(', ')}`);
+  if (edgeFiles.length)
+    problems.push(`edge: app files under /srv: ${edgeFiles.slice(0, 3).join(', ')}`);
   return problems.length
     ? problems
     : `web-learner ${learner.length} files (no studio marker), web-studio ${studio.length} files (all markers), edge none`;
@@ -124,9 +157,13 @@ function checkStudioGuard() {
   const text = readFileSync(join(root, 'deploy/edge/Caddyfile'), 'utf8');
   const ok =
     text.includes('{$STUDIO_SITE_ADDRESS:http://studio.invalid} {') &&
-    /@unconfigured expression `"\{\$STUDIO_SITE_ADDRESS:http:\/\/studio\.invalid\}" == "http:\/\/studio\.invalid"`/.test(text) &&
+    /@unconfigured expression `"\{\$STUDIO_SITE_ADDRESS:http:\/\/studio\.invalid\}" == "http:\/\/studio\.invalid"`/.test(
+      text,
+    ) &&
     /handle @unconfigured \{\s*abort\s*\}/.test(text);
-  return ok ? 'deploy/edge/Caddyfile keeps the @unconfigured abort guard' : ['deploy/edge/Caddyfile lost the @unconfigured abort guard'];
+  return ok
+    ? 'deploy/edge/Caddyfile keeps the @unconfigured abort guard'
+    : ['deploy/edge/Caddyfile lost the @unconfigured abort guard'];
 }
 
 const CHECKS = [
