@@ -36,7 +36,7 @@ Thêm vào `.local/pilot.env` trên VPS (file quyền 600; không `cat`, không 
 | `STUDIO_ORIGIN` | origin HTTPS của host Studio (scheme + host, không có `/` cuối) | API (realm đăng nhập, kiểm Origin khi ghi), kho S3 (CORS) |
 | `STUDIO_SITE_ADDRESS` | tên host Studio, không scheme, không cổng (để Caddy tự cấp HTTPS) | Caddy trong ảnh web |
 
-API chuẩn hóa `STUDIO_ORIGIN` (và `PUBLIC_ORIGIN`) khi so với `Origin` của trình duyệt (bỏ `/` cuối, chữ hoa, cổng mặc định) và **từ chối khởi động** (log `API startup refused: …`) nếu `STUDIO_ORIGIN` có đường dẫn/query/thông tin đăng nhập, không phải http(s) hoặc trùng `PUBLIC_ORIGIN`. CORS của kho S3 được ghép thẳng từ chuỗi env, nên vẫn ghi dạng chuẩn `https://host` (không `/` cuối, chữ thường).
+**`STUDIO_ORIGIN` phải ghi đúng dạng chuẩn** `scheme://host[:cổng khác mặc định]`, chữ thường, không `/` cuối, không đường dẫn/query/thông tin đăng nhập, khác `PUBLIC_ORIGIN`. Giá trị sai không được sửa ngầm: API **từ chối khởi động** (log `API startup refused: …`) và `scripts/init-pilot.mjs` từ chối (thoát lỗi) với câu `STUDIO_ORIGIN must be written exactly as https://seafoodeckstudio.tiendn.io.vn (it is also the S3 CORS entry).` Đúng: `https://seafoodeckstudio.tiendn.io.vn`; sai: `https://seafoodeckstudio.tiendn.io.vn/`, `https://SeafoodeckStudio.tiendn.io.vn`, `https://seafoodeckstudio.tiendn.io.vn:443`. Lý do: compose chép nguyên chuỗi này vào CORS của kho S3. `PUBLIC_ORIGIN` vẫn được so sánh sau khi chuẩn hóa (không bị từ chối).
 
 `STUDIO_WEB_PORT` chỉ dùng cho stack local (`compose.yaml`); `deploy/compose.pilot.ghcr.yaml` không publish cổng nào cho Studio (Caddy phục vụ host Studio qua 80/443 theo tên host), nên không cần kiểm hay đặt cổng đó trên VPS.
 
