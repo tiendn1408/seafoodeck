@@ -14,8 +14,11 @@ Mục tiêu của chủ dự án: **giảm số người biết là có khu qu�
 **API**
 - Đăng nhập kiểm "realm" theo `Origin`: student/mã mời chỉ ở origin học viên, editor/reviewer/publisher/manager/admin chỉ ở origin Studio. Sai host → **đúng status, đúng body, cùng chi phí bộ giới hạn đăng nhập như sai mật khẩu**. Không đặt `STUDIO_ORIGIN` thì hành vi như cũ (một origin cho mọi vai trò).
 - Request không có header `Origin` (script phía server) vẫn đăng nhập và ghi được ở cả hai host (vẫn cần CSRF token). Đây là chủ ý, có test.
-- Trên host học viên, `/api/v1/admin*`, `/api/v1/manager*`, `/api/v1/docs*`, `/api/v1/openapi*` trả 404 giống hệt một đường không tồn tại (kể cả biến thể `..%2F`, chữ hoa, `//`…): Caddy gắn `X-Edge: learner`, API (`apps/api/src/learner-edge.ts`) biến đường đó thành route không tồn tại. Ma trận vai trò × route vẫn là ranh giới thật và vẫn xanh.
-- CORS của kho S3 liệt kê cả hai origin.
+- Trên host học viên, `/api/v1/admin*`, `/api/v1/manager*`, `/api/v1/docs*`, `/api/v1/openapi*` trả 404 giống hệt một đường không tồn tại (biến thể `..%2F` được kiểm đầu cuối trong e2e; chữ hoa và `//` được kiểm bằng unit test trong `apps/api/src/learner-edge.test.ts`, chưa chạy đầu cuối): Caddy gắn `X-Edge: learner`, API (`apps/api/src/learner-edge.ts`) biến đường đó thành route không tồn tại. Ma trận vai trò × route vẫn là ranh giới thật và vẫn xanh.
+- CORS của kho S3 liệt kê cả hai origin. `PUBLIC_ORIGIN` và `STUDIO_ORIGIN` được chuẩn hóa bằng `new URL(v).origin` (bỏ `/` cuối, chữ hoa, cổng mặc định `:443`/`:80`) khi so với `Origin` của trình duyệt. API từ chối khởi động (log `API startup refused: …`) nếu `STUDIO_ORIGIN` có đường dẫn/query/thông tin đăng nhập, không phải http(s), hoặc trùng `PUBLIC_ORIGIN`; `scripts/init-pilot.mjs` kiểm cùng quy tắc và ghi giá trị đã chuẩn hóa. Compose ghép CORS S3 trực tiếp từ giá trị env, nên vẫn ghi origin dạng chuẩn (không `/` cuối) trong `.local/pilot.env`. Không đặt `STUDIO_ORIGIN` thì hành vi như cũ.
+- Studio: admin chỉ còn một thanh điều hướng (tab của Studio); thanh tab thứ hai trong trang đã bỏ. Chặn rời trang khi đang hiện mật khẩu tạm vẫn do tab của Studio (xác nhận khi đổi hash) và có test.
+- Compose VPS (`deploy/compose.pilot.ghcr.yaml`) không publish cổng Studio nào (chỉ 80/443); `STUDIO_WEB_PORT` chỉ có trong `compose.yaml` local.
+- Thông báo lỗi 500 chung cho học viên là "Lỗi máy chủ. Thử lại sau." (không nhắc quản trị).
 
 **Rào chắn trong CI**
 - ESLint của `apps/web` cấm import `apps/studio` (cả import động).
@@ -27,7 +30,7 @@ Mục tiêu của chủ dự án: **giảm số người biết là có khu qu�
 - **Không có TOTP/MFA, không giới hạn IP.** Bảo vệ tài khoản nhân sự vẫn là mật khẩu (tối thiểu 16 ký tự cho nhân sự) + bộ giới hạn đăng nhập (20 lần sai/IP và 10 lần sai/tên trong 10 phút).
 - **Giấu ≠ bảo vệ.** Ranh giới thật là kiểm vai trò ở server (401/403). Việc tách app chỉ làm học viên không thấy dấu vết của khu quản trị.
 - **Docs/OpenAPI trên host Studio chỉ được giấu bởi `EXPOSE_API_DOCS`** (mặc định tắt). Host học viên chặn thêm một lớp; host Studio thì không. Không bật cờ này trên VPS.
-- **Studio không có "Học".** Nhân sự muốn luyện tập dùng **tài khoản học viên cá nhân** trên host học viên (admin tạo ở màn Người dùng với vai trò `student`), hoặc mã mời. Tài khoản nhân sự không bao giờ đăng nhập được ở host học viên, nên tiến độ học tách khỏi danh tính quản trị.
+- **Studio không có "Học".** Nhân sự muốn luyện tập dùng **tài khoản học viên cá nhân** trên host học viên (admin tạo ở màn Người dùng với vai trò `student`), hoặc mã mời. Tài khoản nhân sự không bao giờ đăng nhập được ở host học viên từ trình duyệt (một script đăng nhập không có header `Origin` vẫn chạy, có chủ ý: làm rõ số 5 trong spec), nên tiến độ học tách khỏi danh tính quản trị.
 - **Thứ tự triển khai: API trước, web sau.** Việc chặn đường nhân sự trên host học viên nằm trong API 2.5e; ảnh web mới đi với API cũ thì các đường đó vẫn trả lời trên host học viên. Rollback thì lùi cả hai.
 - Ảnh/bản thu xem trước trong Studio tải qua URL ký sẵn trỏ về host học viên (`S3_PUBLIC_ENDPOINT` = origin học viên). Không cần CORS (thẻ `<img>`/`Audio`), không lộ gì cho học viên.
 
@@ -55,7 +58,6 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 - Chưa triển khai VPS; DNS và chứng chỉ là việc của chủ dự án.
 - Metadata của media chưa duyệt vẫn nằm trong DTO danh mục: **vẫn mở**, cần chủ sản phẩm quyết.
 - `ALLOW_INTERNAL_DEMO` phải tắt trên bản cho người ngoài.
-- Admin thấy hai lớp điều hướng trùng nhau (thanh tab của Studio và tab "Nội dung / Người dùng / Học viên" trong trang): không vỡ, chỉ thừa.
 - Ảnh minh họa của app học viên (~3,4 MB) cũng nằm trong build Studio do dùng chung thư mục `public`.
 - `scripts/smoke-pilot.mjs` và mục (f) của `scripts/learner-accounts-check.mjs` báo lỗi trên DB local nhiều lần chạy: release hiện tại không còn trong 20 release gần nhất mà màn tổng quan trả về (giới hạn có từ trước 2.5e). Phần đăng nhập Studio của các script đã chạy được; `admin-lock-race-check` đạt 2/2 vòng. `browser-pilot-check` đã sửa cho hai host nhưng chưa chạy lại.
 - Mỗi lần chạy e2e dùng 8 trong 20 lượt đăng nhập sai/IP/10 phút: hai lần liên tiếp vừa đủ, lần thứ ba trong 10 phút sẽ gặp 429 (khởi động lại API để xóa bộ đếm).
