@@ -283,18 +283,49 @@ describe('StudioApp role-aware routes', () => {
     expect(calls.filter((c) => c.includes(' /me') || c.includes('/learning/'))).toEqual([]);
   });
 
-  it('an admin on #admin/users sees the users screen under the Nội dung | Người dùng tabs', async () => {
+  it('an admin on #admin/users sees the users screen under the shell tabs only', async () => {
     routes[USERS] = () => json({ items: [], total: 0, page: 1, limit: 20 });
     const host = await open('admin', '#admin/users');
     expect(location.hash).toBe('#admin/users');
-    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
+    const tabs = host.querySelector('nav[aria-label="Điều hướng chính"]');
     expect([...tabs!.querySelectorAll('a')].map((a) => a.textContent)).toEqual([
-      'Nội dung',
+      'Quản trị',
       'Người dùng',
       'Học viên',
+      'Thư viện',
     ]);
     expect(tabs!.querySelector('[aria-current="page"]')?.textContent).toBe('Người dùng');
+    expect(host.querySelector('nav[aria-label="Khu quản trị"]')).toBeNull();
     expect(host.querySelector('h1')?.textContent).toBe('Người dùng');
+  });
+
+  it('with the admin own own one-time password on screen, the tabs cannot leave unless confirmed', async () => {
+    routes[USERS] = () => json({ items: [ownAdmin], total: 1, page: 1, limit: 20 });
+    routes['POST /admin/users/u-admin/reset-password'] = () =>
+      json({ temporaryPassword: 'OwnTmp7xKq9Rz2aBcDeF' });
+    routes[LEARNERS] = () => json({ items: [], total: 0, page: 1, limit: 20 });
+    const host = await open('admin', '#admin/users');
+    await click(
+      button(host.querySelector<HTMLElement>('[data-user="u-admin"]')!, 'Đặt lại mật khẩu'),
+    );
+    await click(button(host.querySelector<HTMLElement>('[role="dialog"]')!, 'Đặt lại'));
+    await tick();
+    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const go = async (hash: string) => {
+      location.hash = hash;
+      await tick();
+      await tick();
+    };
+    await go('#manager');
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(location.hash).toBe('#admin/users');
+    expect(host.textContent).toContain('OwnTmp7xKq9Rz2aBcDeF');
+    confirm.mockReturnValue(true);
+    await go('#manager');
+    expect(location.hash).toBe('#manager');
+    expect(host.textContent).not.toContain('OwnTmp7xKq9Rz2aBcDeF');
+    confirm.mockRestore();
   });
 
   it('an admin resetting their own password keeps the one-time password until closing it', async () => {
@@ -330,12 +361,13 @@ describe('StudioApp role-aware routes', () => {
     expect(host.querySelector('a[href="#admin/users"]')).toBeNull();
   });
 
-  it('an admin on #admin gets the content page with both tabs', async () => {
+  it('an admin on #admin gets the content page under the shell tabs only', async () => {
     const host = await open('admin', '#admin');
     expect(host.textContent).toContain('Biên tập và xuất bản');
-    const tabs = host.querySelector('nav[aria-label="Khu quản trị"]');
-    expect(tabs?.querySelector('[aria-current="page"]')?.textContent).toBe('Nội dung');
+    const tabs = host.querySelector('nav[aria-label="Điều hướng chính"]');
+    expect(tabs?.querySelector('[aria-current="page"]')?.textContent).toBe('Quản trị');
     expect(tabs?.querySelector('a[href="#admin/users"]')).not.toBeNull();
+    expect(host.querySelector('nav[aria-label="Khu quản trị"]')).toBeNull();
   });
 
   it('manager on home goes straight to the learner table', async () => {

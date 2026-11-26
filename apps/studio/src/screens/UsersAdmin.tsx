@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { api } from '@web/pilot/api';
 import type { AdminUserPage, AdminUserRow } from '../api';
-import { AdminTabs } from './AdminTabs';
 import { setLeaveGuard } from '@web/pilot/leaveGuard';
 import { Dialog } from './Dialog';
 import { BulkDialog } from './BulkUsers';
@@ -224,7 +223,6 @@ export function UsersAdmin({ selfId }: { selfId?: string }) {
 
   return (
     <div className="users-admin">
-      <AdminTabs current="users" disabled={paused} />
       <header className="users-head">
         <div>
           <h1 ref={head} tabIndex={-1}>

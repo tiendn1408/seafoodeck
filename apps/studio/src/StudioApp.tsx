@@ -214,9 +214,9 @@ export default function StudioApp() {
           />
         ) : !permitted ? null : (
           <>
-            {route === 'admin' && <Admin usersTab={kind === 'admin'} />}
+            {route === 'admin' && <Admin />}
             {route === 'admin/users' && <UsersAdmin selfId={auth.userId} />}
-            {route === 'manager' && <ManagerLearners admin={kind === 'admin'} />}
+            {route === 'manager' && <ManagerLearners />}
             {route.startsWith('manager/learner/') && auth.userId !== undefined && (
               <ManagerLearnerDetail key={route} id={routeId(route)} userId={auth.userId} />
             )}

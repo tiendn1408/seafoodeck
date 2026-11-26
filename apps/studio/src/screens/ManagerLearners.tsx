@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { api } from '@web/pilot/api';
 import type { LearnerPage, LearnerRow } from '../api';
-import { AdminTabs } from './AdminTabs';
 import { ErrorNote } from '@web/learner/ErrorNote';
 import { useMedia } from '@web/learner/useMedia';
 import './users.css';
@@ -125,7 +124,7 @@ function useScrollEdges(watch: unknown) {
   return [ref, edges] as const;
 }
 
-export function ManagerLearners({ admin = false }: { admin?: boolean }) {
+export function ManagerLearners() {
   const [sort, setSort] = useState<SortKey>('lastStudyAt'),
     [dir, setDir] = useState<Dir>('desc'),
     [filter, setFilter] = useState<Filter>(''),
@@ -236,7 +235,6 @@ export function ManagerLearners({ admin = false }: { admin?: boolean }) {
 
   return (
     <div className="users-admin manager-learners">
-      {admin && <AdminTabs current="learners" />}
       <header className="users-head">
         <div>
           <h1>Học viên</h1>

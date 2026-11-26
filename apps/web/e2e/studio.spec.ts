@@ -663,6 +663,12 @@ test('the Studio has no Study: no study tab, route or action for any staff kind'
     'Học viên',
     'Thư viện',
   ]);
+  // One navigation bar: admins switch screens with these tabs only (no second in-page tab strip).
+  await expect(page.getByRole('navigation', { name: 'Khu quản trị' })).toHaveCount(0);
+  await nav.getByRole('link', { name: 'Người dùng' }).click();
+  await expect(page).toHaveURL(/#admin\/users$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Người dùng' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Khu quản trị' })).toHaveCount(0);
   for (const route of ['#study', '#home', '#review', '#progress']) {
     await page.goto('/' + route);
     await expect(page).toHaveURL(/#admin$/);

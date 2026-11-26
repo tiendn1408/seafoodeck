@@ -3,7 +3,6 @@ import { extraRows } from './itemExtras';
 import { api, type CatalogItem } from '@web/pilot/api';
 import { SignedImage, Pronunciation } from '@web/pilot/Media';
 import { HsAdmin, type AdminTariff } from './HsAdmin';
-import { AdminTabs } from './AdminTabs';
 import './admin.css';
 interface Revision {
   id: string;
@@ -36,8 +35,7 @@ interface Overview {
   }[];
   audit: { id: string; action: string; at: string; targetId: string }[];
 }
-/** `usersTab`: show the "Nội dung | Người dùng" switch (admins only). */
-export function Admin({ usersTab = false }: { usersTab?: boolean }) {
+export function Admin() {
   const [data, setData] = useState<Overview | null>(null),
     [error, setError] = useState(''),
     [message, setMessage] = useState(''),
@@ -76,7 +74,6 @@ export function Admin({ usersTab = false }: { usersTab?: boolean }) {
   const extras = extraRows(revision?.data);
   return (
     <div className="pilot-admin">
-      {usersTab && <AdminTabs current="content" />}
       <h1>Biên tập và xuất bản</h1>
       <p>
         Nội dung nháp không tự xuất hiện cho người học. Duyệt nội dung và quyền media là hai việc
