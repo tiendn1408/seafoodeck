@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { extraRows } from './itemExtras';
 import { api, type CatalogItem } from '@web/pilot/api';
 import { SignedImage, Pronunciation } from '@web/pilot/Media';
@@ -26,7 +26,8 @@ interface Overview {
   revisionTotal: number;
   tariffs: AdminTariff[];
   revisions: Revision[];
-  releases: { id: string; internal: boolean; items: { revisionId: string }[] }[];
+  /** `current`: the release learners are served now (always listed, even if older than 20). */
+  releases: { id: string; internal: boolean; current: boolean; items: { revisionId: string }[] }[];
   scenarios: {
     id: string;
     status: string;
@@ -49,13 +50,18 @@ export function Admin() {
     [edit, setEdit] = useState(''),
     [busy, setBusy] = useState(false),
     [checked, setChecked] = useState<string[]>([]);
-  const refresh = () =>
-    api<Overview>('/admin/overview?q=' + encodeURIComponent(revisionQuery))
-      .then(setData)
-      .catch((e) => setError(e.message));
+  const load = useCallback(
+    (query: string) =>
+      api<Overview>('/admin/overview?q=' + encodeURIComponent(query))
+        .then(setData)
+        .catch((e) => setError(e.message)),
+    [],
+  );
+  // Later refreshes use the search box as it stands; the first load has no query yet.
+  const refresh = () => load(revisionQuery);
   useEffect(() => {
-    void refresh();
-  }, []);
+    void load('');
+  }, [load]);
   async function act(path: string, body: unknown = {}) {
     setBusy(true);
     setError('');
@@ -472,7 +478,8 @@ export function Admin() {
         <h3>Lịch sử release</h3>
         {data?.releases.map((r) => (
           <p key={r.id}>
-            {r.id.slice(0, 8)} · {r.internal ? 'Nội bộ' : 'Đã duyệt'} · {r.items.length} mục{' '}
+            {r.id.slice(0, 8)} · {r.internal ? 'Nội bộ' : 'Đã duyệt'} · {r.items.length} mục
+            {r.current && ' · Hiện hành'}{' '}
             <button
               className="pilot-text-button"
               disabled={busy}
