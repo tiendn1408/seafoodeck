@@ -36,7 +36,7 @@ Thêm vào `.local/pilot.env` trên VPS (file quyền 600; không `cat`, không 
 | `STUDIO_ORIGIN` | origin HTTPS của host Studio (scheme + host, không có `/` cuối) | API (realm đăng nhập, kiểm Origin khi ghi), kho S3 (CORS) |
 | `STUDIO_SITE_ADDRESS` | tên host Studio, không scheme, không cổng (để Caddy tự cấp HTTPS) | Caddy trong ảnh web |
 
-`STUDIO_WEB_PORT` (mặc định 18090) chỉ dùng cho stack local; trên VPS `deploy/compose.pilot.ghcr.yaml` vẫn publish `127.0.0.1:${STUDIO_WEB_PORT}` → cổng 8090 trong container (không có gì nghe ở đó khi `STUDIO_SITE_ADDRESS` là tên host). Trước khi deploy, kiểm cổng loopback đó còn trống trên VPS (`sudo ss -ltn | grep ':18090 '` phải rỗng); nếu bận, đặt `STUDIO_WEB_PORT` sang cổng trống khác.
+`STUDIO_WEB_PORT` chỉ dùng cho stack local (`compose.yaml`); `deploy/compose.pilot.ghcr.yaml` không publish cổng nào cho Studio (Caddy phục vụ host Studio qua 80/443 theo tên host), nên không cần kiểm hay đặt cổng đó trên VPS.
 
 Sửa bằng trình soạn thảo (`sudo -e .local/pilot.env`) rồi chỉ kiểm **tên** biến:
 
