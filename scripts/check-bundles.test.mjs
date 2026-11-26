@@ -78,13 +78,27 @@ test('a studio file name marker in the learner dist fails', () => {
 });
 
 test('a marker missing from the studio bundle fails', () => {
-  for (const m of MARKERS) {
+  for (const m of MARKERS.filter((x) => !x.optionalInStudio)) {
     const without = MARKERS.filter((o) => o !== m).map((o) => o.sample).join('\n');
     // Overlapping markers (e.g. /manager vs manager/learners) can still be satisfied by a sibling sample.
     if (matchesText(m, without)) continue;
     const r = run({ studioJs: without });
     assert.equal(r.ok, false, m.name);
     assert.ok(r.errors.some((e) => e.includes(m.name) && /missing/i.test(e)), m.name);
+  }
+});
+
+test('an optionalInStudio marker may be absent from studio but never from being checked in the learner build', () => {
+  const optional = MARKERS.filter((m) => m.optionalInStudio);
+  assert.ok(optional.length > 0);
+  for (const m of optional) {
+    assert.ok(m.reason, `${m.name} needs a reason`);
+    const without = MARKERS.filter((o) => o !== m).map((o) => o.sample).join('\n');
+    if (matchesText(m, without)) continue;
+    assert.equal(run({ studioJs: without }).ok, true, m.name);
+    const r = run({ learnerExtra: '\n' + m.sample });
+    assert.equal(r.ok, false, m.name);
+    assert.ok(r.errors.some((e) => e.includes(m.name)), m.name);
   }
 });
 
