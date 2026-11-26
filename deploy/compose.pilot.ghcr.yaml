@@ -1,5 +1,22 @@
 # Run from repo root with --project-directory . and -f deploy/compose.pilot.ghcr.yaml.
 name: ${PILOT_PROJECT_NAME:-seafoodeck-pilot}
+
+# Settings shared by edge, web-learner and web-studio.
+x-web-tier: &web-tier
+  platform: linux/amd64  # release images are amd64 (the VPS)
+  restart: unless-stopped
+  mem_limit: 96m
+  logging:  # Caddy access/error logs: never fill the disk
+    driver: json-file
+    options: {max-size: 10m, max-file: '3'}
+# Same healthcheck intent as compose.yaml. There is no start_period: the images carry a 30 s HEALTHCHECK,
+# and interval 5s x retries 20 gives each container 100 s to come up, which covers Caddy's start-up, so
+# `edge` (waiting on both web containers) starts within seconds of them.
+x-web-tier-health: &web-tier-health
+  interval: 5s
+  timeout: 3s
+  retries: 20
+
 services:
   db:
     image: postgres:17-alpine
@@ -55,16 +72,40 @@ services:
     pids_limit: 128
     restart: unless-stopped
     logging: {driver: json-file, options: {max-size: 10m, max-file: '3'}}
-  web:
-    platform: linux/amd64
-    image: ${WEB_IMAGE_REF:?Set WEB_IMAGE_REF in .local/pilot.env}
+  # Web tier: `edge` is the only way in (ports 80/443, TLS, headers, /api/*, S3 proxy, Studio guard) and proxies
+  # the rest by host to `web-learner` or `web-studio`, each holding one app build only. Three images, three
+  # digests (EDGE_IMAGE_REF, LEARNER_IMAGE_REF, STUDIO_IMAGE_REF) so either app can roll back alone.
+  # Switching from the old single `web` container: it still owns 80/443, so remove it first
+  # (`docker rm -f <project>-web-1`), then `up -d edge web-learner web-studio`. Never `down -v`.
+  edge:
+    <<: *web-tier
+    image: ${EDGE_IMAGE_REF:?Set EDGE_IMAGE_REF in .local/pilot.env}
     # Unset STUDIO_SITE_ADDRESS -> placeholder host (Studio site off); an empty value would break the Caddyfile.
     environment: {SITE_ADDRESS: '${SITE_ADDRESS:-:80}',STUDIO_SITE_ADDRESS: '${STUDIO_SITE_ADDRESS:-http://studio.invalid}',S3_BUCKET: '${S3_BUCKET:-seafoodeck-private}'}
+    # The only published ports of the stack. 443/udp is HTTP/3.
     ports: ['80:80', '443:443', '443:443/udp']
+    # Same volumes the old `web` mounted: certificates and ACME state survive the switch.
     volumes: [caddy_data:/data, caddy_config:/config]
-    depends_on: {api: {condition: service_healthy}}
-    mem_limit: 96m
-    restart: unless-stopped
+    healthcheck:
+      <<: *web-tier-health
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/healthz']
+    depends_on:
+      api: {condition: service_healthy}
+      web-learner: {condition: service_healthy}
+      web-studio: {condition: service_healthy}
+  # web-learner / web-studio: plain HTTP on the compose network only, no ports, no volumes.
+  web-learner:
+    <<: *web-tier
+    image: ${LEARNER_IMAGE_REF:?Set LEARNER_IMAGE_REF in .local/pilot.env}
+    healthcheck:
+      <<: *web-tier-health
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8081/healthz']
+  web-studio:
+    <<: *web-tier
+    image: ${STUDIO_IMAGE_REF:?Set STUDIO_IMAGE_REF in .local/pilot.env}
+    healthcheck:
+      <<: *web-tier-health
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8081/healthz']
 volumes:
   pilot_db:
   pilot_storage:
