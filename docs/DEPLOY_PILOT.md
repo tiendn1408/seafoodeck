@@ -1,5 +1,7 @@
 # Chạy Seafood Deck 0.6 qua GHCR bằng tay
 
+> **Cập nhật 2.5e.** Từ bản tách tầng web, stack pilot có **bốn** ảnh: `seafoodeck-api`, `seafoodeck-edge`, `seafoodeck-web-learner`, `seafoodeck-web-studio` (không còn `seafoodeck-web`), và `.local/pilot.env` dùng `API_IMAGE_REF`, `EDGE_IMAGE_REF`, `LEARNER_IMAGE_REF`, `STUDIO_IMAGE_REF` (không còn `WEB_IMAGE_REF`). Các mục bên dưới mô tả bản 0.6 `pilot-internal-20261119-r1` (một ảnh web, `WEB_IMAGE_REF`, service `web`): **lịch sử**, giữ làm biên bản. Build, đẩy, đổi mã ảnh, gỡ `web` cũ và bật `edge` cho bản tách: [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 3; lệnh `publish-pilot.sh <tag>` giờ đẩy cả bốn ảnh. Giá trị mặc định ba `*_IMAGE_REF` trong `deploy/pilot.env.example` và do `init-pilot` ghi chỉ là chỗ giữ chỗ: phải thay bằng digest trước `dc pull`. `deploy/compose.ghcr.yaml` và `deploy/compose.origin.yaml` là bản 0.5 (legacy 0.5).
+
 0.6 là web + API + PostgreSQL + kho S3 riêng. Không dùng `deploy/compose.ghcr.yaml` của 0.5 hoặc chỉ thay `IMAGE_REF`: file đó chỉ chạy web tĩnh. Không chạy các lệnh dưới trong thư mục bot trading. Agent chưa triển khai lên VPS.
 
 ## Chuẩn bị trên máy làm việc

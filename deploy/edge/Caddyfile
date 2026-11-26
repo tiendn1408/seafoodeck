@@ -1,35 +1,42 @@
-# One web image, two sites (phase 2.5e): learner app from /srv/learner, Studio app from /srv/studio.
-# Both sites share one API (api:3000) and one S3 store (storage:8333).
+# Edge (phase 2.5e web tier split): TLS, security headers, compression, /api/* -> api:3000, the S3 path proxy
+# and the Studio-unconfigured guard. Everything else goes to the static container of the host:
+# learner site -> web-learner:80, Studio site -> web-studio:80 (deploy/web/Caddyfile). No app files here.
 
 (security_headers) {
     header {
         X-Content-Type-Options nosniff
         Referrer-Policy no-referrer
         X-Frame-Options DENY
-        Cache-Control "no-store"
         X-Robots-Tag "noindex, nofollow"
     }
+    # Cache-Control, two cases. reverse_proxy appends upstream headers to the ones already set, so:
+    # - /api/* and the S3 proxy: no-store set before proxying, exactly as the single web container did
+    #   (the API's own no-store is appended, as before).
+    # - everything else comes from the static container: no-store only where it sent no Cache-Control
+    #   (`?` = set if absent, applied when the response is written), so its immutable /assets/* value
+    #   survives and index.html / SPA routes stay no-store.
+    @edge_answered path /api/* /{$S3_BUCKET:seafoodeck-private}/*
+    header @edge_answered Cache-Control "no-store"
+    @from_app not path /api/* /{$S3_BUCKET:seafoodeck-private}/*
+    header @from_app ?Cache-Control "no-store"
+    # The single container served app files itself, without a Via header; keep it that way (the API and
+    # S3 proxy responses keep the Via they always had).
+    header @from_app -Via
 }
 
-# S3 path proxy, hashed assets and SPA fallback; identical on both sites (each with its own root).
-(storage_and_spa) {
+# S3 path proxy, then the host's static container; identical on both sites (each with its own upstream).
+(storage_and_app) {
     # Preserve path and Host: both are part of S3 signatures. No listing URL is signed.
     handle /{$S3_BUCKET:seafoodeck-private}/* {
         reverse_proxy storage:8333
     }
-    handle /assets/* {
-        header Cache-Control "public, max-age=31536000, immutable"
-        file_server
-    }
     handle {
-        try_files {path} /index.html
-        file_server
+        reverse_proxy {args[0]}
     }
 }
 
 # Learner site. Serves only the learner build; staff API surface answers like a path that does not exist.
 {$SITE_ADDRESS::80} {
-    root * /srv/learner
     encode zstd gzip
     import security_headers
     handle /api/* {
@@ -42,7 +49,7 @@
             header_up X-Edge learner
         }
     }
-    import storage_and_spa
+    import storage_and_app web-learner:80
 }
 
 # Studio site (staff). If STUDIO_SITE_ADDRESS is unset (or set to the placeholder below), this block
@@ -51,7 +58,6 @@
 # Local stack: STUDIO_SITE_ADDRESS=http://localhost:8090 (container port 8090, published on
 # 127.0.0.1:${STUDIO_WEB_PORT}); VPS: the studio host name (Caddy obtains its certificate).
 {$STUDIO_SITE_ADDRESS:http://studio.invalid} {
-    root * /srv/studio
     encode zstd gzip
     import security_headers
     # Only two top-level handles so the guard is evaluated first (a named-matcher handle sorts
@@ -67,7 +73,7 @@
                 header_up -X-Edge
             }
         }
-        import storage_and_spa
+        import storage_and_app web-studio:80
     }
 }
 

@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
-# Run only after testing these exact two local images. Never changes the VPS.
+# Run only after testing these exact four local images (api, edge, web-learner, web-studio). Never changes the VPS.
 tag=${1:-pilot-internal-20261118-r2}
 case "$tag" in *[!a-zA-Z0-9_.-]*|'') echo 'Invalid tag' >&2; exit 2;; esac
-for service in api web; do
+for service in api edge web-learner web-studio; do
   local_ref="seafoodeck-$service:$tag"
   remote_ref="ghcr.io/tiendn1408/seafoodeck-$service:$tag"
   test "$(docker image inspect "$local_ref" --format '{{.Architecture}}')" = amd64

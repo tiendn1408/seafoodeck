@@ -4,7 +4,7 @@ Từ bản đang chạy trên VPS `learner-demo-20261120-r1` (đã nâng ngày 2
 
 **Không có migration mới.** Đã kiểm trong repo: `apps/api/prisma/migrations` có đúng bốn thư mục `202611170001_initial`, `202611180001_alias_search`, `202611190001_learner_accounts`, `202611200001_username_ci`; tài liệu demo 20/11 ghi VPS đã chạy hai migration cuối (`202611190001_learner_accounts`, `202611200001_username_ci`). `git diff --stat 1692138 HEAD -- apps/api/prisma` (source của bản r1) rỗng, tức schema không đổi. Vì vậy bước `migrate` bên dưới chỉ để xác nhận "không có gì để áp dụng". Trước khi chạy thật, chạy lại lệnh `git diff` trên commit release 2.5c thực tế để chắc chắn.
 
-> **Từ 2.5e** ảnh web có hai site: host học viên và host Studio riêng cho nhân sự. Màn quản trị không còn ở `https://seafoodeck.tiendn.io.vn/#admin` (mục 6 bên dưới chỉ đúng cho 2.5c/2.5d). Nâng lên 2.5e: làm theo [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) (DNS → biến môi trường → deploy → kiểm). Từ runbook này chỉ dùng mục 0 (đăng nhập GHCR, push, `imagetools inspect`; DEPLOY_STUDIO_HOST mục 3 đã chép đủ lệnh cho 2.5e kèm bước build amd64 và kiểm `amd64/linux`), mục 1–3 (sao lưu kèm `git pull --ff-only` bắt buộc, ghi nhớ, đổi mã ảnh) và mục 7 (quay lại, cộng phần `STUDIO_ORIGIN` ở DEPLOY_STUDIO_HOST mục 5); mục 4 (thiếu bước tạo lại kho S3) và mục 6 (quản trị ở host học viên) không áp dụng cho 2.5e.
+> **Từ 2.5e** tầng web tách thành ba ảnh (`edge`, `web-learner`, `web-studio`) và có hai host: học viên và Studio riêng cho nhân sự. **Không dùng runbook này cho bản tách**: nâng lên đó làm toàn bộ theo [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 3 (build ba ảnh, sao lưu, đổi mã ảnh, gỡ `web` cũ, bật `edge`) và mục 5 (quay lại). Runbook này (và mọi `WEB_IMAGE_REF`, `dc up … web`, `apps/web/Dockerfile` trong nó) là lịch sử của 2.5c/2.5d với compose một container `web`; màn quản trị ở `https://seafoodeck.tiendn.io.vn/#admin` (mục 6) cũng chỉ đúng cho 2.5c/2.5d. `deploy/compose.origin.yaml` và `deploy/compose.ghcr.yaml` là bản 0.5 (legacy 0.5), không phải stack pilot.
 
 Mã nhận diện hai ảnh (điền sau khi push GHCR và kiểm bằng `docker buildx imagetools inspect`):
 
@@ -22,7 +22,7 @@ Chỉ push hai ảnh amd64 đã kiểm cục bộ đúng tag này:
 
 `publish-pilot.sh` in digest của từng ảnh; ghi lại hai digest vào hai dòng ở trên. Không đưa token vào tài liệu hay lịch sử chia sẻ.
 
-Từ 2.5d, bước build của ảnh web (`apps/web/Dockerfile` và `Dockerfile` ở gốc) chạy `npm run build && npm run check:bundle`: nếu mã admin/manager lọt vào bundle tải cho mọi người thì build ảnh web thất bại, không có ảnh để push. Ảnh web build trước 2.5d chưa có bước này; build lại, không push ảnh cũ.
+Từ 2.5d, bước build của ảnh web (lịch sử: `apps/web/Dockerfile` và `Dockerfile` ở gốc, nay chỉ còn `Dockerfile` ở gốc với ba target) chạy `npm run build && npm run check:bundle`: nếu mã admin/manager lọt vào bundle tải cho mọi người thì build ảnh web thất bại, không có ảnh để push. Ảnh web build trước 2.5d chưa có bước này; build lại, không push ảnh cũ.
 
 ## 1. Sao lưu trước (DB và ảnh)
 

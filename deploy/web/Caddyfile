@@ -1,0 +1,26 @@
+# Static web container (web-learner and web-studio images, same file): serves one app build from /srv/app
+# over plain HTTP. Only the edge (deploy/edge/Caddyfile) talks to it; it owns TLS, compression and the
+# security headers, so none of them are set here.
+{
+    auto_https off
+    admin off
+}
+
+:80 {
+    root * /srv/app
+    handle /assets/* {
+        # Hashed file names: safe to cache forever. The edge keeps this value (it adds no-store only
+        # where this container sent no Cache-Control).
+        header Cache-Control "public, max-age=31536000, immutable"
+        file_server
+    }
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}
+
+# Container health check only (loopback, not published): the public /healthz is a SPA route.
+http://127.0.0.1:8081 {
+    respond /healthz "ok" 200
+}

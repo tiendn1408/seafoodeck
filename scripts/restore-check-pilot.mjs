@@ -18,7 +18,7 @@ try{
  docker('up','-d','--wait','db','storage');
  execFileSync('docker',['compose','--env-file','.local/restore.env','exec','-T','db','psql','-v','ON_ERROR_STOP=1','-U',env.POSTGRES_USER,'-d',env.POSTGRES_DB],{input:readFileSync(backup+'/db.sql'),stdio:['pipe','pipe','pipe']});
  const restored=JSON.parse(docker('run','--rm','--no-deps','--user','0','-v',process.cwd()+'/'+backup+':/backup:ro','-e','BACKUP_DIR=/backup','api','node','dist/objects.js','restore').trim());
- docker('run','--rm','migrate');docker('up','-d','api','web');
+ docker('run','--rm','migrate');docker('up','-d','api','edge','web-learner','web-studio');
  for(let i=0;i<120;i++){try{if((await fetch(env.PUBLIC_ORIGIN+'/api/v1/health')).ok)break;}catch{}await new Promise(r=>setTimeout(r,500));}
  assert.equal((await fetch(env.PUBLIC_ORIGIN+'/api/v1/health')).status,200);
  docker('run','--rm','--no-deps','--user','0','-v',process.cwd()+'/.local/restore-inventory:/backup','-e','BACKUP_DIR=/backup','api','node','dist/objects.js','inventory');

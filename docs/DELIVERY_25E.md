@@ -6,10 +6,10 @@ Mục tiêu của chủ dự án: **giảm số người biết là có khu qu�
 
 ## Đã giao
 
-**Hai app, hai host, một API, một DB, một ảnh web**
+**Hai app, hai host, một API, một DB, ba ảnh web (xem "Tách tầng web" cuối tài liệu; ban đầu 2.5e giao một ảnh web)**
 - `apps/web`: app học viên (khách, học thử bằng mã mời, student). Không còn route, tab, chữ, tên file chunk hay đường API nào của quản trị/quản lý. Mở `#admin`, `#manager`… trên app học viên chỉ về Trang chủ (hoặc form đăng nhập nếu chưa đăng nhập).
 - `apps/studio` (`@seafoodeck/studio`): app Studio cho editor/reviewer/publisher (Quản trị + Thư viện), manager (Học viên + Thư viện + Tài khoản), admin (Quản trị + Người dùng + Học viên + Thư viện). Đủ các tính năng cũ: nhập CSV, revision/media, xuất bản/rollback, người dùng (tạo, tạo hàng loạt, khóa/mở khóa, đặt lại mật khẩu, xóa), bảng học viên và chi tiết, CSV học viên, màn Tài khoản của manager, buộc đổi mật khẩu, 401 → đăng nhập lại, CSRF sau đổi mật khẩu, chặn rời trang khi đang hiện mật khẩu tạm.
-- Ảnh web chứa hai bản build (`/srv/learner`, `/srv/studio`); Caddy có hai site. Host học viên `seafoodeck.tiendn.io.vn`, host Studio `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`).
+- (Lịch sử, trước tách tầng web) Ảnh web chứa hai bản build (`/srv/learner`, `/srv/studio`); Caddy có hai site. Host học viên `seafoodeck.tiendn.io.vn`, host Studio `seafoodeckstudio.tiendn.io.vn` (`STUDIO_SITE_ADDRESS`, `STUDIO_ORIGIN`).
 
 **API**
 - Đăng nhập kiểm "realm" theo `Origin`: student/mã mời chỉ ở origin học viên, editor/reviewer/publisher/manager/admin chỉ ở origin Studio. Sai host → **đúng status, đúng body, cùng chi phí bộ giới hạn đăng nhập như sai mật khẩu**. Không đặt `STUDIO_ORIGIN` thì hành vi như cũ (một origin cho mọi vai trò).
@@ -74,3 +74,71 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 - `smoke-pilot`: 10/10 PASS. `learner-accounts-check`: 11 pass, 1 skip ((j) chưa đủ 3 bản thu), 0 lỗi, (f) đạt. `browser-pilot-check`: đạt (âm thanh 1×/0,75×, một nguồn phát; câu hỏi đầu 2,5 s ở mạng 1,5 Mbps, CPU ×4).
 - `npm run test:e2e` hai lần cách nhau hơn 10 phút (và hơn 10 phút sau các script trên): lần 1 lúc 11:11 và lần 2 lúc 11:22, đều **52 pass / 6 skip / 0 lỗi**.
 - `smoke-pilot` và `learner-accounts-check` từ nay cần ảnh API có cờ `current` (lượt sửa này trở đi); chạy với ảnh cũ hơn (ví dụ r1) thì báo lỗi, có chủ ý. Hai script chỉ chạy trên stack local, không chạy trên VPS.
+
+## Tách tầng web (26/11/2026, branch `feat/web-tier-split`)
+
+Chủ dự án chọn tách thật: container học viên chỉ chứa bản build học viên, container Studio chỉ chứa bản build Studio, một `edge` đứng trước. Các mục "ảnh web chứa hai bản build" ở trên là lịch sử của lượt giao đầu 2.5e.
+
+**Đã đổi**
+- Service `web` thành `edge` (Caddy: cổng, TLS, header bảo mật, `/api/*`, proxy S3, site Studio chưa cấu hình thì đóng kết nối; không chứa file app), `web-learner` và `web-studio` (Caddy HTTP thuần, mỗi cái chỉ có bản build của mình, không publish cổng). Ba ảnh `seafoodeck-edge`, `seafoodeck-web-learner`, `seafoodeck-web-studio` build từ một `Dockerfile` ở gốc (ba target), `check:bundle` chạy một lần trong stage build nên cả ba build đều hỏng nếu bundle lẫn mã. `apps/web/Dockerfile` và `deploy/Caddyfile.pilot` đã xóa (thay bằng `deploy/edge/Caddyfile`, `deploy/web/Caddyfile`).
+- Chỉ `edge` mở cổng (VPS: 80, 443, 443/udp; local: 18089, 18090). Hành vi nhìn từ ngoài giữ nguyên ở cả hai host (status, header, cache, SPA fallback, `X-Edge`, guard Studio).
+- Dừng hoặc quay lại một container web không ảnh hưởng host kia (host bị dừng trả 502). Học viên và Studio quay lại riêng được bằng `LEARNER_IMAGE_REF` / `STUDIO_IMAGE_REF`.
+- VPS: `EDGE_IMAGE_REF`, `LEARNER_IMAGE_REF`, `STUDIO_IMAGE_REF` thay `WEB_IMAGE_REF`; `scripts/publish-pilot.sh` đẩy bốn ảnh. Runbook nâng cấp và quay lại: [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 3 và 5. Chuyển từ `web` cũ cần gỡ container `web` (đang giữ 80/443) rồi bật `edge`: vài giây ngừng cho cả hai host.
+
+**Không đổi (nói thẳng)**
+- `edge` hỏng thì **cả hai host cùng ngừng**: vẫn một VPS, một `edge`, một API, một DB, không HA, không VPS thứ hai, không TLS riêng mỗi app. Tách tầng web chỉ tách ảnh và vòng đời của hai app web, không tăng độ sẵn sàng của hệ thống.
+- Không đổi API, DB, vai trò, `/admin*`, kiểm Origin/realm, `learner-edge.ts` hay mã app nào. Chặn đường nhân sự ở host học viên vẫn nằm trong API (header `X-Edge`).
+- Caddy volumes `caddy_data`/`caddy_config` giữ nguyên, do đó chứng chỉ không mất khi chuyển.
+
+### Bằng chứng
+
+Kiểm ngày 26/11/2026 trên branch `feat/web-tier-split` (HEAD `bbae093` cho mã; chỉ tài liệu đổi sau đó), máy local, không đụng VPS, không đẩy ảnh.
+
+**Dựng lại stack local** (project `seafoodeck-pilot-acceptance`, giữ volume, không `down`):
+
+    sh scripts/backup-pilot.sh _backups/before-web-split-20261126        # db.sql 19,8 MB, objects.json, images.txt
+    API_TAG=web-tier-split-local WEB_TAG=web-tier-split-local docker compose --env-file .local/pilot.env build api edge web-learner web-studio
+    API_TAG=web-tier-split-local WEB_TAG=web-tier-split-local docker compose --env-file .local/pilot.env up -d --wait
+
+- Build: `check-bundles: ok (12 markers absent from learner, present in studio; learner index.html clean)` trong stage build chung.
+- `docker compose ps`: `api`, `db`, `storage`, `edge`, `web-learner`, `web-studio` đều healthy. Cổng publish chỉ ở `edge`: `127.0.0.1:18089->80/tcp, 127.0.0.1:18090->8090/tcp`; các service khác chỉ có cổng nội bộ (không `->`).
+- `/api/v1/health` ở cả hai host: `{"status":"ok","version":"0.6.0","release":"web-tier-split-local"}`.
+
+**Kiểm trên stack đã dựng lại**
+- `npm run check:web-tier`: 4/4 ok: (a) ma trận header 16 mục trùng baseline của container `web` cũ; (b) chỉ `edge` publish cổng (6 service đang chạy); (c) `web-learner` 51 file, không marker Studio; `web-studio` 51 file, đủ marker; `edge` không có file app; (d) Caddyfile của edge giữ guard `@unconfigured`.
+- `npm run smoke:pilot`: 10/10 PASS.
+- `node scripts/learner-accounts-check.mjs`: 11 pass, 1 skip ((j) chưa đủ 3 bản thu, như trước), 0 lỗi.
+- `node scripts/browser-pilot-check.mjs` (có `/tmp/seafoodeck-audio-check.mp3`, chạy sau smoke): đạt; câu hỏi đầu 2 541 ms ở mạng 1,5 Mbps, CPU ×4.
+- `npm run test:e2e` (sau khi khởi động lại `api` để xóa bộ đếm đăng nhập, 14:18): **52 pass / 6 skip / 0 lỗi**; theo project: `desktop` 12/3 skip, `mobile` 15, `studio-desktop` 14, `studio-mobile` 11/3 skip, giống `main`.
+
+**Cô lập hai container web** (status code của `GET /`):
+
+| Thao tác | Host học viên `/` | Host học viên `/api/v1/health` | Host Studio `/` | Host Studio `/api/v1/health` | `edge` |
+| --- | --- | --- | --- | --- | --- |
+| `docker compose stop web-studio` | 200 | 200 | **502** | 200 | healthy |
+| `start web-studio`, chờ healthy | 200 | | 200 | | |
+| `docker compose stop web-learner` | **502** | 200 | 200 | 200 | healthy |
+| `start web-learner`, chờ healthy | 200 | | 200 | | |
+
+**Studio chưa cấu hình** (project tạm `seafoodeck-split-unconfigured`, `compose.yaml` của repo, cổng 18191/18192, env sinh bằng `init-pilot` trong thư mục tạm rồi bỏ dòng `STUDIO_SITE_ADDRESS`): `edge`, `web-learner`, `web-studio`, `api` healthy; `edge` nhận `STUDIO_SITE_ADDRESS=http://studio.invalid`. Host học viên `/` 200. `curl http://localhost:18192/` → `curl: (52) Empty reply from server`; `curl -H 'Host: studio.invalid' http://127.0.0.1:18191/` → rc 52. `docker port <project>-web-studio-1` rỗng (không publish cổng). Đã gỡ project này (`docker compose -p seafoodeck-split-unconfigured … down -v`, chỉ project tạm đó).
+
+**Diễn tập chuyển VPS** (project tạm `seafoodeck-split-rehearsal`, một bản clone repo trong thư mục tạm, env sinh bằng `init-pilot` của `main` với secret dùng một lần; file override ngoài repo đưa cổng công khai về `127.0.0.1:18201:80` / `127.0.0.1:18202:443` cho `web` cũ rồi cho `edge`, nên xung đột cổng là thật; `SITE_ADDRESS=:80`, Studio ở host `studio.localhost` trên cùng cổng, không lấy chứng chỉ). Chạy đúng lệnh của [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md) mục 3 và 5, chỉ thay: tên project, thêm `-f <override>` vào `dc`, bỏ `sudo` (Docker Desktop), `git pull --ff-only origin feat/web-tier-split` thay `origin main` (chưa merge), mã ảnh là tên ảnh local, và trình soạn thảo được thay bằng `sed`.
+
+1. Bố cục cũ (`git show main:deploy/compose.pilot.ghcr.yaml`, `WEB_IMAGE_REF=seafoodeck-web:studio-split-25e-r3-local`, API r3): `web` healthy, giữ `127.0.0.1:18201->80, 18202->443`; học viên `/` 200, Studio `/` 200, health `release: studio-split-25e-r3-local`. Ghi một file đánh dấu vào `/data` của `web`; `instance.uuid` của Caddy `88ffed34-…`.
+2. 3.2: `git status --short` rỗng; `<previous-commit>` = `e43170b`; `backup-pilot.sh` với compose cũ tạo `db.sql`, `objects.json`, `images.txt`; `git pull --ff-only` mang compose mới.
+3. 3.3: `grep -o '^[A-Z_]*IMAGE_REF='` thấy API, EDGE, LEARNER, STUDIO, không còn WEB; `compose-ok`; `dc config --images` đúng bốn ảnh mới cùng db, storage.
+4. 3.4: `dc pull` lỗi `pull access denied` cho ảnh local (chỉ do diễn tập dùng tên ảnh local; trên VPS là digest GHCR); `migrate`: `No pending migrations to apply.`; `storage` không đổi (đã có `STUDIO_ORIGIN`), `api` lên ảnh mới, `web` cũ vẫn phục vụ (200). Mọi lệnh `dc up` từ đây in cảnh báo `Found orphan containers (…-web-1)`.
+5. 3.5: `web-learner`, `web-studio` healthy song song với `web` cũ; hai host vẫn 200.
+6. Thử bật `edge` trước khi gỡ `web` (ngoài runbook, để chứng minh): `Bind for 127.0.0.1:18201 failed: port is already allocated`, container `edge` nằm lại ở trạng thái `created`. `dc rm -sf web` với file mới: `no such service: web` (container `web` vẫn chạy), nên cần lệnh `docker rm -f` theo nhãn.
+7. 3.6: lệnh lọc nhãn ra đúng một dòng `…-web-1 seafoodeck-web:studio-split-25e-r3-local`; `docker rm -f $(…)` gỡ nó. **Lỗi runbook tìm thấy**: `dc up -d --no-deps edge` (như viết lúc đó) bật lại chính container `edge` tạo ở bước 6, `edge` healthy nhưng `NetworkSettings.Ports` rỗng: cả hai host từ chối kết nối. `dc up -d --no-deps --force-recreate edge` tạo container mới: học viên 200 sau ~1 s, `edge` có `127.0.0.1:18201->80, 18202->443`. Runbook đã sửa sang `--force-recreate` và yêu cầu kiểm cột PORTS. Lượt chuyển sạch thứ hai (không có bước 6) với lệnh như viết và lượt thứ ba với `--force-recreate`: đều 200 ngay, `edge` có cổng.
+8. Chứng chỉ: `edge` gắn `seafoodeck-split-rehearsal_caddy_data:/data` và `…_caddy_config:/config`, đúng hai volume `web` cũ dùng (cùng tên, cùng `CreatedAt 2026-11-26T07:32:41Z`); file đánh dấu và `instance.uuid` `88ffed34-…` vẫn còn trong `edge` và lại thấy trong `web` sau khi quay lại.
+9. Mục 4 (phần chạy được local): cổng chỉ ở `edge`; học viên `admin/users`, `manager/learners`, `docs`, `openapi.json` đều 404; Studio `admin/users` 401; health hai host `release: web-tier-split-local`.
+10. Quay lại một app (mục 5): `LEARNER_IMAGE_REF` về ảnh learner r3, `dc up -d --no-deps web-learner`: host học viên 502 khoảng 1 s rồi 200, host Studio 200 suốt, `edge`/`web-studio` không bị tạo lại.
+11. Quay lại bố cục một `web` (mục 5, vòng `docker rm -f` theo từng service, `git checkout e43170b -- deploy/compose.pilot.ghcr.yaml`, trả hai dòng `API/WEB_IMAGE_REF`, `storage`, `api`, `web`): ba lần, lần nào cũng `web` r3 giữ lại cổng, hai host 200, health `release: studio-split-25e-r3-local`; host học viên trở lại 200 khoảng 11 s sau lệnh `rm` đầu tiên. **Lỗi runbook tìm thấy**: câu "khi ổn định, trả file compose về bản mới bằng `git checkout HEAD`" làm mọi lệnh `dc` lỗi (`required variable LEARNER_IMAGE_REF is missing a value`) chừng nào env còn là `WEB_IMAGE_REF`; runbook giờ bảo giữ file cũ khi bản cũ chạy và chỉ trả file ngay trước `git pull` của lần nâng cấp sau.
+12. Đã gỡ project tạm (`docker compose -p seafoodeck-split-rehearsal … down -v --remove-orphans`, chỉ project đó); không còn container hay volume `seafoodeck-split-*`.
+
+Lệnh của runbook đã chạy trong diễn tập: mục 3.2 (trừ `sudo`), 3.3, 3.4 (`dc pull` chỉ với ảnh registry), 3.5, 3.6, phần cổng/404/401/health của mục 4, cả ba nhánh quay lại ở mục 5 trừ nhánh "chỉ site Studio lỗi". Lưu ý: thứ tự các lệnh của nhánh quay lại bố cục một `web` được đổi sau lần review cuối (đổi compose, env và `dc pull` lên trước vòng gỡ container) và chưa diễn tập lại nguyên thứ tự mới. Chưa chạy (cần VPS, DNS hoặc GHCR thật): mục 1 (`dig`), build amd64 trên máy build và `publish-pilot.sh`/`imagetools inspect` ở 3.1, kiểm HTTPS/chứng chỉ thật, đếm catalogue trên DB thật, đăng nhập trình duyệt ở mục 4.
+
+**Cổng kiểm cuối** (một lần, trên stack đã dựng lại): `format:check`, `lint` (0 lỗi, 0 cảnh báo), `typecheck` đạt; `node --test "scripts/*.test.mjs"` 38/38; `npm test`: web 327, studio 136, API 435, scripts 58 (gồm prototype), tất cả pass; `npm run build` đạt; `check:bundle` ok; `check:web-tier` 4/4 ok.
+
+Còn lại cho chủ dự án: build và kiểm bốn ảnh amd64 thật, đẩy GHCR, rồi làm theo runbook trên VPS (khoảng ngừng vài giây cho cả hai host ở 3.6).

@@ -1,5 +1,7 @@
 # Seafood Deck 0.6.0 — bàn giao bản kỹ thuật nội bộ
 
+> **Lịch sử.** Biên bản của một bản phát hành cũ với một ảnh web (`seafoodeck-web`, `WEB_IMAGE_REF`, `apps/web/Dockerfile`, Caddyfile trong ảnh web). Từ 2.5e tầng web là ba ảnh `edge`, `web-learner`, `web-studio` và `Dockerfile` ở gốc có ba target; xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md). Không dùng các lệnh trong tài liệu này cho bản hiện tại.
+
 Ngày 18/11/2026. Thực thi hai tài liệu batch 2026-11-17-002 trong repo hiện tại. Bản này chạy bốn chế độ qua API/DB/S3, không còn catalog/đáp án/media câu hỏi trong bundle web. Chưa deploy VPS, chưa tuyên bố đủ điều kiện pilot dữ liệu khách.
 
 ## Mốc và image

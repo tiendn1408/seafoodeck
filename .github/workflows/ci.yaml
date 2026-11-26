@@ -29,11 +29,12 @@ jobs:
       - run: npm run contract:generate
       - run: git diff --exit-code -- docs/api/openapi.json
       - run: node scripts/init-pilot.mjs
-      - run: docker compose --env-file .local/pilot.env build api web
-      - run: docker compose --env-file .local/pilot.env up -d api web
+      - run: docker compose --env-file .local/pilot.env build api edge web-learner web-studio
+      - run: docker compose --env-file .local/pilot.env up -d api edge web-learner web-studio
       - run: docker compose --env-file .local/pilot.env --profile internal-seed run --rm seed
       - run: node scripts/wait-pilot.mjs
       - run: npm run smoke:pilot
+      - run: npm run check:web-tier
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - if: always()

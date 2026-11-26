@@ -1,5 +1,7 @@
 # Phase 2.5d: siết vai trò, tách bundle, màn Tài khoản của manager
 
+> **Lịch sử.** Biên bản của một bản phát hành cũ với một ảnh web (`seafoodeck-web`, `WEB_IMAGE_REF`, `apps/web/Dockerfile`, Caddyfile trong ảnh web). Từ 2.5e tầng web là ba ảnh `edge`, `web-learner`, `web-studio` và `Dockerfile` ở gốc có ba target; xem [DEPLOY_STUDIO_HOST.md](DEPLOY_STUDIO_HOST.md). Không dùng các lệnh trong tài liệu này cho bản hiện tại.
+
 Ngày 23/11/2026. Branch `feat/role-hardening-25d`. Chưa build image phát hành, chưa push GHCR, chưa nâng cấp VPS. Không có migration mới (stack local báo "No pending migrations").
 
 ## Đã làm
