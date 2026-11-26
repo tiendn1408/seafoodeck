@@ -52,7 +52,15 @@ Cài mới bằng `node scripts/init-pilot.mjs --production --origin https://<ho
 
 ## 3. Deploy (sau DNS và env)
 
-Sao lưu và đổi hai mã ảnh như [runbook 2.5c](DEPLOY_UPGRADE_25C.md) (mục 1–3, thay tag/digest bằng bản 2.5e), rồi:
+Từ bản đang chạy `learner-demo-20261120-r1` (một origin): 2.5c, 2.5d, 2.5e không thêm migration (vẫn bốn thư mục trong `apps/api/prisma/migrations`, VPS đã chạy đủ), nên nhảy thẳng lên 2.5e, không cần lên 2.5c trước.
+
+Máy build (không phải VPS), từ commit đã merge vào `main` trên origin, tag mới `<TAG-2.5e>`:
+
+    docker build --platform linux/amd64 --build-arg RELEASE_TAG=<TAG-2.5e> -f apps/api/Dockerfile -t seafoodeck-api:<TAG-2.5e> .
+    docker build --platform linux/amd64 --build-arg RELEASE_TAG=<TAG-2.5e> -f apps/web/Dockerfile -t seafoodeck-web:<TAG-2.5e> .
+    sh scripts/publish-pilot.sh <TAG-2.5e>     # in digest hai ảnh; script từ chối ảnh không phải amd64
+
+Trên VPS: làm [runbook 2.5c](DEPLOY_UPGRADE_25C.md) mục 1–3 (sao lưu, ghi nhớ hai mã ảnh đang chạy, đổi hai mã ảnh), thay `2.5c` bằng `2.5e` ở commit cần kiểm, thư mục sao lưu (`_backups/before-25e`) và digest. **Không** dùng mục 4 và mục 6 của runbook đó cho 2.5e: mục 4 không tạo lại kho S3 (thiếu CORS cho host Studio) và mục 6 mở quản trị ở host học viên. Thay bằng:
 
     dc pull
     dc run --rm --no-deps migrate

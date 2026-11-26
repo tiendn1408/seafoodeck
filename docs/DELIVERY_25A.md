@@ -23,7 +23,7 @@ Ngày 20/11/2026. Branch `feat/learner-accounts-25a` (gốc `feat/pilot-monorepo
 
 - **Không chạy script này trên VPS/production** (nó tạo người dùng QA và đăng/rollback release nội bộ).
 - Người dùng QA `qa-*` (kể cả `qa-stress-*` khi có `--stress`) ở lại trong DB local; mật khẩu ngẫu nhiên, không in ra.
-- Mỗi lần chạy, ý (f) đăng thêm một release nội bộ vào lịch sử rồi rollback. Ý (f) và `smoke:pilot` cần release nền nằm trong 20 release gần nhất, nên chạy nhiều lần thì đến lúc sẽ hỏng cho tới khi đăng lại release nền (cùng danh sách revision) làm release hiện hành.
+- Mỗi lần chạy, ý (f) đăng thêm một release nội bộ vào lịch sử rồi rollback. Ý (f) và `smoke:pilot` cần release nền nằm trong 20 release gần nhất, nên chạy nhiều lần thì đến lúc sẽ hỏng cho tới khi đăng lại release nền (cùng danh sách revision) làm release hiện hành. (Đã sửa sau 2.5e: tổng quan quản trị luôn liệt kê release hiện hành và gắn cờ `current`, xem [DELIVERY_25E.md](DELIVERY_25E.md).)
 - Mỗi lần chạy đăng nhập khoảng 11 lần; giới hạn đăng nhập là 20 lần / 10 phút / IP, nên gần như mỗi lần chạy cần khởi động lại API local: `docker compose --env-file .local/pilot.env restart api` (rồi `node scripts/wait-pilot.mjs`).
 
 ## API mới / thay đổi
