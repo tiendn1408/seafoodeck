@@ -9,14 +9,16 @@ import {readFileSync} from 'node:fs';
 import {randomBytes, randomUUID} from 'node:crypto';
 import {refuseNonLocal} from './local-origin.mjs';
 const origin=process.env.PILOT_ORIGIN??'http://127.0.0.1:18089';
-const refusal=refuseNonLocal(origin,process.argv.slice(2));
-if(refusal){console.error(refusal);process.exit(2);}
 const env=Object.fromEntries(readFileSync('.local/pilot.env','utf8').trim().split('\n').filter(l=>l.includes('=')).map(l=>{const p=l.indexOf('=');return [l.slice(0,p),l.slice(p+1)];}));
+// Phase 2.5e: admin and manager sign in on the Studio host (PILOT_STUDIO_ORIGIN, else STUDIO_ORIGIN from the env file).
+const studio=process.env.PILOT_STUDIO_ORIGIN??env.STUDIO_ORIGIN??origin;
+for(const o of new Set([origin,studio])){const refusal=refuseNonLocal(o,process.argv.slice(2));if(refusal){console.error(refusal);process.exit(2);}}
 const results=[];
 const secret=()=>randomBytes(18).toString('base64url');
 class Client {
  cookie='';csrf='';
- async req(path,body,options={}){const method=options.method??(body===undefined?'GET':'POST');const headers={Origin:origin,...(this.cookie?{Cookie:this.cookie}:{}),...(method==='GET'?{}:{'X-CSRF-Token':this.csrf,'Content-Type':'application/json'}),...options.headers};const response=await fetch(origin+'/api/v1'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});const cookie=response.headers.getSetCookie()[0];if(cookie)this.cookie=cookie.split(';')[0];const text=await response.text();let data;try{data=JSON.parse(text);}catch{data={message:text.slice(0,200)};}if(data&&data.csrf)this.csrf=data.csrf;return {status:response.status,data};}
+ constructor(base=origin){this.base=base;}
+ async req(path,body,options={}){const method=options.method??(body===undefined?'GET':'POST');const headers={Origin:this.base,...(this.cookie?{Cookie:this.cookie}:{}),...(method==='GET'?{}:{'X-CSRF-Token':this.csrf,'Content-Type':'application/json'}),...options.headers};const response=await fetch(this.base+'/api/v1'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});const cookie=response.headers.getSetCookie()[0];if(cookie)this.cookie=cookie.split(';')[0];const text=await response.text();let data;try{data=JSON.parse(text);}catch{data={message:text.slice(0,200)};}if(data&&data.csrf)this.csrf=data.csrf;return {status:response.status,data};}
  async ok(path,body,options){const r=await this.req(path,body,options);const want=(options?.method??(body===undefined?'GET':'POST'))==='POST'?201:200;assert.equal(r.status,want,`Unexpected ${r.status} at ${path}: ${JSON.stringify(r.data?.message)}`);return r.data;}
  async login(credential,username){await this.ok('/auth/me');const r=await this.req('/auth/login',username?{username,credential}:{credential});assert.equal(r.status,201,`login ${username??'invite'} -> ${r.status} ${JSON.stringify(r.data?.message)}`);await this.ok('/auth/me');return r.data;}
 }
@@ -28,7 +30,7 @@ async function check(id,name,fn){
 const attempt=(c,s,q,answer,key=randomUUID())=>c.req(`/learning/sessions/${s}/questions/${q}/attempts`,{key,answer});
 const progress=c=>c.ok('/me/progress');
 const stamp=Date.now().toString(36);
-const admin=new Client();await admin.login(env.ADMIN_PASSWORD,env.ADMIN_USERNAME);
+const admin=new Client(studio);await admin.login(env.ADMIN_PASSWORD,env.ADMIN_USERNAME);
 const users={student:{username:`qa-student-${stamp}`,password:secret(),role:'student'},student2:{username:`qa-student2-${stamp}`,password:secret(),role:'student'},must:{username:`qa-mustchange-${stamp}`,password:secret(),role:'student',mustChangePassword:true},manager:{username:`qa-manager-${stamp}`,password:secret(),role:'manager'}};
 for(const u of Object.values(users)){const created=await admin.ok('/admin/users',{username:u.username,password:u.password,role:u.role,displayName:'QA nội bộ',mustChangePassword:u.mustChangePassword??false});assert.equal(created.role,u.role);assert.equal(created.mustChangePassword,u.mustChangePassword??false);}
 console.log('Created QA users (passwords random, not printed):',Object.values(users).map(u=>`${u.username}:${u.role}${u.mustChangePassword?'+mustChange':''}`).join(', '));
@@ -132,7 +134,7 @@ await check('g','role separation: invite learner, second student, manager',async
  const m2=await s2.ok('/me/mastery');assert.ok(Object.keys(m2).length>0);assert.ok(Object.values(m2).every(m=>m.status==='new'&&m.level===0));
  assert.equal((await s2.req(`/learning/sessions/${flashA.id}`)).status,404);assert.equal((await s2.req(`/learning/sessions/${flashA.id}/summary`)).status,404);
  assert.equal((await attempt(s2,flashA.id,flashA.questions[0].id,{rating:'known'})).status,404);
- const manager=new Client();await manager.login(users.manager.password,users.manager.username);
+ const manager=new Client(studio);await manager.login(users.manager.password,users.manager.username);
  for(const p of ['/me/home','/me/progress','/me/mastery','/me/review'])assert.equal((await manager.req(p)).status,403,`manager ${p}`);
  assert.equal((await manager.ok('/me')).role,'manager');
  return {learner403:4,manager403:4,student2Isolated:true};
