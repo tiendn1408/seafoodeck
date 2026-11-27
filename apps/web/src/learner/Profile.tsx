@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { api, type CatalogItem } from '../pilot/api';
 import { Pronunciation } from '../pilot/Media';
+import { MachineVoice } from '../pilot/MachineVoice';
+import type { VoiceKind } from '../pilot/speechVoice';
 import { ErrorNote } from './ErrorNote';
 import { SpeciesCover } from './SpeciesCover';
 import './profile.css';
@@ -103,7 +105,16 @@ export function Profile({
                     (audio ? (
                       <Pronunciation id={audio} />
                     ) : (
-                      <p className="profile-audio-missing">Chưa có bản thu đã duyệt.</p>
+                      <>
+                        <p className="profile-audio-missing">Chưa có bản thu đã duyệt.</p>
+                        {(n.kind === 'en' || n.kind === 'ja' || n.kind === 'scientific') && (
+                          <MachineVoice
+                            key={n.kind}
+                            kind={n.kind satisfies VoiceKind}
+                            label={n.label}
+                          />
+                        )}
+                      </>
                     ))}
                   <details>
                     <summary>Nguồn tên gọi</summary>
