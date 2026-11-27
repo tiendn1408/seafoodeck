@@ -16,7 +16,8 @@ Giai đoạn 3 là các tính năng đã nêu ngày 19/11/2026: HS nhiều bư�
 ## Kết quả nghe thử
 
 - Vòng 1 (giọng macOS; chủ dự án nghe): tiếng Nhật Kyoko 8/8 chuẩn, Eddy 4/8, Reed 1/8, Sandy 0/8; tiếng Anh Samantha và Eddy 6/6, Flo 3/6; tên khoa học: nghe được nhưng chưa biết đúng không. Kết quả thô: `.local/tts-listening/ratings-round1.txt` (ghi chú là về độ rõ, chưa phải trọng âm; vẫn cần người nghe được trọng âm tiếng Nhật duyệt).
-- Vòng 2 (Kokoro-82M mã nguồn mở, chạy trên máy): **đã sinh 22 đoạn, chủ dự án CHƯA nghe.** Tiếng Nhật `jf_alpha`, `jm_kumo` (8 tên), tiếng Anh `af_heart` (6 tên). Tài liệu Kokoro tự chấm `jf_alpha` C+ và `jm_kumo` C-, yếu với chuỗi rất ngắn, không có ký hiệu trọng âm. Giấy phép Apache-2.0 (dùng trong sản phẩm được); `jm_kumo` cần ghi công Koniwa. Chưa thử VOICEVOX, Style-BERT-VITS2; Piper không có giọng Nhật.
+- Vòng 2 (Kokoro-82M mã nguồn mở, chạy trên máy; chủ dự án nghe ngày 27/11/2026): tiếng Nhật `jf_alpha` 7/8 chuẩn (ウニ chấm Sai), `jm_kumo` 6/8 chuẩn (ウシエビ, イセエビ chấm Tạm), tiếng Anh `af_heart` 6/6 chuẩn. Tốt hơn điểm tự chấm của tài liệu Kokoro, gần ngang Kyoko (8/8). Vẫn là độ rõ, chưa phải trọng âm. Chọn được giọng khác nhau cho từng tên (người duyệt chọn clip tốt nhất mỗi tên).
+- Hướng hiện tại: Kokoro chạy trong một container `tts` trên VPS để admin bấm tạo giọng trên Studio, miễn phí, không khóa dịch vụ ngoài. **Cần biết trước:** RAM và đĩa của VPS (image khoảng 2 GB, mô hình 327 MB), và kiểm giấy phép espeak-ng (GPL-3.0) khi đóng gói vào image. Chưa quyết định. Thông tin gốc ở bên dưới: Tiếng Nhật `jf_alpha`, `jm_kumo` (8 tên), tiếng Anh `af_heart` (6 tên). Tài liệu Kokoro tự chấm `jf_alpha` C+ và `jm_kumo` C-, yếu với chuỗi rất ngắn, không có ký hiệu trọng âm. Giấy phép Apache-2.0 (dùng trong sản phẩm được); `jm_kumo` cần ghi công Koniwa. Chưa thử VOICEVOX, Style-BERT-VITS2; Piper không có giọng Nhật.
 
 ## Dữ liệu cần nhớ
 
