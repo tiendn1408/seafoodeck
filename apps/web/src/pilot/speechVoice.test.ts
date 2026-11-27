@@ -6,7 +6,7 @@ import {
   speechAvailable,
   speechRate,
   speechText,
-} from './machineVoice';
+} from './speechVoice';
 
 const voice = (name: string, lang: string) => ({ name, lang }) as SpeechSynthesisVoice;
 const enUS = voice('Samantha', 'en-US');

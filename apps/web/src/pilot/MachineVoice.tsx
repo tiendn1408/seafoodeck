@@ -9,12 +9,15 @@ import {
   speechAvailable,
   speechText,
   type VoiceKind,
-} from './machineVoice';
+} from './speechVoice';
 
 export function MachineVoice({ kind, label }: { kind: VoiceKind; label: string }) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => availableVoices());
   const [slow, setSlow] = useState(false);
-  const [status, setStatus] = useState('');
+  const key = `${kind}|${label}`;
+  const [shown, setShown] = useState({ key, text: '' });
+  const status = shown.key === key ? shown.text : '';
+  const setStatus = (text: string) => setShown({ key, text });
   const run = useRef(0);
   useEffect(() => {
     if (!speechAvailable()) return;

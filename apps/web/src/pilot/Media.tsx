@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, RotateCcw } from 'lucide-react';
 import { api } from './api';
-import { cancelSpeech } from './machineVoice';
+import { cancelSpeech } from './speechVoice';
 export function MediaCredit({ id }: { id: string }) {
   const [info, setInfo] = useState<{ credit: string; rights: string; source: string } | null>(null);
   useEffect(() => {

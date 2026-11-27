@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act } from 'react';
+import { act, useState } from 'react';
 import { mount, unmountAll, button, click } from '../learner/testDom';
-import { MachineVoice } from './MachineVoice.tsx';
+import { MachineVoice } from './MachineVoice';
 import { Pronunciation, stopAudio } from './Media';
 
 const voice = (name: string, lang: string) => ({ name, lang }) as SpeechSynthesisVoice;
@@ -106,6 +106,25 @@ describe('MachineVoice', () => {
     await click(button(host, 'Nghe'));
     act(() => fake.spoken[0].onend?.());
     expect(host.querySelector('[role=status]')!.textContent).toBe('Đang đọc');
+  });
+  it('resets the status and cancels speech when the label changes', async () => {
+    const fake = install([voice('Samantha', 'en-US')]);
+    function Host() {
+      const [label, setLabel] = useState('Blue mussel');
+      return (
+        <>
+          <button data-testid="swap" onClick={() => setLabel('Scallop')} />
+          <MachineVoice kind="en" label={label} />
+        </>
+      );
+    }
+    const host = mount(<Host />);
+    await click(button(host, 'Nghe'));
+    expect(host.querySelector('[role=status]')!.textContent).toBe('Đang đọc');
+    fake.synth.cancel.mockClear();
+    await click(host.querySelector('[data-testid=swap]') as HTMLElement);
+    expect(fake.synth.cancel).toHaveBeenCalled();
+    expect(host.querySelector('[role=status]')!.textContent).toBe('');
   });
   it('cancels speech on unmount', () => {
     const fake = install([voice('Samantha', 'en-US')]);
