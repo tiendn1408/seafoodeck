@@ -477,6 +477,52 @@ describe('Study combo chip', () => {
     expect(chip(host)?.textContent).toBe('Combo ×2');
   });
 
+  it('a skipped graded question in the middle neither extends nor breaks the combo', async () => {
+    const host = mount(
+      <Host
+        initial={game([
+          graded('a'),
+          graded('s', { skipped: true, answered: false, correct: false }),
+          graded('b'),
+          open('d'),
+        ])}
+        userKind="student"
+      />,
+    );
+    await tick();
+    expect(chip(host)?.textContent).toBe('Combo ×2');
+  });
+
+  it('appears at Combo ×2 while answering live and vanishes on a wrong answer', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    vi.stubGlobal('scrollTo', () => {});
+    const host = mount(
+      <Host initial={game([open('a'), open('b'), open('c'), open('d')])} userKind="student" />,
+    );
+    await tick();
+    async function answer(n: number, correct: boolean) {
+      await click(button(host, 'Mực ống'));
+      await click(button(host, 'Nộp câu trả lời'));
+      const id = String.fromCharCode(97 + n);
+      await act(async () => {
+        attempts[n]!.resolve(
+          json(serverScore(id, 'name', { selfRated: false, correct, correctOption: 'o1' })),
+        );
+        await new Promise((r) => setTimeout(r, 0));
+      });
+      await tick();
+    }
+    await answer(0, true);
+    expect(chip(host)).toBeNull();
+    await click(button(host, 'Tiếp tục'));
+    await answer(1, true);
+    expect(chip(host)?.textContent).toBe('Combo ×2');
+    await click(button(host, 'Tiếp tục'));
+    await answer(2, false);
+    expect(chip(host)).toBeNull();
+    expect(host.querySelector('.study-bar .combo-slot')?.textContent).toBe('');
+  });
+
   it('shows the best combo in the summary only from ×2', async () => {
     const host = mount(
       <Host
@@ -512,7 +558,10 @@ describe('Summary best combo line', () => {
   );
   it('shows the line for 3 and hides it for 1, 0 and when omitted', () => {
     expect(mount(summaryWith(3)).textContent).toContain('Combo cao nhất: ×3');
-    for (const n of [1, 0, undefined])
+    unmountAll();
+    for (const n of [1, 0, undefined]) {
       expect(mount(summaryWith(n)).textContent).not.toContain('Combo cao nhất');
+      unmountAll();
+    }
   });
 });

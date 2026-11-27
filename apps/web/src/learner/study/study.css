@@ -72,6 +72,14 @@
 .study-count {
   font-variant-numeric: tabular-nums;
 }
+.study-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 /* Session combo: a small pill beside the question count; it pops in and disappears quietly. */
 .combo-chip {
   display: inline-flex;
@@ -974,7 +982,8 @@
   }
 }
 @media (max-width: 599px) {
-  .study-mode {
+  .study-mode,
+  .combo-chip {
     font-size: var(--text-xs);
   }
   .study-answer-face {
