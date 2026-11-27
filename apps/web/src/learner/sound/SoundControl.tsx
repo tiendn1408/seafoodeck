@@ -17,14 +17,24 @@ export function SoundControl() {
   const muted = !on || volume === 0;
   const Icon = muted ? VolumeX : Volume2;
 
-  // A press outside the control closes the panel.
+  // While open, a press outside closes the panel, and so does Escape. Escape is heard on the
+  // document: Safari gives a button no focus on click, so the key event never reaches the control.
   useEffect(() => {
     if (!open) return;
     const onPress = (e: Event) => {
       if (!root.current?.contains(e.target as Node)) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      button.current?.focus();
+    };
     document.addEventListener('pointerdown', onPress);
-    return () => document.removeEventListener('pointerdown', onPress);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPress);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   // The native "change" fires when a slider value is committed (release, or a key press),
@@ -38,17 +48,7 @@ export function SoundControl() {
   }, [open]);
 
   return (
-    <div
-      className="sound"
-      ref={root}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && open) {
-          e.stopPropagation();
-          setOpen(false);
-          button.current?.focus();
-        }
-      }}
-    >
+    <div className="sound" ref={root}>
       <button
         type="button"
         ref={button}

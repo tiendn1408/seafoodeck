@@ -92,6 +92,27 @@ describe('SoundControl', () => {
     expect(document.activeElement).toBe(toggle(host));
   });
 
+  it('closes on Escape pressed on the document when focus stayed on body (Safari click)', () => {
+    const add = vi.spyOn(document, 'addEventListener');
+    const remove = vi.spyOn(document, 'removeEventListener');
+    const host = mount(<SoundControl />);
+    open(host);
+    expect(document.activeElement).toBe(document.body);
+    const esc = () =>
+      act(() => void document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    esc();
+    expect(host.querySelector('[role="group"]')).toBeNull();
+    expect(document.activeElement).toBe(toggle(host));
+    const handler = add.mock.calls.find((c) => c[0] === 'keydown')?.[1];
+    expect(handler).toBeDefined();
+    expect(remove.mock.calls.some((c) => c[0] === 'keydown' && c[1] === handler)).toBe(true);
+    act(() => toggle(host).blur());
+    esc();
+    expect(document.activeElement).toBe(document.body);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
   it('closes on a press outside and removes its document listeners on unmount', () => {
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
