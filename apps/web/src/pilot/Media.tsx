@@ -107,14 +107,19 @@ function ImageContent({
 }
 let playing: HTMLAudioElement | null = null;
 let audioGeneration = 0;
+// Clears the status of the Pronunciation that owns the current clip.
+let playingReset: (() => void) | null = null;
 export function stopAudio() {
   audioGeneration++;
+  const reset = playingReset;
+  playingReset = null;
   if (playing) {
     playing.onerror = null;
     playing.onended = null;
     playing.pause();
   }
   playing = null;
+  reset?.();
   cancelSpeech();
 }
 export function Pronunciation({
@@ -136,6 +141,13 @@ export function Pronunciation({
     }
     stopAudio();
     const generation = audioGeneration;
+    const reset = () => setStatus('');
+    playingReset = reset;
+    // A clip that finished or failed on its own keeps its own status.
+    const settle = (text: string) => {
+      if (playingReset === reset) playingReset = null;
+      setStatus(text);
+    };
     try {
       let refreshed = false;
       const run = async () => {
@@ -147,12 +159,12 @@ export function Pronunciation({
         const audio = new Audio(d.url);
         playing = audio;
         audio.playbackRate = speed;
-        audio.onended = () => setStatus('Đã phát xong');
+        audio.onended = () => settle('Đã phát xong');
         audio.onerror = () => {
           if (!refreshed) {
             refreshed = true;
-            void run().catch(() => setStatus('Không phát được bản thu. Hãy thử lại.'));
-          } else setStatus('Không phát được bản thu. Hãy thử lại.');
+            void run().catch(() => settle('Không phát được bản thu. Hãy thử lại.'));
+          } else settle('Không phát được bản thu. Hãy thử lại.');
         };
         await audio.play();
         if (generation === audioGeneration) setStatus('Đang phát');

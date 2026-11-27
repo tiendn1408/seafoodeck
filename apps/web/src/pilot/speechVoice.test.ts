@@ -181,3 +181,66 @@ describe('cancelSpeech', () => {
     expect(synth.cancel).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('speak watchdog', () => {
+  const begin = () => {
+    vi.useFakeTimers();
+    return install([enUS]);
+  };
+  afterEach(() => vi.useRealTimers());
+
+  it('reports a fatal error when the engine never fires start within 3000 ms', () => {
+    const fake = begin();
+    const on = handlers();
+    speak('en', 'Blue mussel', false, on);
+    vi.advanceTimersByTime(2999);
+    expect(on.error).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(on.error).toHaveBeenCalledTimes(1);
+    expect(on.error).toHaveBeenCalledWith(true);
+    expect(fake.synth.cancel).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(60000);
+    expect(on.error).toHaveBeenCalledTimes(1);
+  });
+  it('resets when start fires but end never does within 15000 ms', () => {
+    const fake = begin();
+    const on = { ...handlers(), reset: vi.fn() };
+    speak('en', 'Blue mussel', false, on);
+    vi.advanceTimersByTime(100);
+    fake.spoken[0].onstart?.();
+    vi.advanceTimersByTime(14999);
+    expect(on.reset).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(on.reset).toHaveBeenCalledTimes(1);
+    expect(on.error).not.toHaveBeenCalled();
+  });
+  it('a normal utterance leaves no timer behind', () => {
+    const fake = begin();
+    const on = { ...handlers(), reset: vi.fn() };
+    speak('en', 'Blue mussel', false, on);
+    fake.spoken[0].onstart?.();
+    fake.spoken[0].onend?.();
+    vi.advanceTimersByTime(20000);
+    expect(on.error).not.toHaveBeenCalled();
+    expect(on.reset).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('error, cancelSpeech and takeover clear the pending timers', () => {
+    const fake = begin();
+    const a = { ...handlers(), reset: vi.fn() };
+    speak('en', 'A', false, a);
+    fake.spoken[0].onerror?.({ error: 'synthesis-failed' });
+    expect(vi.getTimerCount()).toBe(0);
+    const b = { ...handlers(), reset: vi.fn() };
+    speak('en', 'B', false, b);
+    cancelSpeech();
+    expect(vi.getTimerCount()).toBe(0);
+    const c = handlers();
+    speak('en', 'C', false, { ...c, reset: vi.fn() });
+    const d = handlers();
+    speak('en', 'D', false, d);
+    vi.advanceTimersByTime(3000);
+    expect(c.error).not.toHaveBeenCalled();
+    expect(d.error).toHaveBeenCalledTimes(1);
+  });
+});

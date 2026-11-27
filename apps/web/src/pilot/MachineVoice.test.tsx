@@ -227,4 +227,156 @@ describe('MachineVoice', () => {
     stopAudio();
     expect(fake.synth.cancel).toHaveBeenCalledTimes(1);
   });
+
+  describe('watchdog and stale file status', () => {
+    const status = (host: HTMLElement) => host.querySelector('[role=status]')!.textContent;
+    const tap = (el: HTMLElement) => act(() => el.click());
+    afterEach(() => vi.useRealTimers());
+
+    it('shows the failure when the engine never reports back, and the next click speaks again', () => {
+      vi.useFakeTimers();
+      const fake = install([voice('Samantha', 'en-US')]);
+      const host = mount(<MachineVoice kind="en" label="Blue mussel" />);
+      tap(button(host, 'Nghe'));
+      expect(status(host)).toBe('Đang đọc');
+      act(() => void vi.advanceTimersByTime(3000));
+      expect(status(host)).toBe('Không đọc được. Hãy thử lại.');
+      tap(button(host, 'Nghe'));
+      expect(fake.spoken).toHaveLength(2);
+      expect(status(host)).toBe('Đang đọc');
+    });
+    it('clears the status when start fires but end never does', () => {
+      vi.useFakeTimers();
+      const fake = install([voice('Samantha', 'en-US')]);
+      const host = mount(<MachineVoice kind="en" label="Blue mussel" />);
+      tap(button(host, 'Nghe'));
+      act(() => void vi.advanceTimersByTime(100));
+      act(() => fake.spoken[0].onstart?.());
+      act(() => void vi.advanceTimersByTime(15000));
+      expect(status(host)).toBe('');
+    });
+    it('a normal utterance stays "Đã đọc xong"', () => {
+      vi.useFakeTimers();
+      const fake = install([voice('Samantha', 'en-US')]);
+      const host = mount(<MachineVoice kind="en" label="Blue mussel" />);
+      tap(button(host, 'Nghe'));
+      act(() => fake.spoken[0].onstart?.());
+      act(() => fake.spoken[0].onend?.());
+      act(() => void vi.advanceTimersByTime(20000));
+      expect(status(host)).toBe('Đã đọc xong');
+    });
+    it('a taken-over utterance timer never changes its status', () => {
+      vi.useFakeTimers();
+      const fake = install([voice('Samantha', 'en-US')]);
+      const host = mount(
+        <>
+          <section data-testid="a">
+            <MachineVoice kind="en" label="Blue mussel" />
+          </section>
+          <section data-testid="b">
+            <MachineVoice kind="scientific" label="Mytilus edulis" />
+          </section>
+        </>,
+      );
+      const a = host.querySelector('[data-testid=a]') as HTMLElement;
+      const b = host.querySelector('[data-testid=b]') as HTMLElement;
+      tap(button(a, 'Nghe'));
+      tap(button(b, 'Nghe'));
+      act(() => fake.spoken[1].onstart?.());
+      act(() => void vi.advanceTimersByTime(3000));
+      expect(status(a)).toBe('');
+      expect(status(b)).toBe('Đang đọc');
+    });
+    it('unmounting with a pending watchdog causes no warning', () => {
+      vi.useFakeTimers();
+      install([voice('Samantha', 'en-US')]);
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const host = mount(<MachineVoice kind="en" label="Blue mussel" />);
+      tap(button(host, 'Nghe'));
+      unmountAll();
+      act(() => void vi.advanceTimersByTime(20000));
+      expect(err).not.toHaveBeenCalled();
+      err.mockRestore();
+    });
+
+    class FakeAudio {
+      static last: FakeAudio | null = null;
+      playbackRate = 1;
+      onended: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      pause = vi.fn();
+      play = () => Promise.resolve();
+      constructor() {
+        FakeAudio.last = this;
+      }
+    }
+    const clip = async () => {
+      vi.stubGlobal('Audio', FakeAudio);
+      const host = mount(<Pronunciation initialUrl="https://example.test/a.mp3" />);
+      await click(button(host, 'Nghe'));
+      return host;
+    };
+
+    it('stopAudio resets a playing clip status', async () => {
+      const host = await clip();
+      expect(status(host)).toBe('Đang phát');
+      act(() => stopAudio());
+      expect(status(host)).toBe('');
+    });
+    it('machine voice interrupting a clip resets its status', async () => {
+      install([voice('Samantha', 'en-US')]);
+      vi.stubGlobal('Audio', FakeAudio);
+      const host = mount(
+        <>
+          <section data-testid="clip">
+            <Pronunciation initialUrl="https://example.test/a.mp3" />
+          </section>
+          <MachineVoice kind="en" label="Blue mussel" />
+        </>,
+      );
+      const clipHost = host.querySelector('[data-testid=clip]') as HTMLElement;
+      await click(button(clipHost, 'Nghe'));
+      expect(status(clipHost)).toBe('Đang phát');
+      const nghe = [...host.querySelectorAll('button')].filter((x) => x.textContent === 'Nghe');
+      await click(nghe[1]);
+      expect(status(clipHost)).toBe('');
+    });
+    it('a clip that ended keeps "Đã phát xong" after a later stopAudio', async () => {
+      const host = await clip();
+      act(() => FakeAudio.last!.onended?.());
+      expect(status(host)).toBe('Đã phát xong');
+      act(() => stopAudio());
+      expect(status(host)).toBe('Đã phát xong');
+    });
+    it('stopAudio with nothing playing does not throw', () => {
+      expect(() => stopAudio()).not.toThrow();
+    });
+    it('interrupting while the URL loads leaves no status and plays nothing', async () => {
+      FakeAudio.last = null;
+      vi.stubGlobal('Audio', FakeAudio);
+      let resolve!: (u: string) => void;
+      const onRefresh = () => new Promise<string | undefined>((r) => (resolve = r));
+      const host = mount(<Pronunciation initialUrl="x" onRefresh={onRefresh} />);
+      // First attempt uses initialUrl; make it fail so the refresh path is pending.
+      vi.stubGlobal(
+        'Audio',
+        class extends FakeAudio {
+          play = () => Promise.resolve();
+        },
+      );
+      await click(button(host, 'Nghe'));
+      act(() => FakeAudio.last!.onerror?.());
+      act(() => stopAudio());
+      await act(async () => resolve('https://example.test/b.mp3'));
+      expect(status(host)).toBe('');
+      expect(FakeAudio.last!.pause).toHaveBeenCalled();
+    });
+    it('unmounting a playing clip emits no warning', async () => {
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      await clip();
+      unmountAll();
+      expect(err).not.toHaveBeenCalled();
+      err.mockRestore();
+    });
+  });
 });
