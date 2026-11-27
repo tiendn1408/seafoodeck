@@ -76,6 +76,7 @@ export function Summary({
   lookup,
   onRetry,
   pending,
+  bestCombo = 0,
 }: {
   game: Game;
   /** Review rows returned with this session's answers (empty for trial learners). */
@@ -89,6 +90,8 @@ export function Summary({
   lookup: (vi: string | undefined) => SpeciesRef | null;
   onRetry: () => void;
   pending: boolean;
+  /** Longest run of correct graded answers in the session; shown from ×2. */
+  bestCombo?: number;
 }) {
   // When the saving status (the focus target until then) gives way to the title, move focus
   // to the title so keyboard and screen-reader users are not left on a removed element.
@@ -188,6 +191,7 @@ export function Summary({
               <dd>{skipped.length}</dd>
             </div>
           </dl>
+          {bestCombo >= 2 && <p className="haul-combo">Combo cao nhất: ×{bestCombo}</p>}
           <p className="haul-fineprint">
             {scores.filter((s) => s.selfRated).length} thẻ tự đánh giá · không cộng vào tỷ lệ chấm
             tự động.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowRight,
   BookmarkCheck,
@@ -26,6 +26,7 @@ import { ErrorNote } from '../ErrorNote';
 import { SpeciesCover } from '../SpeciesCover';
 import { lightItem, useCatalogItem, type SpeciesRef } from './species';
 import type { Job } from './submitQueue';
+import { pairCombo } from './combo';
 
 /** The flashcard prompt names the language being asked; the code and lang follow from it. */
 const answerLanguage: Record<string, { code: string; lang: string; skill: string }> = {
@@ -297,6 +298,13 @@ export function QuestionView({
   }
   const done = !!q.result;
   const result = q.result;
+  // Per left option in displayed order: an unpaired option counts as wrong. The streak (display
+  // only) is shown only once an answered, not skipped, result exists, so nothing leaks early.
+  const pairRight = (q.left ?? []).map((o) => {
+    const pair = draft.pairs?.[o.id];
+    return !!pair && result?.correctPairs?.[o.id] === pair;
+  });
+  const pairStreak = result && !result.skipped ? pairCombo(pairRight) : [];
   const next = done && (
     <div className="pilot-question-next">
       <button
@@ -568,14 +576,11 @@ export function QuestionView({
         {q.type === 'match' ? (
           <div className="pilot-match">
             <div role="group" aria-label="Tên tiếng Việt">
-              {q.left?.map((o) => {
+              {q.left?.map((o, i) => {
                 const pair = draft.pairs?.[o.id];
                 const verdict =
-                  result?.correctPairs && pair
-                    ? result.correctPairs[o.id] === pair
-                      ? 'is-right'
-                      : 'is-wrong'
-                    : '';
+                  result?.correctPairs && pair ? (pairRight[i] ? 'is-right' : 'is-wrong') : '';
+                const streak = pairStreak[i] ?? 0;
                 return (
                   <button
                     key={o.id}
@@ -595,6 +600,16 @@ export function QuestionView({
                         <small>{q.right?.find((r) => r.id === draft.pairs![o.id])?.label}</small>
                       )}
                     </span>
+                    {streak >= 2 && (
+                      <span
+                        className="pair-combo"
+                        role="img"
+                        aria-label={`combo ${streak}`}
+                        style={{ '--pair-delay': `${i * 100}ms` } as CSSProperties}
+                      >
+                        ×{streak}
+                      </span>
+                    )}
                     {verdict && (
                       <span className="study-verdict" aria-hidden="true">
                         {verdict === 'is-right' ? <Check size={16} /> : <X size={16} />}

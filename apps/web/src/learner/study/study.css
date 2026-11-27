@@ -72,6 +72,35 @@
 .study-count {
   font-variant-numeric: tabular-nums;
 }
+/* Session combo: a small pill beside the question count; it pops in and disappears quietly. */
+.combo-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--s-surface);
+  color: var(--s-right);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  animation: combo-pop var(--dur) var(--ease-out);
+}
+@keyframes combo-pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.haul-combo {
+  margin: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
 /* Self-ratings still on their way to the server: a quiet word, no spinner. */
 .study-saving,
 .haul-saving {
@@ -82,6 +111,16 @@
 .study-saving:empty,
 .haul-saving:empty {
   display: none;
+}
+/* The combo live region stays in the accessibility tree while empty (display: none would drop it
+   and the first "Combo ×2" might not be announced); out of flow, so it takes no gap. */
+.combo-slot:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .study-tools {
   flex: none;
@@ -712,6 +751,25 @@
   color: var(--s-wrong);
   text-decoration: line-through;
 }
+/* On the row's top edge, out of the flex width, so the pair label keeps its room. */
+.pilot-match .pilot-option {
+  position: relative;
+}
+.pair-combo {
+  position: absolute;
+  top: -8px;
+  right: var(--space-3);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--s-right);
+  border-radius: var(--radius-pill);
+  background: var(--s-surface);
+  color: var(--s-right);
+  line-height: 1.4;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  animation: combo-pop var(--dur) var(--ease-out) var(--pair-delay, 0ms) backwards;
+}
 .study-verdict {
   flex: none;
   display: grid;
@@ -1170,7 +1228,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .study-answer-face {
+  .study-answer-face,
+  .combo-chip,
+  .pair-combo {
     animation: none;
   }
   .study-pause,

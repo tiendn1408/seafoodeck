@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, useEffect, useState } from 'react';
 import type { ApiQuestion, Game, ProgressEntry, Score } from '../../pilot/api';
 import { button, click, mount, unmountAll } from '../testDom';
+import { Summary } from './HaulSummary';
 import { Study } from './Study';
 import { disposeAll } from './submitQueues';
 
@@ -413,5 +414,105 @@ describe('Study prefetch', () => {
     mount(<Host initial={g} userKind="trial" />);
     await tick();
     expect(loaded).toEqual(['u2']);
+  });
+});
+
+describe('Study combo chip', () => {
+  const graded = (id: string, extra: Partial<Score> = {}): ApiQuestion => ({
+    id,
+    type: 'image',
+    prompt: 'Nhìn hình, chọn đúng loài',
+    options: [
+      { id: 'o1', label: 'Mực ống' },
+      { id: 'o2', label: 'Hải sâm' },
+    ],
+    image: { url: 'https://example.invalid/a.jpg', expiresIn: 300 },
+    unavailable: false,
+    result: serverScore(id, 'name', { selfRated: false, ...extra }),
+  });
+  const open = (id: string): ApiQuestion => {
+    const rest = graded(id);
+    delete rest.result;
+    return rest;
+  };
+  const chip = (host: HTMLElement) => host.querySelector('.study-bar .combo-chip');
+
+  it.each(['student', 'trial'] as const)(
+    'shows Combo ×3 in the bar for a %s session',
+    async (kind) => {
+      const host = mount(
+        <Host initial={game([graded('a'), graded('b'), graded('c'), open('d')])} userKind={kind} />,
+      );
+      await tick();
+      expect(chip(host)?.textContent).toBe('Combo ×3');
+      expect(chip(host)?.parentElement?.getAttribute('role')).toBe('status');
+    },
+  );
+
+  it('is gone after a wrong graded answer, with no other message', async () => {
+    const host = mount(
+      <Host
+        initial={game([graded('a'), graded('b'), graded('c', { correct: false }), open('d')])}
+        userKind="student"
+      />,
+    );
+    await tick();
+    expect(chip(host)).toBeNull();
+    expect(host.textContent).not.toMatch(/combo/i);
+  });
+
+  it('keeps the combo across a self-rated card in the middle', async () => {
+    const host = mount(
+      <Host
+        initial={game([
+          graded('a'),
+          card('f', 'Tên tiếng Anh', serverScore('f', 'name:en')),
+          graded('b'),
+          open('d'),
+        ])}
+        userKind="student"
+      />,
+    );
+    await tick();
+    expect(chip(host)?.textContent).toBe('Combo ×2');
+  });
+
+  it('shows the best combo in the summary only from ×2', async () => {
+    const host = mount(
+      <Host
+        initial={game([graded('a'), graded('b'), graded('c'), graded('d', { correct: false })])}
+        userKind="trial"
+      />,
+    );
+    await tick();
+    expect(host.textContent).toContain('Combo cao nhất: ×3');
+    unmountAll();
+    const one = mount(
+      <Host initial={game([graded('a'), graded('b', { correct: false })])} userKind="trial" />,
+    );
+    await tick();
+    expect(one.textContent).not.toContain('Combo cao nhất');
+  });
+});
+
+describe('Summary best combo line', () => {
+  const summaryWith = (bestCombo?: number) => (
+    <Summary
+      game={game([card('f1', 'Tên tiếng Anh', serverScore('f1', 'name:en'))])}
+      progress={[]}
+      server={null}
+      saving={false}
+      saveError={null}
+      rope={null}
+      lookup={() => null}
+      onRetry={() => {}}
+      pending={false}
+      bestCombo={bestCombo}
+    />
+  );
+  it('shows the line for 3 and hides it for 1, 0 and when omitted', () => {
+    expect(mount(summaryWith(3)).textContent).toContain('Combo cao nhất: ×3');
+    for (const n of [1, 0, undefined])
+      expect(mount(summaryWith(n)).textContent).not.toContain('Combo cao nhất');
   });
 });
