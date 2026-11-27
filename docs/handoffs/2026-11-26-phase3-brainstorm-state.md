@@ -60,4 +60,5 @@ Chủ dự án muốn **xong hết giai đoạn 3 rồi mới đưa lên VPS m�
 - Bốn âm (đúng, sai, trung tính, xong phiên) tạo bằng Web Audio, bật mặc định, âm lượng mặc định 25% (đỉnh 0,075), nút loa trên thanh màn học (công tắc và thanh âm lượng, nhớ theo máy). Không phát đè lên giọng máy hay bản thu. Không đổi điểm, lịch ôn hay API.
 - Đã kiểm trong Chromium và WebKit thật (script tạm, không vào git): bộ âm thanh chạy, đánh giá thẻ phát đúng một âm, bảng chỉnh âm nằm trong màn 320 và 360 px, Escape đóng bảng ở cả hai.
 - Chưa kiểm được: công tắc im lặng của iPhone, độ lớn thật trên loa điện thoại (âm "sai" 220 Hz có thể nhỏ), cú chạm đầu tiên là vuốt cuộn trên iPhone thật. Chủ dự án test cuối trên điện thoại sau khi deploy.
+- Sau khi chủ dự án nghe thử âm thật (27/11/2026): các âm TẮT mặc định (cờ build `VITE_SOUND_EFFECTS=on` để bật; Docker `--build-arg VITE_SOUND_EFFECTS=on`), cải thiện sau nếu khách hàng cần.
 - Phần còn lại của giai đoạn 3: 2 combo điểm Ghép tên, 3 tính giờ Đoán hình, 4 HS nhiều bước có "bẫy" (cần nội dung từ chủ dự án). Deploy một lần sau khi xong cả bốn phần.

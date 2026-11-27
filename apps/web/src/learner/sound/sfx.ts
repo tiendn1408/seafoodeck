@@ -42,11 +42,23 @@ let ctx: AudioContext | null = null;
 let stopPrevious: (() => void) | null = null;
 
 /**
- * True only with the unprefixed `AudioContext`. Older iPhones (before Safari 14.5) only have
+ * Build-time switch, OFF by default: only the exact value `on` of VITE_SOUND_EFFECTS enables the
+ * feature. Read at call time so tests can stub it.
+ */
+export function soundFeatureEnabled(): boolean {
+  return import.meta.env.VITE_SOUND_EFFECTS === 'on';
+}
+
+/**
+ * True only when the feature is switched on and the browser has the unprefixed `AudioContext`. Older iPhones (before Safari 14.5) only have
  * `webkitAudioContext`; there is no prefixed fallback, so the sound feature is off there.
  */
 export function soundSupported(): boolean {
-  return typeof window !== 'undefined' && typeof window.AudioContext === 'function';
+  return (
+    soundFeatureEnabled() &&
+    typeof window !== 'undefined' &&
+    typeof window.AudioContext === 'function'
+  );
 }
 
 // Created only inside a user gesture (iOS/Safari), and only while sound is on.

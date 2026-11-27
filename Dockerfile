@@ -7,6 +7,9 @@
 FROM node:24-alpine AS build
 ARG RELEASE_TAG=pilot-internal-20261118-r2
 ENV VITE_RELEASE_TAG=$RELEASE_TAG
+# Sound effects are built but off; build with --build-arg VITE_SOUND_EFFECTS=on to enable them.
+ARG VITE_SOUND_EFFECTS=
+ENV VITE_SOUND_EFFECTS=$VITE_SOUND_EFFECTS
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json

@@ -49,7 +49,9 @@ Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Gi�
 
 ## Hiệu ứng âm thanh
 
-Màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Một phiên đã xong mà mở lại trong cùng lần tải trang, hoặc một màn hình được khôi phục hay dựng lại, có thể phát lại âm "xong phiên" hoặc âm phản hồi. Trên iPhone cũ hơn iOS 14.5 (chỉ có `webkitAudioContext`), tính năng âm thanh bị tắt và nút loa không hiện. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
+Tính năng đã làm xong và có test nhưng **TẮT mặc định**: chủ dự án nghe thử ngày 27/11/2026 và thấy âm chưa đủ hay, nên ẩn đi, giữ mã để bật lại và cải thiện khi khách hàng cần. Khi tắt không có nút loa, không có âm nào, không tạo `AudioContext`. Để bật, build web với `VITE_SOUND_EFFECTS=on` (đúng chuỗi `on`; với Docker: `--build-arg VITE_SOUND_EFFECTS=on`).
+
+Khi bật: màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Một phiên đã xong mà mở lại trong cùng lần tải trang, hoặc một màn hình được khôi phục hay dựng lại, có thể phát lại âm "xong phiên" hoặc âm phản hồi. Trên iPhone cũ hơn iOS 14.5 (chỉ có `webkitAudioContext`), tính năng âm thanh bị tắt và nút loa không hiện. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
 
 ## Nhập dữ liệu prototype
 
