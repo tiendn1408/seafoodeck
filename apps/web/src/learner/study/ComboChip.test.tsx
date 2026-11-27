@@ -13,7 +13,9 @@ describe('ComboChip', () => {
     const root = createRoot(host);
     act(() => root.render(<ComboChip current={n} />));
     expect(host.querySelector('.combo-chip')).toBeNull();
-    expect(host.querySelector('[role="status"]')?.innerHTML).toBe('');
+    const slot = host.querySelector('[role="status"]');
+    expect(slot).not.toBeNull();
+    expect(slot?.innerHTML).toBe('');
     act(() => root.unmount());
     host.remove();
   });

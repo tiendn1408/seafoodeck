@@ -109,9 +109,18 @@
   font-weight: 600;
 }
 .study-saving:empty,
-.haul-saving:empty,
-.combo-slot:empty {
+.haul-saving:empty {
   display: none;
+}
+/* The combo live region stays in the accessibility tree while empty (display: none would drop it
+   and the first "Combo ×2" might not be announced); out of flow, so it takes no gap. */
+.combo-slot:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .study-tools {
   flex: none;
