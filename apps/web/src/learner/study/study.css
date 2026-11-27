@@ -136,6 +136,72 @@
   align-items: center;
   gap: var(--space-2);
 }
+/* Đoán hình session clock: its own line inside .study-mode (the bar keeps its two children). The
+   track only narrows; at 10 s or less it turns warm. Colour only: no blinking. */
+.study-mode:has(.study-timer) {
+  flex: 1 1 auto;
+}
+.study-timer {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--s-ink);
+}
+.study-timer-track {
+  flex: 1 1 auto;
+  min-width: 3rem;
+  max-width: 20rem;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--s-line-strong);
+}
+.study-timer-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--deep-accent);
+  transform-origin: left center;
+  transition:
+    transform 250ms linear,
+    background-color var(--dur-fast) var(--ease-out);
+}
+.study-timer-text {
+  flex: none;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.study-timer.is-warm .study-timer-fill {
+  background: var(--action);
+}
+.study-timer.is-warm .study-timer-text {
+  color: var(--action-hover); /* 6.7:1 on --deep-900 */
+}
+.study-timer-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--s-line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--s-surface);
+  color: var(--s-ink);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.study-timer-toggle:hover {
+  border-color: var(--deep-accent);
+  background: var(--s-surface-hover);
+}
+.study-timer-toggle[aria-pressed='false'] {
+  color: var(--s-muted);
+}
 .sound {
   position: relative;
 }
@@ -727,6 +793,12 @@
     appearance: auto;
     background-image: none;
   }
+  .study-timer-track {
+    border: 1px solid CanvasText;
+  }
+  .study-timer-fill {
+    background: CanvasText;
+  }
 }
 
 /* Matching board: two columns of buttons, tap or keyboard, no dragging. */
@@ -1026,6 +1098,13 @@
   font-size: var(--text-lg);
   font-weight: 600;
 }
+/* Why the open questions count as wrong: a plain line in the warm accent, no icon or box. */
+.haul-timeout {
+  max-width: 40ch;
+  margin: var(--space-2) 0 0;
+  color: var(--action-hover); /* 6.7:1 on --deep-900 */
+  font-weight: 700;
+}
 .haul-sheet {
   --s-ink: var(--ice-ink);
   --s-muted: var(--ice-muted);
@@ -1244,6 +1323,8 @@
   }
   .study-pause,
   .sound-toggle,
+  .study-timer-toggle,
+  .study-timer-fill,
   .study-flip,
   .pilot-option,
   .study-next svg,

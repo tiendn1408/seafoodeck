@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import {
   ArrowRight,
   BookmarkCheck,
@@ -27,6 +35,7 @@ import { SpeciesCover } from '../SpeciesCover';
 import { lightItem, useCatalogItem, type SpeciesRef } from './species';
 import type { Job } from './submitQueue';
 import { pairCombo } from './combo';
+import { timeoutKey } from './sessionTimer';
 
 /** The flashcard prompt names the language being asked; the code and lang follow from it. */
 const answerLanguage: Record<string, { code: string; lang: string; skill: string }> = {
@@ -182,6 +191,16 @@ function Feedback({ q, result }: { q: ApiQuestion; result: Score }) {
   );
 }
 
+/** What Study may ask of the question on screen. */
+export type QuestionHandle = {
+  /**
+   * The session clock ran out: send the selected option (with this question's own key), or a
+   * timeout when nothing is selected. Resolves once the question has its result; an answer
+   * already on its way is reused, never sent twice. Rejects with the request's error.
+   */
+  closeOut: () => Promise<void>;
+};
+
 /**
  * One question of a session. Flashcard and image questions sit on the species cover
  * ("Ấn bản loài"); matching, HS and listening sit on a light card on the deep frame.
@@ -198,6 +217,8 @@ export function QuestionView({
   onQueue,
   onNext,
   onRefresh,
+  onImageSettled,
+  ref,
 }: {
   game: Game;
   q: ApiQuestion;
@@ -212,6 +233,9 @@ export function QuestionView({
   onQueue?: (job: Job, provisional: Score) => void;
   onNext: () => void;
   onRefresh: () => Promise<ApiQuestion | undefined>;
+  /** The image (of an image question) has loaded, failed, or there is none to wait for. */
+  onImageSettled?: () => void;
+  ref?: Ref<QuestionHandle>;
 }) {
   const draftKey = draftStorageKey(game.id, q.id);
   const [draft, setDraft] = useState(() =>
@@ -273,23 +297,44 @@ export function QuestionView({
     setDraft(next);
     writeLocal(draftKey, next);
   }
-  async function submit(answer: unknown) {
-    if (busy || q.result) return;
+  // The answer on its way, if any: a second send (a double press, or the clock running out at
+  // the same moment) waits for it instead of posting again.
+  const sending = useRef<Promise<void> | null>(null);
+  function send(answer: unknown, key: string = token): Promise<void> {
+    if (q.result) return Promise.resolve();
+    if (sending.current) return sending.current;
     setBusy(true);
     setError('');
-    try {
-      const score = await api<Score>(`/learning/sessions/${game.id}/questions/${q.id}/attempts`, {
-        key: token,
-        answer,
+    const done = api<Score>(`/learning/sessions/${game.id}/questions/${q.id}/attempts`, {
+      key,
+      answer,
+    })
+      .then((score) => {
+        onScore(score);
+        setAnsweredHere(true);
+      })
+      .finally(() => {
+        sending.current = null;
+        setBusy(false);
       });
-      onScore(score);
-      setAnsweredHere(true);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    sending.current = done;
+    return done;
   }
+  function submit(answer: unknown) {
+    if (busy) return;
+    send(answer).catch((e) => setError((e as Error).message));
+  }
+  useImperativeHandle(ref, () => ({
+    closeOut: () =>
+      draft.optionId
+        ? send({ optionId: draft.optionId })
+        : send({ timeout: true }, timeoutKey(game.id, q.id)),
+  }));
+  // Nothing to wait for: the image is gone or was never there.
+  const noImage = q.type === 'image' && (broken || !image);
+  useEffect(() => {
+    if (noImage) onImageSettled?.();
+  }, [noImage, onImageSettled]);
   function rate(rating: 'known' | 'again') {
     if (!onQueue) return void submit({ rating });
     if (busy || q.result) return;
@@ -528,7 +573,9 @@ export function QuestionView({
               alt="Mẫu nguyên liệu cần nhận diện"
               width="640"
               height="420"
+              onLoad={() => onImageSettled?.()}
               onError={() => {
+                onImageSettled?.();
                 if (!refreshed) {
                   setRefreshed(true);
                   void onRefresh()

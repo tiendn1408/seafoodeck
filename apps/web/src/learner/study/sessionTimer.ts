@@ -124,3 +124,11 @@ export function useSessionTimer({ gameId, totalMs, enabled, running, onExpire }:
 
   return view.v;
 }
+
+/**
+ * The idempotency key of a question's timeout attempt: the same for every retry, so the server
+ * returns the stored result. Hyphens only (the API key rule rejects a colon).
+ */
+export function timeoutKey(gameId: string, questionId: string): string {
+  return `timeout-${gameId}-${questionId}`;
+}
