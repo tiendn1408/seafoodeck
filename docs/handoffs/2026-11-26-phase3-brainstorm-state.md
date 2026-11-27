@@ -68,3 +68,11 @@ Chủ dự án muốn **xong hết giai đoạn 3 rồi mới đưa lên VPS m�
 - Combo chỉ hiển thị, không đổi điểm lưu: nhãn "Combo ×N" trên thanh màn học (từ ×2, đếm các câu chấm tự động đúng liên tiếp; bỏ qua và tự chấm không tính; sai thì nhãn tắt, không báo gì), nhãn ×2/×3 trên các cặp Ghép tên sau khi nộp, dòng "Combo cao nhất: ×N" ở màn tổng kết. Chủ dự án chọn phương án "như plan gốc" và sẽ tự test rồi sửa sau (có đề xuất thay thế: hiện "Bắt đầu lại" mờ khi combo đứt).
 - Đã đo trong Chromium và WebKit thật ở 390/360/320 px: bề ngang tên không đổi khi có nhãn, không tràn ngang, vùng thông báo `role="status"` vẫn có trong cây trợ năng khi trống.
 - Còn lại: 3 tính giờ Đoán hình, 4 HS nhiều bước có "bẫy" (cần nội dung từ chủ dự án). Deploy một lần sau khi xong cả bốn phần.
+
+## Cập nhật 27/11/2026 (tối): phần 3 giai đoạn 3 (tính giờ Đoán hình) xong và đã merge vào `main`
+
+- Tính giờ thật cho cả phiên Đoán hình: 15 giây nhân số câu, một đồng hồ chung, công tắc "Tính giờ" (mặc định bật, nhớ theo máy). Hết giờ: câu đang làm nộp lựa chọn hiện có (chưa chọn thì tính sai), các câu chưa làm tính sai ("Hết giờ"), rồi sang tổng kết có dòng nêu hết giờ. API nhận `{ timeout: true }` cho câu hình (không đổi DB, không migration). Server không ép giờ.
+- Đồng hồ tạm dừng khi hiện kết quả từng câu và khi ảnh câu kế đang tải; "Tạm dừng" và tải lại trang giữ thời gian còn lại.
+- Đã kiểm trong Chromium và WebKit thật: hết giờ khi mất mạng thì không đổi được lựa chọn, có nút "Thử lại", nối mạng lại thì nộp đủ và sang tổng kết với cùng khóa; thanh học ở 320 px không tràn, nút công tắc cao 44 px.
+- API đã đổi (câu trả lời timeout): khi deploy phải đưa ảnh API lên trước web; không có migration.
+- Còn lại: 4 HS nhiều bước có "bẫy" (cần nội dung từ chủ dự án). Deploy một lần sau khi xong phần 4.
