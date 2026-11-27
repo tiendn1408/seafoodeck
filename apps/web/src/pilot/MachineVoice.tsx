@@ -42,6 +42,7 @@ export function MachineVoice({ kind, label }: { kind: VoiceKind; label: string }
     const live = () => mine === run.current;
     const ok = speak(kind, label, useSlow, {
       start: () => live() && setStatus('Đang đọc'),
+      // A late `end` after the 15 s watchdog reset intentionally shows this: the utterance did finish.
       end: () => live() && setStatus('Đã đọc xong'),
       reset: () => live() && setStatus(''),
       error: (fatal) => live() && setStatus(fatal ? 'Không đọc được. Hãy thử lại.' : ''),

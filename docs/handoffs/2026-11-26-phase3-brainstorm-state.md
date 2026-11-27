@@ -42,3 +42,11 @@ Trang có 86 đoạn; chấm Chuẩn / Tạm được / Sai, bấm "Sao chép k�
 ## Việc nhỏ khác còn mở (ngoài giai đoạn 3)
 
 Danh sách đầy đủ ở báo cáo rà soát (nội dung khách, audio thật, vận hành, tài liệu cũ); tóm tắt: README và file follow-up 2.5 còn cũ, `deploy/pilot.env.example` mặc định `ALLOW_INTERNAL_DEMO=true`, chưa có CSP/HSTS, chưa có backup ngoài VPS, tài khoản "An" chưa tạo.
+
+## Cập nhật 27/11/2026: giọng máy (cách A) đã merge vào `main`
+
+- Đã có trên `main` (`306eb2e`): nút "Nghe" với nhãn "Giọng máy, tham khảo" ở hồ sơ loài và mặt lật flashcard (tiếng Anh, tiếng Nhật, tên khoa học; không có tiếng Việt; không dùng trong bài Nghe). **Chưa deploy lên VPS.**
+- Đã kiểm trong Chromium và WebKit thật trên máy Mac (script `.local/tts-listening/voice-browser-check.mjs`, không vào git): chọn đúng Samantha và Kyoko, sự kiện bắt đầu và kết thúc đúng, bấm nút khác thì nút cũ tự về trống. Chủ dự án đã nghe thử trên máy Mac và thấy ổn.
+- **Chủ dự án test cuối trên điện thoại (iPhone Safari, Android Chrome) SAU KHI deploy lên VPS.** Mỗi máy: một tên Anh, một tên Nhật, một tên khoa học, ở hồ sơ loài và ở mặt lật flashcard. Chưa kiểm: giọng và sự kiện của iOS/Android/Windows, công tắc im lặng của iPhone, độ đúng trọng âm tiếng Nhật.
+- Sau khi xong giọng máy thì chuyển sang bốn tính năng còn lại của giai đoạn 3 (HS nhiều bước có "bẫy", tính giờ Đoán hình, combo điểm Ghép tên, hiệu ứng âm thanh). Câu brainstorm đang chờ: cái nào quan trọng nhất với người mới vào ngành, và vì sao.
+- Hai lỗi nhỏ của giọng máy đang được sửa trên nhánh `fix/machine-voice-edge-cases` (trạng thái "Đang đọc" mắc kẹt khi máy không báo đọc xong; nút audio đã duyệt còn hiện "Đang phát" khi giọng máy chen vào).

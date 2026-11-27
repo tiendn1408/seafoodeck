@@ -83,13 +83,38 @@ export function availableVoices(): SpeechSynthesisVoice[] {
 const held: SpeechSynthesisUtterance[] = [];
 // The handlers of whoever is speaking now, so a takeover can reset the previous status even
 // when the browser reports `end` instead of `error: interrupted`.
-let owner: { on: SpeakHandlers; active: boolean } | null = null;
+let owner: Entry | null = null;
+
+// The engine may never report back (no TTS engine, a stalled remote voice): without `start` in
+// 3 s it is a failure, and without `end` 15 s after `start` the status is dropped.
+const START_WATCHDOG_MS = 3000;
+const END_WATCHDOG_MS = 15000;
+
+interface Entry {
+  on: SpeakHandlers;
+  active: boolean;
+  timer: ReturnType<typeof setTimeout> | undefined;
+}
+
+function disarm(entry: Entry): void {
+  clearTimeout(entry.timer);
+  entry.timer = undefined;
+}
+
+function arm(entry: Entry, ms: number, fire: () => void): void {
+  disarm(entry);
+  entry.timer = setTimeout(() => {
+    entry.timer = undefined;
+    if (entry.active) fire();
+  }, ms);
+}
 
 function releaseOwner(): void {
   const previous = owner;
   owner = null;
   if (!previous) return;
   previous.active = false;
+  disarm(previous);
   previous.on.reset?.();
 }
 
@@ -103,19 +128,40 @@ export function speak(kind: VoiceKind, label: string, slow: boolean, on: SpeakHa
     utterance.voice = voice;
     utterance.lang = normalTag(voice);
     utterance.rate = speechRate(kind, slow);
-    const entry = { on, active: true };
-    utterance.onstart = () => entry.active && on.start();
-    utterance.onend = () => entry.active && on.end();
+    const entry: Entry = { on, active: true, timer: undefined };
+    utterance.onstart = () => {
+      if (!entry.active) return;
+      // A late `end` after this reset intentionally shows "Đã đọc xong": the entry stays active.
+      arm(entry, END_WATCHDOG_MS, () => on.reset?.());
+      on.start();
+    };
+    utterance.onend = () => {
+      if (!entry.active) return;
+      disarm(entry);
+      on.end();
+    };
     utterance.onerror = (e) => {
       const code = (e as { error?: string }).error;
       // After a takeover or cancel, an error without a code is the browser's echo of our stop.
       if (!entry.active) return;
+      disarm(entry);
       on.error(!(code === 'interrupted' || code === 'canceled'));
     };
     window.speechSynthesis.cancel();
     releaseOwner();
     owner = entry;
     held.splice(0, held.length, utterance);
+    arm(entry, START_WATCHDOG_MS, () => {
+      entry.active = false;
+      if (owner === entry) owner = null;
+      held.length = 0;
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* nothing to cancel */
+      }
+      on.error(true);
+    });
     window.speechSynthesis.speak(utterance);
     return true;
   } catch {
