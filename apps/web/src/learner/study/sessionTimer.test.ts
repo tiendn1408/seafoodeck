@@ -1,4 +1,4 @@
-import { act, createElement, useEffect } from 'react';
+import { StrictMode, act, createElement, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { unmountAll } from '../testDom';
@@ -188,13 +188,25 @@ describe('useSessionTimer', () => {
     advance(10000);
     r.rerender({ gameId: 'two' });
     expect(latest.remainingMs).toBe(45000);
-    expect(localStorage.getItem(KEY('one'))).not.toBeNull();
+    const one = Number(localStorage.getItem(KEY('one')));
+    expect(one).toBeGreaterThanOrEqual(34750);
+    expect(one).toBeLessThanOrEqual(35000);
+    expect(localStorage.getItem(KEY('two'))).toBeNull();
   });
 
   it('clamps a saved value larger than the budget', () => {
     localStorage.setItem(KEY('g1'), '999999');
     render();
     expect(latest.remainingMs).toBe(45000);
+  });
+
+  it('a stored negative value is expired', () => {
+    localStorage.setItem(KEY('g1'), '-5');
+    const onExpire = vi.fn();
+    render({ onExpire });
+    expect(latest).toEqual({ remainingMs: 0, expired: true });
+    advance(5000);
+    expect(onExpire).not.toHaveBeenCalled();
   });
 
   it('ignores negative and non-numeric saved values sensibly', () => {
@@ -268,10 +280,69 @@ describe('useSessionTimer', () => {
     const r = render();
     advance(1000);
     expect(vi.getTimerCount()).toBe(1);
+    const err = vi.spyOn(console, 'error');
     r.unmount();
     expect(vi.getTimerCount()).toBe(0);
-    const err = vi.spyOn(console, 'error');
     advance(60000);
     expect(err).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSessionTimer edge cases', () => {
+  for (const field of ['running', 'enabled'] as const) {
+    it(`expires once when ${field} goes false right at the boundary`, () => {
+      const onExpire = vi.fn();
+      const r = render({ onExpire });
+      advance(44900);
+      act(() => {
+        vi.setSystemTime(Date.now() + 200);
+      });
+      r.rerender({ onExpire, [field]: false });
+      expect(onExpire).toHaveBeenCalledTimes(1);
+      expect(latest).toEqual({ remainingMs: 0, expired: true });
+      expect(localStorage.getItem(KEY('g1'))).toBe('0');
+      r.rerender({ onExpire });
+      advance(5000);
+      expect(onExpire).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  }
+
+  it('shows the precise value as soon as it pauses or is disabled', () => {
+    const r = render();
+    advance(10100); // 250 ms ticks leave the view up to a tick behind
+    r.rerender({ running: false });
+    const saved = Number(localStorage.getItem(KEY('g1')));
+    expect(latest.remainingMs).toBe(saved);
+    expect(saved).toBeLessThanOrEqual(34900);
+  });
+
+  it('a backwards clock step does not add time or break the countdown', () => {
+    const onExpire = vi.fn();
+    render({ onExpire });
+    advance(10000);
+    const before = latest.remainingMs;
+    act(() => {
+      vi.setSystemTime(Date.now() - 60000);
+      vi.advanceTimersByTime(250);
+    });
+    expect(latest.remainingMs).toBeLessThanOrEqual(before);
+    advance(40000);
+    expect(onExpire).toHaveBeenCalledTimes(1);
+    expect(latest.expired).toBe(true);
+  });
+
+  it('works under StrictMode: one interval, one expiry', () => {
+    const onExpire = vi.fn();
+    const host = document.createElement('div');
+    root = createRoot(host);
+    act(() =>
+      root!.render(createElement(StrictMode, null, createElement(Probe, base({ onExpire })))),
+    );
+    expect(vi.getTimerCount()).toBe(1);
+    advance(50000);
+    expect(onExpire).toHaveBeenCalledTimes(1);
+    expect(latest.expired).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

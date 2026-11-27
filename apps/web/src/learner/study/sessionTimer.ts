@@ -60,29 +60,46 @@ export function useSessionTimer({ gameId, totalMs, enabled, running, onExpire }:
     onExpireRef.current = onExpire;
   });
 
+  // Declared first so its cleanup runs first on unmount: later cleanups must not set state then.
+  const unmounting = useRef(false);
+  const expiredFired = useRef(false);
+  useEffect(() => {
+    unmounting.current = false;
+    return () => {
+      unmounting.current = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (loadedKey.current !== key) {
       loadedKey.current = key;
       remaining.current = loadRemainingMs(gameId, totalMs);
+      // A restored 0 means the expiry already ran in an earlier mount.
+      expiredFired.current = remaining.current <= 0;
     }
     if (!enabled || !running || remaining.current <= 0) return;
     let last = Date.now();
     let lastSave = last;
-    let done = false;
     const advance = () => {
       const now = Date.now();
       remaining.current = Math.max(0, remaining.current - Math.max(0, now - last));
       last = now;
       return now;
     };
+    const expire = () => {
+      saveRemainingMs(gameId, 0);
+      if (expiredFired.current) return;
+      expiredFired.current = true;
+      if (!unmounting.current) {
+        setView({ key, v: viewOf(0) });
+        onExpireRef.current();
+      }
+    };
     const id = setInterval(() => {
       const now = advance();
       if (remaining.current <= 0) {
-        done = true;
         clearInterval(id);
-        saveRemainingMs(gameId, 0);
-        setView({ key, v: viewOf(0) });
-        onExpireRef.current();
+        expire();
         return;
       }
       setView({ key, v: viewOf(remaining.current) });
@@ -93,9 +110,15 @@ export function useSessionTimer({ gameId, totalMs, enabled, running, onExpire }:
     }, TICK_MS);
     return () => {
       clearInterval(id);
-      if (done) return;
+      if (expiredFired.current) return;
       advance();
+      if (remaining.current <= 0) {
+        expire();
+        return;
+      }
       saveRemainingMs(gameId, remaining.current);
+      // Show the precise frozen value (not on unmount: no state set then).
+      if (!unmounting.current) setView({ key, v: viewOf(remaining.current) });
     };
   }, [gameId, totalMs, key, enabled, running]);
 
