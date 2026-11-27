@@ -62,3 +62,9 @@ Chủ dự án muốn **xong hết giai đoạn 3 rồi mới đưa lên VPS m�
 - Chưa kiểm được: công tắc im lặng của iPhone, độ lớn thật trên loa điện thoại (âm "sai" 220 Hz có thể nhỏ), cú chạm đầu tiên là vuốt cuộn trên iPhone thật. Chủ dự án test cuối trên điện thoại sau khi deploy.
 - Sau khi chủ dự án nghe thử âm thật (27/11/2026): các âm TẮT mặc định (cờ build `VITE_SOUND_EFFECTS=on` để bật; Docker `--build-arg VITE_SOUND_EFFECTS=on`), cải thiện sau nếu khách hàng cần.
 - Phần còn lại của giai đoạn 3: 2 combo điểm Ghép tên, 3 tính giờ Đoán hình, 4 HS nhiều bước có "bẫy" (cần nội dung từ chủ dự án). Deploy một lần sau khi xong cả bốn phần.
+
+## Cập nhật 27/11/2026 (đêm): phần 2 giai đoạn 3 (combo hiển thị) xong và đã merge vào `main`
+
+- Combo chỉ hiển thị, không đổi điểm lưu: nhãn "Combo ×N" trên thanh màn học (từ ×2, đếm các câu chấm tự động đúng liên tiếp; bỏ qua và tự chấm không tính; sai thì nhãn tắt, không báo gì), nhãn ×2/×3 trên các cặp Ghép tên sau khi nộp, dòng "Combo cao nhất: ×N" ở màn tổng kết. Chủ dự án chọn phương án "như plan gốc" và sẽ tự test rồi sửa sau (có đề xuất thay thế: hiện "Bắt đầu lại" mờ khi combo đứt).
+- Đã đo trong Chromium và WebKit thật ở 390/360/320 px: bề ngang tên không đổi khi có nhãn, không tràn ngang, vùng thông báo `role="status"` vẫn có trong cây trợ năng khi trống.
+- Còn lại: 3 tính giờ Đoán hình, 4 HS nhiều bước có "bẫy" (cần nội dung từ chủ dự án). Deploy một lần sau khi xong cả bốn phần.
