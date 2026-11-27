@@ -233,7 +233,11 @@ test('attempt: a timeout has the same log and review effect as a wrong option', 
   assert.equal(t.logs[0].skipped, false);
   assert.equal(t.progress.length, 1);
   const strip = (rows: Record<string, unknown>[]) =>
-    rows.map(({ at: _a, lastAttemptAt: _l, dueAt: _d, ...rest }) => rest);
+    rows.map((r) =>
+      Object.fromEntries(
+        Object.entries(r).filter(([k]) => !['at', 'lastAttemptAt', 'dueAt'].includes(k)),
+      ),
+    );
   assert.deepEqual(strip(t.logs), strip(w.logs));
   assert.deepEqual(strip(t.progress), strip(w.progress));
   assert.equal(t.progress[0].stage, w.progress[0].stage);
@@ -322,4 +326,27 @@ test('attempt: a timeout on an image that is now unavailable is skipped (existin
   const r = await submit(h, 'timeout-key-0001', { timeout: true });
   assert.equal(r.skipped, true);
   assert.equal(r.answered, false);
+});
+
+test('attempt: { timeout: 1 } is an invalid payload (400) and stores nothing', async () => {
+  const h = harness();
+  await assert.rejects(() => submit(h, 'timeout-key-0001', { timeout: 1 }), BadRequestException);
+  assert.equal(h.attempts.length, 0);
+});
+test('attempt: a plain wrong or correct option carries no timeout prefix', async () => {
+  for (const [optionId, correct] of [
+    ['o-wrong', false],
+    ['o-right', true],
+  ] as const) {
+    const r = await submit(harness(), 'option-key-0001', { optionId });
+    assert.equal(r.correct, correct);
+    assert.equal(r.explanation, imageQ.explanation);
+    assert.ok(!String(r.explanation).includes('Hết giờ'));
+  }
+});
+test('attempt: an empty image explanation leaves the timeout prefix without a trailing space', async () => {
+  const r = await submit(harness({ ...imageQ, explanation: '' }), 'timeout-key-0001', {
+    timeout: true,
+  });
+  assert.equal(r.explanation, PREFIX);
 });

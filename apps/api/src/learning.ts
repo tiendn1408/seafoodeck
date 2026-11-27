@@ -690,7 +690,7 @@ export class Learning {
       explanation: scored.skipped
         ? 'Câu bỏ qua không tính đúng/sai hoặc tạo lịch ôn.'
         : answer.timeout === true
-          ? `${TIMEOUT_EXPLANATION} ${q.explanation}`
+          ? `${TIMEOUT_EXPLANATION} ${q.explanation}`.trim()
           : q.explanation,
       ...(q.type === 'match' && !scored.skipped
         ? {
