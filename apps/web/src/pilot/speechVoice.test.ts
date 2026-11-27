@@ -60,6 +60,13 @@ describe('pickVoice', () => {
     expect(pickVoice('ja', [enUS, jaOther])).toBe(jaOther);
     expect(pickVoice('ja', [enUS, enGB])).toBeUndefined();
   });
+  it('accepts underscore tags reported by Android Chrome and Firefox', () => {
+    const jaUnderscore = voice('Google 日本語', 'ja_JP');
+    const enUnderscore = voice('Google US English', 'en_US');
+    expect(pickVoice('ja', [enUnderscore, jaUnderscore])).toBe(jaUnderscore);
+    expect(pickVoice('en', [jaUnderscore, enUnderscore])).toBe(enUnderscore);
+    expect(pickVoice('scientific', [enUnderscore])).toBe(enUnderscore);
+  });
   it('prefers en-US for English and scientific', () => {
     expect(pickVoice('en', [enGB, enUS])).toBe(enUS);
     expect(pickVoice('scientific', [enGB, enUS])).toBe(enUS);

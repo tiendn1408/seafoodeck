@@ -43,6 +43,10 @@ Trang mở bằng form tài khoản học viên. Tiến độ của học viên 
 
 Quản trị có tab "Người dùng" (`#admin/users`): tạo (mật khẩu tự nhập hoặc tạo tự động, hiện một lần), khóa/mở khóa (khóa thu hồi phiên ngay), đặt lại mật khẩu (mật khẩu tạm, buộc đổi), xóa có xác nhận và tạo hàng loạt học viên từ CSV (xem trước rồi mới tạo). Manager (và admin) xem bảng học viên ở `#manager` (đang học, đã vững, mức nhớ, lần học cuối, quá hạn, phiên 7 ngày; lọc, sắp xếp, xuất CSV có BOM) và chi tiết chỉ đọc của từng học viên; manager không thấy nhân sự hay mật khẩu. Không có nhóm/đội. `npm run test:e2e` tạo thêm các tài khoản `qa-*` (cả manager và editor) trong DB local; `scripts/admin-lock-race-check.mjs` kiểm hai quản trị khóa nhau trên Postgres thật (chỉ local). Không chạy hai thứ này trên VPS. Chi tiết, số liệu kiểm thử và lỗi đã biết: [DELIVERY_25C.md](docs/DELIVERY_25C.md); nâng cấp VPS: [DEPLOY_UPGRADE_25C.md](docs/DEPLOY_UPGRADE_25C.md).
 
+## Giọng máy trên thiết bị
+
+Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Giọng máy, tham khảo" cho tên tiếng Anh, tiếng Nhật và tên khoa học. Giọng này do chính trình duyệt đọc (Web Speech API), không gọi mạng, không lưu thành bản thu và không phải bản thu đã duyệt. Nút chỉ hiện khi thiết bị có giọng phù hợp; nếu không có, nút ẩn đi. Khi một tên đã có bản thu đã duyệt thì chỉ hiện trình phát bản thu đó. Câu hỏi Nghe chỉ dùng bản thu đã duyệt, không bao giờ dùng giọng máy. Việc tạo giọng trên Studio được hoãn lại, ghi trong `docs/handoffs/2026-11-26-tts-provider-setup.md`.
+
 ## Nhập dữ liệu prototype
 
 Bộ prototype (100 loài, 5 hồ sơ HS) được nhập thành bản nháp qua script chỉ gọi API quản trị; không ghi thẳng DB. Thông tin nguồn và giới hạn: [docs/sources/prototype-import](docs/sources/prototype-import/README.md).

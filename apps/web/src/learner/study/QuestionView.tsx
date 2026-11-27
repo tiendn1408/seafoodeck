@@ -20,6 +20,7 @@ import {
   type Score,
 } from '../../pilot/api';
 import { Pronunciation } from '../../pilot/Media';
+import { MachineVoice } from '../../pilot/MachineVoice';
 import { ErrorNote } from '../ErrorNote';
 import { SpeciesCover } from '../SpeciesCover';
 import { lightItem, useCatalogItem, type SpeciesRef } from './species';
@@ -431,7 +432,18 @@ export function QuestionView({
                     }}
                   />
                 ) : (
-                  <span className="study-chip">Chưa có bản thu</span>
+                  <>
+                    <span className="study-chip">Chưa có bản thu</span>
+                    {language && (
+                      <MachineVoice
+                        key={q.id}
+                        kind={
+                          language.lang === 'la' ? 'scientific' : (language.lang as 'en' | 'ja')
+                        }
+                        label={reveal.label}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>

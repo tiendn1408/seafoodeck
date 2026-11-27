@@ -126,6 +126,27 @@ describe('MachineVoice', () => {
     expect(fake.synth.cancel).toHaveBeenCalled();
     expect(host.querySelector('[role=status]')!.textContent).toBe('');
   });
+  it('resets a previous instance status when another instance takes over', async () => {
+    const fake = install([voice('Samantha', 'en-US')]);
+    const host = mount(
+      <>
+        <section data-testid="a">
+          <MachineVoice kind="en" label="Blue mussel" />
+        </section>
+        <section data-testid="b">
+          <MachineVoice kind="scientific" label="Mytilus edulis" />
+        </section>
+      </>,
+    );
+    const a = host.querySelector('[data-testid=a]') as HTMLElement;
+    const b = host.querySelector('[data-testid=b]') as HTMLElement;
+    await click(button(a, 'Nghe'));
+    expect(a.querySelector('[role=status]')!.textContent).toBe('Đang đọc');
+    await click(button(b, 'Nghe'));
+    expect(fake.spoken).toHaveLength(2);
+    expect(a.querySelector('[role=status]')!.textContent).not.toBe('Đang đọc');
+    expect(b.querySelector('[role=status]')!.textContent).toBe('Đang đọc');
+  });
   it('cancels speech on unmount', () => {
     const fake = install([voice('Samantha', 'en-US')]);
     mount(<MachineVoice kind="en" label="Blue mussel" />);

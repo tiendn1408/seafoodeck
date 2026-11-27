@@ -42,6 +42,7 @@ export function MachineVoice({ kind, label }: { kind: VoiceKind; label: string }
     const ok = speak(kind, label, useSlow, {
       start: () => live() && setStatus('Đang đọc'),
       end: () => live() && setStatus('Đã đọc xong'),
+      reset: () => live() && setStatus(''),
       error: (fatal) => live() && setStatus(fatal ? 'Không đọc được. Hãy thử lại.' : ''),
     });
     setStatus(ok ? 'Đang đọc' : 'Không đọc được. Hãy thử lại.');
