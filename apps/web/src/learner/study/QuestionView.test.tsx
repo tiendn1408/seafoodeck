@@ -429,6 +429,30 @@ describe('QuestionView image readiness and the time-up close', () => {
     ]);
   });
 
+  it('closeOut keeps the answer of its first call for every retry', async () => {
+    stubAttempts();
+    const fetchOk = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        bodies.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }),
+    );
+    localStorage.setItem(
+      draftStorageKey('g-image', question.id),
+      JSON.stringify({ optionId: 'o2' }),
+    );
+    const handle = { current: null as null | { closeOut: () => Promise<void> } };
+    const host = show(question, { ref: handle });
+    await act(async () => handle.current!.closeOut().catch(() => {}));
+    await click(button(host, 'Mực ống'));
+    vi.stubGlobal('fetch', fetchOk);
+    await act(async () => handle.current!.closeOut());
+    expect(bodies.map((b) => b.body.answer)).toEqual([{ optionId: 'o2' }, { optionId: 'o2' }]);
+    expect(bodies[0].body.key).toBe(bodies[1].body.key);
+  });
+
   it('closeOut without a selection sends a timeout with the deterministic key', async () => {
     stubAttempts();
     const handle = { current: null as null | { closeOut: () => Promise<void> } };

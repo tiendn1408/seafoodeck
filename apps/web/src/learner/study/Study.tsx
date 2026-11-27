@@ -20,7 +20,7 @@ import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
 import { sessionQueue, withResult, type GameUpdate } from './submitQueues';
 import { useSessionSummary } from './useSessionSummary';
-import { loadRemainingMs, timeoutKey, timerBudgetMs, useSessionTimer } from './sessionTimer';
+import { timeoutKey, timerBudgetMs, useSessionTimer } from './sessionTimer';
 import { setTimerOn, useTimerOn } from './timerSetting';
 import { TimerBar, WARM_MS } from './TimerBar';
 import './study.css';
@@ -115,15 +115,18 @@ export function Study({
   const stage = useRef<HTMLDivElement>(null);
   usePrefetch(game.questions[cursor + 1]);
   const combo = sessionCombo(game.questions);
-  // Đoán hình session clock (15 s per question for the whole session). It runs once the first
-  // image is ready (or failed, or there is none) and stops for good once every question has a
-  // result; leaving the screen pauses it (the hook saves the time left per game).
+  // Đoán hình session clock (15 s per question for the whole session). It measures recognition:
+  // it runs only while the question on screen is open and its image is ready (loaded, failed, or
+  // there is none), so feedback and a slow image do not eat the budget. It stops for good once
+  // every question has a result; leaving the screen pauses it (the hook saves the time left).
   const imageSession = isImageSession(game);
   const timerOn = useTimerOn();
   const allDone = game.questions.every((x) => !!x.result);
   const timerEnabled = imageSession && timerOn && !allDone;
-  const [imageSettled, setImageSettled] = useState(false);
-  const settleImage = useCallback(() => setImageSettled(true), []);
+  // The question whose image last settled; a new question waits for its own image.
+  const [settledFor, setSettledFor] = useState<string | null>(null);
+  const settleImage = useCallback((id: string) => setSettledFor(id), []);
+  const current = game.questions[cursor];
   const totalMs = timerBudgetMs(game.questions.length);
   // The expiry is driven by `expired` (below), not by `onExpire`: a budget restored as 0 (it ran
   // out as the screen closed, or the closing failed before a reload) is expired without a call.
@@ -131,13 +134,14 @@ export function Study({
     gameId: game.id,
     totalMs,
     enabled: timerEnabled,
-    running: imageSettled && !allDone,
+    running: !!current && settledFor === current.id && !current.result && !allDone,
     onExpire: noop,
   });
-  // The clock ran out on an earlier visit (saved as 0): the summary still says so.
-  const [expiredBefore] = useState(() => imageSession && loadRemainingMs(game.id, 1) === 0);
   const [timedOut, setTimedOut] = useState(false);
   const [closeError, setCloseError] = useState('');
+  const [closingNow, setClosingNow] = useState(false);
+  const closeNoteRef = useRef<HTMLDivElement>(null);
+  const focusNote = useRef(false);
   const shown = useRef<QuestionHandle>(null);
   const closing = useRef(new Set<string>());
   const closedFor = useRef<string | null>(null);
@@ -157,6 +161,8 @@ export function Study({
     const apply = (id: string, s: Score) =>
       latest.current.onChange((x) => withResult(x, g.id, id, s));
     const open = g.questions.filter((x) => !x.result && !closing.current.has(x.id));
+    if (!open.length) return;
+    setClosingNow(true);
     const outcomes = await Promise.allSettled(
       open.map((x) => {
         closing.current.add(x.id);
@@ -187,6 +193,7 @@ export function Study({
         errors = [...errors, ...conflicts.map((c) => ({ ...c, error: e as Error }))];
       }
     }
+    setClosingNow(closing.current.size > 0);
     setCloseError(
       errors.length
         ? `Chưa nộp được ${errors.length} câu khi hết giờ: ${errors[0].error.message}`
@@ -215,9 +222,7 @@ export function Study({
     userKind === 'student' && restored && !q && !saving && !failures.length,
   );
   const timeNotice =
-    timedOut ||
-    expiredBefore ||
-    game.questions.some((x) => x.result?.explanation?.startsWith('Hết giờ'));
+    timedOut || game.questions.some((x) => x.result?.explanation?.startsWith('Hết giờ'));
 
   const ended = timedOut && allDone;
   useEffect(() => {
@@ -227,6 +232,15 @@ export function Study({
       ?.querySelector<HTMLElement>('[data-focus-target]')
       ?.focus({ preventScroll: true });
   }, [cursor, ended]);
+  // "Tiếp tục" after the time ran out retries the closing; the note (if it is or comes back) takes
+  // focus so a phone user sees it even when it is above the fold.
+  useEffect(() => {
+    const note = closeNoteRef.current;
+    if (!focusNote.current || !note) return;
+    focusNote.current = false;
+    note.scrollIntoView?.({ block: 'center' });
+    note.focus({ preventScroll: true });
+  });
   const lookup = (vi: string | undefined) => findSpecies(speciesIndex, game.releaseId, vi);
   const floats: RopeFloat[] = game.questions.flatMap((x, i) =>
     x.result
@@ -270,7 +284,11 @@ export function Study({
       </>
     );
   const closeNote = closeError && (
-    <ErrorNote message={closeError} retry={() => void closeAll().catch(noop)} />
+    <ErrorNote
+      message={closeError}
+      retry={() => void closeAll().catch(noop)}
+      noteRef={closeNoteRef}
+    />
   );
   return (
     <>
@@ -325,6 +343,8 @@ export function Study({
           key={q.id}
           ref={shown}
           onImageSettled={settleImage}
+          timeUp={timedOut}
+          closing={closingNow}
           game={game}
           q={q}
           index={cursor}
@@ -336,8 +356,13 @@ export function Study({
             queue.enqueue(job);
           }}
           onNext={() => {
-            // Time is up: the open questions are being closed; the summary follows on its own.
-            if (timedOut) return;
+            // Time is up: no new question. Retry the closing (questions already being sent are
+            // left alone); the summary follows on its own once every question has a result.
+            if (timedOut) {
+              focusNote.current = true;
+              void closeAll().catch(noop);
+              return;
+            }
             stopAudio();
             advanced.current = true;
             setCursor(cursor + 1);

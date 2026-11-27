@@ -74,7 +74,9 @@ export function useSessionTimer({ gameId, totalMs, enabled, running, onExpire }:
     if (loadedKey.current !== key) {
       loadedKey.current = key;
       remaining.current = loadRemainingMs(gameId, totalMs);
-      // A restored 0 means the expiry already ran in an earlier mount.
+      // A restored 0 is never expired again here: either the expiry ran in an earlier mount, or
+      // the budget ran out exactly as that mount unmounted (saved 0, no `onExpire`). The consumer
+      // must act on the returned `expired` itself, not only on `onExpire`.
       expiredFired.current = remaining.current <= 0;
     }
     if (!enabled || !running || remaining.current <= 0) return;
@@ -86,6 +88,7 @@ export function useSessionTimer({ gameId, totalMs, enabled, running, onExpire }:
       last = now;
       return now;
     };
+    // Saves 0 even while unmounting (when `onExpire` is not called): consumers act on `expired`.
     const expire = () => {
       saveRemainingMs(gameId, 0);
       if (expiredFired.current) return;

@@ -218,6 +218,8 @@ export function QuestionView({
   onNext,
   onRefresh,
   onImageSettled,
+  timeUp = false,
+  closing = false,
   ref,
 }: {
   game: Game;
@@ -233,8 +235,15 @@ export function QuestionView({
   onQueue?: (job: Job, provisional: Score) => void;
   onNext: () => void;
   onRefresh: () => Promise<ApiQuestion | undefined>;
-  /** The image (of an image question) has loaded, failed, or there is none to wait for. */
-  onImageSettled?: () => void;
+  /** The image of this question (by id) has loaded, failed, or there is none to wait for. */
+  onImageSettled?: (questionId: string) => void;
+  /**
+   * The session clock ran out: the answer can no longer be changed, sent or skipped by hand
+   * (Study closes it through `closeOut` and shows the one error note for that).
+   */
+  timeUp?: boolean;
+  /** Study is still sending the open questions after the time ran out. */
+  closing?: boolean;
   ref?: Ref<QuestionHandle>;
 }) {
   const draftKey = draftStorageKey(game.id, q.id);
@@ -300,9 +309,14 @@ export function QuestionView({
   // The answer on its way, if any: a second send (a double press, or the clock running out at
   // the same moment) waits for it instead of posting again.
   const sending = useRef<Promise<void> | null>(null);
+  // What was sent last (the in-flight answer, when the clock runs out during a send).
+  const lastSent = useRef<{ answer: unknown; key: string } | null>(null);
+  // The close-out answer, fixed at its first call: a retry sends exactly the same thing.
+  const closeShot = useRef<{ answer: unknown; key: string } | null>(null);
   function send(answer: unknown, key: string = token): Promise<void> {
     if (q.result) return Promise.resolve();
     if (sending.current) return sending.current;
+    lastSent.current = { answer, key };
     setBusy(true);
     setError('');
     const done = api<Score>(`/learning/sessions/${game.id}/questions/${q.id}/attempts`, {
@@ -321,20 +335,25 @@ export function QuestionView({
     return done;
   }
   function submit(answer: unknown) {
-    if (busy) return;
+    if (busy || timeUp) return;
     send(answer).catch((e) => setError((e as Error).message));
   }
   useImperativeHandle(ref, () => ({
-    closeOut: () =>
-      draft.optionId
-        ? send({ optionId: draft.optionId })
-        : send({ timeout: true }, timeoutKey(game.id, q.id)),
+    closeOut: () => {
+      closeShot.current ??=
+        sending.current && lastSent.current
+          ? lastSent.current
+          : draft.optionId
+            ? { answer: { optionId: draft.optionId }, key: token }
+            : { answer: { timeout: true }, key: timeoutKey(game.id, q.id) };
+      return send(closeShot.current.answer, closeShot.current.key);
+    },
   }));
   // Nothing to wait for: the image is gone or was never there.
   const noImage = q.type === 'image' && (broken || !image);
   useEffect(() => {
-    if (noImage) onImageSettled?.();
-  }, [noImage, onImageSettled]);
+    if (noImage) onImageSettled?.(q.id);
+  }, [noImage, onImageSettled, q.id]);
   function rate(rating: 'known' | 'again') {
     if (!onQueue) return void submit({ rating });
     if (busy || q.result) return;
@@ -363,8 +382,12 @@ export function QuestionView({
           onNext();
         }}
       >
-        {index === game.questions.length - 1 ? 'Xem tổng kết' : 'Tiếp tục'}
-        <ArrowRight size={18} aria-hidden="true" />
+        {timeUp && closing
+          ? 'Đang nộp các câu còn lại…'
+          : index === game.questions.length - 1
+            ? 'Xem tổng kết'
+            : 'Tiếp tục'}
+        {!(timeUp && closing) && <ArrowRight size={18} aria-hidden="true" />}
       </button>
     </div>
   );
@@ -388,7 +411,7 @@ export function QuestionView({
               (wrong ? 'is-wrong' : '')
             }
             aria-pressed={picked}
-            disabled={done}
+            disabled={done || timeUp}
             onClick={() => update({ ...draft, optionId: o.id })}
           >
             <span className="study-radio" aria-hidden="true">
@@ -424,6 +447,7 @@ export function QuestionView({
         className="btn primary"
         disabled={
           busy ||
+          timeUp ||
           (q.type === 'match'
             ? Object.keys(draft.pairs ?? {}).length !== q.left?.length
             : !draft.optionId) ||
@@ -445,7 +469,7 @@ export function QuestionView({
       {['image', 'listening'].includes(q.type) && (
         <button
           className="btn secondary"
-          disabled={busy}
+          disabled={busy || timeUp}
           onClick={() => void submit({ skip: true })}
         >
           {q.type === 'listening' ? 'Bỏ qua bản thu' : 'Bỏ qua ảnh'}
@@ -573,9 +597,9 @@ export function QuestionView({
               alt="Mẫu nguyên liệu cần nhận diện"
               width="640"
               height="420"
-              onLoad={() => onImageSettled?.()}
+              onLoad={() => onImageSettled?.(q.id)}
               onError={() => {
-                onImageSettled?.();
+                onImageSettled?.(q.id);
                 if (!refreshed) {
                   setRefreshed(true);
                   void onRefresh()
@@ -711,7 +735,7 @@ export function QuestionView({
       tabIndex={-1}
       aria-label={`Câu ${index + 1} / ${game.questions.length}`}
     >
-      {error && <ErrorNote message={error} />}
+      {error && !timeUp && <ErrorNote message={error} />}
       <div className="pilot-question-body">{body}</div>
     </section>
   );

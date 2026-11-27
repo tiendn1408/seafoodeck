@@ -319,18 +319,20 @@ describe('Study timer: expiry', () => {
     for (const p of posts) expect(p.key).toMatch(/^[a-zA-Z0-9_-]{8,100}$/);
   });
 
-  it('expiring while on an answered question closes only the later ones', async () => {
-    const host = await start(imageGame([image('a'), image('b')]));
+  it('answered questions are not posted again at expiry; only the open ones close', async () => {
+    const host = await start(imageGame([image('a'), image('b'), image('c')]));
     settleImage(host);
     await press(button(host, 'Mực ống'));
     await press(button(host, 'Nộp câu trả lời'));
     await flush();
-    expect(host.textContent).toContain('Tiếp tục');
-    advance(30000);
+    await press(button(host, 'Tiếp tục'));
+    settleImage(host);
+    advance(45000);
     await flush();
     expect(posts.map((p) => [p.qid, p.answer])).toEqual([
       ['a', { optionId: 'o1' }],
       ['b', { timeout: true }],
+      ['c', { timeout: true }],
     ]);
     expect(onSummary(host)).toBe(true);
   });
@@ -364,11 +366,6 @@ describe('Study timer: expiry', () => {
     expect(note?.getAttribute('role')).toBe('alert');
     expect(note?.textContent).toContain('Không kết nối được máy chủ');
     expect(latest.questions.map((q) => !!q.result)).toEqual([true, false, true]);
-    // "Tiếp tục" does not open a question after the time is up.
-    const next = [...host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Tiếp tục'),
-    );
-    if (next) await press(next);
     expect(host.querySelector('.study-count')?.textContent).toBe('Câu 1 / 3');
     await press(button(host, 'Thử lại'));
     await flush();
@@ -445,6 +442,16 @@ describe('Study timer: expiry', () => {
     expect(host.textContent).not.toContain(NOTICE);
   });
 
+  it('a saved 0 alone (the last answer landed as the time ran out) shows no notice', async () => {
+    localStorage.setItem('seafoodeck.timer.v1:g1', '0');
+    const host = await start(
+      imageGame([image('a', { result: result('a') }), image('b', { result: result('b') })]),
+    );
+    expect(onSummary(host)).toBe(true);
+    expect(posts).toEqual([]);
+    expect(host.textContent).not.toContain(NOTICE);
+  });
+
   it('the summary notice also shows for restored results that timed out', async () => {
     const host = await start(
       imageGame([
@@ -463,6 +470,143 @@ describe('Study timer: expiry', () => {
     await flush();
     expect(posts).toEqual([{ qid: 'a', key: 'timeout-g1-a', answer: { timeout: true } }]);
     expect(onSummary(host)).toBe(true);
+  });
+});
+
+describe('Study timer: review fixes', () => {
+  const option = (host: HTMLElement, label: string) =>
+    [...host.querySelectorAll<HTMLButtonElement>('.study-options button')].find((b) =>
+      b.textContent?.includes(label),
+    )!;
+
+  it('after time-up the question is locked; a retry sends the ORIGINAL option and token', async () => {
+    plan.a = ['network'];
+    const host = await start(imageGame([image('a'), image('b')]));
+    await press(option(host, 'Hải sâm'));
+    settleImage(host);
+    advance(30000);
+    await flush();
+    expect(onSummary(host)).toBe(false);
+    // One note only: Study's close note, not QuestionView's own.
+    expect(host.querySelectorAll('.pilot-error')).toHaveLength(1);
+    expect(option(host, 'Mực ống').disabled).toBe(true);
+    expect(button(host, 'Nộp câu trả lời').disabled).toBe(true);
+    expect(button(host, 'Bỏ qua ảnh').disabled).toBe(true);
+    await press(option(host, 'Mực ống'));
+    await press(button(host, 'Nộp câu trả lời'));
+    await press(button(host, 'Bỏ qua ảnh'));
+    expect(by('a')).toHaveLength(1);
+    await press(button(host, 'Thử lại'));
+    await flush();
+    const token = JSON.parse(localStorage.getItem('seafood-deck:draft:g1:a:key')!);
+    expect(by('a')).toEqual([
+      { qid: 'a', key: token, answer: { optionId: 'o2' } },
+      { qid: 'a', key: token, answer: { optionId: 'o2' } },
+    ]);
+    expect(onSummary(host)).toBe(true);
+  });
+
+  it('a 409 on the close-out of the question on screen takes the server result', async () => {
+    plan.a = ['conflict'];
+    serverGame = imageGame([image('a', { result: result('a') }), image('b')]);
+    const host = await start(imageGame([image('a'), image('b')]));
+    settleImage(host);
+    advance(30000);
+    await flush(5);
+    expect(by('a')).toEqual([{ qid: 'a', key: 'timeout-g1-a', answer: { timeout: true } }]);
+    expect(host.querySelector('.pilot-error')).toBeNull();
+    expect(latest.questions[0].result).toEqual(result('a'));
+    expect(onSummary(host)).toBe(true);
+  });
+
+  it('"Tiếp tục" after a failed close retries with the same keys, then shows the summary', async () => {
+    plan.b = ['network', 'hold'];
+    const host = await start(imageGame([image('a'), image('b')]));
+    settleImage(host);
+    advance(30000);
+    await flush();
+    expect(host.querySelector('.pilot-error')).toBeTruthy();
+    await press(button(host, 'Tiếp tục'));
+    expect(by('b').map((p) => p.key)).toEqual(['timeout-g1-b', 'timeout-g1-b']);
+    expect(host.textContent).toContain('Đang nộp các câu còn lại…');
+    await act(async () => held.shift()!());
+    await flush();
+    expect(onSummary(host)).toBe(true);
+    expect(by('a')).toHaveLength(1);
+  });
+
+  it('"Tiếp tục" brings the close note into focus when the retry fails again', async () => {
+    plan.b = ['network', 'network'];
+    const host = await start(imageGame([image('a'), image('b')]));
+    settleImage(host);
+    advance(30000);
+    await flush();
+    await press(button(host, 'Tiếp tục'));
+    await flush();
+    expect(by('b')).toHaveLength(2);
+    const note = host.querySelector('.pilot-error')!;
+    expect(note.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(note);
+    expect(onSummary(host)).toBe(false);
+  });
+
+  it('the clock pauses during feedback and until the next image settles', async () => {
+    const host = await start(imageGame([image('a'), image('b'), image('c')]));
+    settleImage(host);
+    advance(5000);
+    expect(clock(host)).toBe('00:40');
+    await press(button(host, 'Mực ống'));
+    await press(button(host, 'Nộp câu trả lời'));
+    await flush();
+    advance(10000);
+    expect(clock(host)).toBe('00:40');
+    await press(button(host, 'Tiếp tục'));
+    advance(10000);
+    expect(clock(host)).toBe('00:40');
+    settleImage(host);
+    advance(5000);
+    expect(clock(host)).toBe('00:35');
+  });
+
+  it('a broken next image still lets the clock resume', async () => {
+    serverGame = imageGame([image('a'), image('b')]);
+    const host = await start(imageGame([image('a'), image('b')]));
+    settleImage(host);
+    await press(button(host, 'Mực ống'));
+    await press(button(host, 'Nộp câu trả lời'));
+    await flush();
+    await press(button(host, 'Tiếp tục'));
+    advance(5000);
+    expect(clock(host)).toBe('00:30');
+    settleImage(host, 'error');
+    await flush();
+    advance(5000);
+    expect(clock(host)).toBe('00:25');
+  });
+
+  it('a non-image session starts no timer and writes no timer keys', async () => {
+    const writes: string[] = [];
+    const setItem = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+      this: Storage,
+      k: string,
+      v: string,
+    ) {
+      writes.push(k);
+      setItem.call(this, k, v);
+    });
+    const card: ApiQuestion = {
+      id: 'f1',
+      type: 'flashcard',
+      prompt: 'Tên tiếng Anh',
+      front: 'Cá tuyết',
+      unavailable: false,
+    };
+    const host = await start({ ...imageGame([card]), mode: 'flashcard' });
+    advance(60000);
+    await press(button(host, 'Ẩn hiện'));
+    expect(vi.getTimerCount()).toBe(0);
+    expect(writes.filter((k) => k.startsWith('seafoodeck.timer'))).toEqual([]);
   });
 });
 
