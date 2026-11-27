@@ -131,6 +131,7 @@ export function speak(kind: VoiceKind, label: string, slow: boolean, on: SpeakHa
     const entry: Entry = { on, active: true, timer: undefined };
     utterance.onstart = () => {
       if (!entry.active) return;
+      // A late `end` after this reset intentionally shows "Đã đọc xong": the entry stays active.
       arm(entry, END_WATCHDOG_MS, () => on.reset?.());
       on.start();
     };

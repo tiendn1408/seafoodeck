@@ -301,6 +301,7 @@ describe('MachineVoice', () => {
 
     class FakeAudio {
       static last: FakeAudio | null = null;
+      static count = 0;
       playbackRate = 1;
       onended: (() => void) | null = null;
       onerror: (() => void) | null = null;
@@ -308,6 +309,7 @@ describe('MachineVoice', () => {
       play = () => Promise.resolve();
       constructor() {
         FakeAudio.last = this;
+        FakeAudio.count++;
       }
     }
     const clip = async () => {
@@ -351,25 +353,45 @@ describe('MachineVoice', () => {
     it('stopAudio with nothing playing does not throw', () => {
       expect(() => stopAudio()).not.toThrow();
     });
-    it('interrupting while the URL loads leaves no status and plays nothing', async () => {
-      FakeAudio.last = null;
+    it('interrupting while the URL loads leaves no status and plays nothing more', async () => {
+      FakeAudio.count = 0;
       vi.stubGlobal('Audio', FakeAudio);
       let resolve!: (u: string) => void;
       const onRefresh = () => new Promise<string | undefined>((r) => (resolve = r));
       const host = mount(<Pronunciation initialUrl="x" onRefresh={onRefresh} />);
-      // First attempt uses initialUrl; make it fail so the refresh path is pending.
-      vi.stubGlobal(
-        'Audio',
-        class extends FakeAudio {
-          play = () => Promise.resolve();
-        },
-      );
       await click(button(host, 'Nghe'));
-      act(() => FakeAudio.last!.onerror?.());
+      const first = FakeAudio.last!;
+      act(() => first.onerror?.());
       act(() => stopAudio());
       await act(async () => resolve('https://example.test/b.mp3'));
       expect(status(host)).toBe('');
-      expect(FakeAudio.last!.pause).toHaveBeenCalled();
+      expect(FakeAudio.count).toBe(1);
+      expect(FakeAudio.last).toBe(first);
+      expect(first.pause).toHaveBeenCalled();
+    });
+    it('an interrupted clip whose play() is pending shows no error (AbortError)', async () => {
+      class PendingAudio extends FakeAudio {
+        reject: ((e: unknown) => void) | null = null;
+        pause = vi.fn(() => this.reject?.({ name: 'AbortError' }));
+        play = () => new Promise<void>((_, rej) => (this.reject = rej));
+      }
+      vi.stubGlobal('Audio', PendingAudio);
+      const host = mount(<Pronunciation initialUrl="https://example.test/a.mp3" />);
+      await click(button(host, 'Nghe'));
+      act(() => stopAudio());
+      await act(async () => {});
+      expect(status(host)).toBe('');
+    });
+    it('a real play failure still shows the retry text', async () => {
+      class FailingAudio extends FakeAudio {
+        play = () => Promise.reject(new Error('NotAllowedError'));
+      }
+      vi.stubGlobal('Audio', FailingAudio);
+      const host = mount(<Pronunciation initialUrl="https://example.test/a.mp3" />);
+      await click(button(host, 'Nghe'));
+      expect(status(host)).toBe('Không phát được bản thu. Hãy thử lại.');
+      act(() => stopAudio());
+      expect(status(host)).toBe('Không phát được bản thu. Hãy thử lại.');
     });
     it('unmounting a playing clip emits no warning', async () => {
       const err = vi.spyOn(console, 'error').mockImplementation(() => {});

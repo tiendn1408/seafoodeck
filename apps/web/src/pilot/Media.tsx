@@ -171,7 +171,8 @@ export function Pronunciation({
       };
       await run();
     } catch {
-      setStatus('Không phát được bản thu. Hãy thử lại.');
+      // An interrupted clip (pause() rejects a pending play() with AbortError) is not a failure.
+      if (generation === audioGeneration) settle('Không phát được bản thu. Hãy thử lại.');
     }
   }
   if (!id && !initialUrl)
