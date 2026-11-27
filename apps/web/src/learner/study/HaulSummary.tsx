@@ -2,6 +2,7 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { Game, ProgressEntry, SessionSummaryResponse } from '../../pilot/api';
 import { SignedImage } from '../../pilot/Media';
+import { playSfx } from '../sound/sfx';
 import { MissingPhoto } from '../MissingPhoto';
 import { coverPhoto } from '../SpeciesCover';
 import { groupTone } from '../groups';
@@ -92,6 +93,14 @@ export function Summary({
   // When the saving status (the focus target until then) gives way to the title, move focus
   // to the title so keyboard and screen-reader users are not left on a removed element.
   const title = useRef<HTMLHeadingElement>(null);
+  // The end-of-session sound, once, when the haul is shown (not while still saving); the ref
+  // holds against StrictMode's double-run mount effect.
+  const doneSound = useRef(false);
+  useEffect(() => {
+    if (saving || doneSound.current) return;
+    doneSound.current = true;
+    playSfx('done');
+  }, [saving]);
   const wasSaving = useRef(saving);
   useEffect(() => {
     const lost = !document.activeElement || document.activeElement === document.body;

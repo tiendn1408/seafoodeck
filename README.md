@@ -47,6 +47,10 @@ Quản trị có tab "Người dùng" (`#admin/users`): tạo (mật khẩu tự
 
 Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Giọng máy, tham khảo" cho tên tiếng Anh, tiếng Nhật và tên khoa học. Giọng này do chính trình duyệt đọc (Web Speech API), ứng dụng không gọi mạng; riêng một số giọng "Google …" trên Chrome máy tính do trình duyệt đọc qua mạng. Giọng không được lưu thành bản thu và không phải bản thu đã duyệt. Nút chỉ hiện khi thiết bị có giọng phù hợp; nếu không có, nút ẩn đi. Khi một tên đã có bản thu đã duyệt thì chỉ hiện trình phát bản thu đó. Câu hỏi Nghe chỉ dùng bản thu đã duyệt, không bao giờ dùng giọng máy. Việc tạo giọng trên Studio được hoãn lại, ghi trong `docs/handoffs/2026-11-26-tts-provider-setup.md`.
 
+## Hiệu ứng âm thanh
+
+Màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Một phiên đã xong mà mở lại trong cùng lần tải trang, hoặc một màn hình được khôi phục hay dựng lại, có thể phát lại âm "xong phiên" hoặc âm phản hồi. Trên iPhone cũ hơn iOS 14.5 (chỉ có `webkitAudioContext`), tính năng âm thanh bị tắt và nút loa không hiện. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
+
 ## Nhập dữ liệu prototype
 
 Bộ prototype (100 loài, 5 hồ sơ HS) được nhập thành bản nháp qua script chỉ gọi API quản trị; không ghi thẳng DB. Thông tin nguồn và giới hạn: [docs/sources/prototype-import](docs/sources/prototype-import/README.md).

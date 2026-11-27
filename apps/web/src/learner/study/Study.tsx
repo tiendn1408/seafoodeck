@@ -5,6 +5,8 @@ import { stopAudio } from '../../pilot/Media';
 import { ErrorNote } from '../ErrorNote';
 import { FloatRope, type RopeFloat } from '../FloatRope';
 import { QuestionView, coverName } from './QuestionView';
+import { SoundControl } from '../sound/SoundControl';
+import { installSoundUnlock } from '../sound/sfx';
 import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
 import { sessionQueue, withResult, type GameUpdate } from './submitQueues';
@@ -73,6 +75,8 @@ export function Study({
   // One queue per session, owned outside this screen: pausing and coming back shows the same
   // pending saves and failures, and results land in the parent's game either way.
   const queue = sessionQueue(game.id, onChange);
+  // iPhone/Safari only start audio after a gesture: unlock on the first press in this screen.
+  useEffect(() => installSoundUnlock(), []);
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   useEffect(() => queue.subscribe(redraw), [queue]);
   const saving = queue.pendingCount() > 0;
@@ -147,10 +151,13 @@ export function Study({
               {saving ? 'Đang lưu…' : ''}
             </span>
           </p>
-          <a className="study-pause" href="#home" title="Tạm dừng">
-            <Pause size={18} aria-hidden="true" />
-            <span className="study-pause-text">Tạm dừng</span>
-          </a>
+          <div className="study-tools">
+            <SoundControl />
+            <a className="study-pause" href="#home" title="Tạm dừng">
+              <Pause size={18} aria-hidden="true" />
+              <span className="study-pause-text">Tạm dừng</span>
+            </a>
+          </div>
         </div>
         {rope}
       </div>

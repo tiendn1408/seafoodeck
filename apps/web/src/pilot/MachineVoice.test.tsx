@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, useState } from 'react';
 import { mount, unmountAll, button, click } from '../learner/testDom';
 import { MachineVoice } from './MachineVoice';
-import { Pronunciation, stopAudio } from './Media';
+import { Pronunciation, isClipPlaying, stopAudio } from './Media';
 
 const voice = (name: string, lang: string) => ({ name, lang }) as SpeechSynthesisVoice;
 
@@ -392,6 +392,27 @@ describe('MachineVoice', () => {
       expect(status(host)).toBe('Không phát được bản thu. Hãy thử lại.');
       act(() => stopAudio());
       expect(status(host)).toBe('Không phát được bản thu. Hãy thử lại.');
+    });
+    it('isClipPlaying is true while a clip plays and false once it ends, errors or is stopped', async () => {
+      expect(isClipPlaying()).toBe(false);
+      await clip();
+      expect(isClipPlaying()).toBe(true);
+      act(() => FakeAudio.last!.onended?.());
+      expect(isClipPlaying()).toBe(false);
+      await click(button(document.body, 'Nghe'));
+      expect(isClipPlaying()).toBe(true);
+      act(() => stopAudio());
+      expect(isClipPlaying()).toBe(false);
+    });
+    it('isClipPlaying is false after a clip errors', async () => {
+      await clip();
+      expect(isClipPlaying()).toBe(true);
+      await act(async () => {
+        FakeAudio.last!.onerror?.();
+        await new Promise((r) => setTimeout(r, 0));
+      });
+      act(() => FakeAudio.last!.onerror?.());
+      expect(isClipPlaying()).toBe(false);
     });
     it('unmounting a playing clip emits no warning', async () => {
       const err = vi.spyOn(console, 'error').mockImplementation(() => {});

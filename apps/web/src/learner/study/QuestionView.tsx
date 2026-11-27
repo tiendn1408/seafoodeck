@@ -10,6 +10,7 @@ import {
   SkipForward,
   X,
 } from 'lucide-react';
+import { playSfx } from '../sound/sfx';
 import {
   api,
   readLocal,
@@ -114,6 +115,9 @@ function SourceCredit({ source }: { source: string }) {
 }
 
 function Feedback({ q, result }: { q: ApiQuestion; result: Score }) {
+  // One sound per question: not again for a re-render or a provisional score that the server
+  // score replaces; the ref also holds against StrictMode's double-run mount effect.
+  const played = useRef<string | null>(null);
   const tone = result.skipped
     ? 'skip'
     : result.selfRated
@@ -124,6 +128,11 @@ function Feedback({ q, result }: { q: ApiQuestion; result: Score }) {
   const Icon = { skip: SkipForward, self: BookmarkCheck, correct: CircleCheck, wrong: CircleX }[
     tone
   ];
+  useEffect(() => {
+    if (played.current === result.questionId) return;
+    played.current = result.questionId;
+    playSfx(tone === 'correct' ? 'correct' : tone === 'wrong' ? 'wrong' : 'neutral');
+  }, [result.questionId, tone]);
   return (
     <div className="pilot-feedback study-feedback" data-tone={tone} role="status">
       <p className="study-feedback-head">

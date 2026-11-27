@@ -106,9 +106,15 @@ function ImageContent({
   );
 }
 let playing: HTMLAudioElement | null = null;
+// The current clip ended or failed on its own; `playing` is kept so stopAudio still cleans it up.
+let playingDone = false;
 let audioGeneration = 0;
 // Clears the status of the Pronunciation that owns the current clip.
 let playingReset: (() => void) | null = null;
+/** True while an approved-audio file clip is playing (machine voice is not a clip). */
+export function isClipPlaying(): boolean {
+  return playing !== null && !playingDone;
+}
 export function stopAudio() {
   audioGeneration++;
   const reset = playingReset;
@@ -119,6 +125,7 @@ export function stopAudio() {
     playing.pause();
   }
   playing = null;
+  playingDone = false;
   reset?.();
   cancelSpeech();
 }
@@ -158,12 +165,25 @@ export function Pronunciation({
         if (generation !== audioGeneration) return;
         const audio = new Audio(d.url);
         playing = audio;
+        playingDone = false;
         audio.playbackRate = speed;
-        audio.onended = () => settle('Đã phát xong');
+        // An ended or failed clip is no longer "playing" (stopAudio still cleans up).
+        const done = () => {
+          if (playing === audio) playingDone = true;
+        };
+        audio.onended = () => {
+          done();
+          settle('Đã phát xong');
+        };
         audio.onerror = () => {
+          done();
           if (!refreshed) {
             refreshed = true;
-            void run().catch(() => settle('Không phát được bản thu. Hãy thử lại.'));
+            void run().catch(() => {
+              // The refreshed clip never played (e.g. play() refused outside a gesture).
+              if (generation === audioGeneration) playingDone = true;
+              settle('Không phát được bản thu. Hãy thử lại.');
+            });
           } else settle('Không phát được bản thu. Hãy thử lại.');
         };
         await audio.play();
@@ -172,7 +192,10 @@ export function Pronunciation({
       await run();
     } catch {
       // An interrupted clip (pause() rejects a pending play() with AbortError) is not a failure.
-      if (generation === audioGeneration) settle('Không phát được bản thu. Hãy thử lại.');
+      if (generation === audioGeneration) {
+        playingDone = true;
+        settle('Không phát được bản thu. Hãy thử lại.');
+      }
     }
   }
   if (!id && !initialUrl)
