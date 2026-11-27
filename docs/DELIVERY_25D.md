@@ -32,7 +32,7 @@ Ngày 23/11/2026. Branch `feat/role-hardening-25d`. Chưa build image phát hàn
 **Tài liệu API (Swagger) từng lộ ra ngoài, đã sửa**
 - Trước sửa: API luôn phục vụ `/api/v1/docs` và `/api/v1/openapi.json`, và Caddy chuyển mọi `/api/*` vào API, nên ai (kể cả khách chưa đăng nhập) cũng đọc được danh sách mọi route `/admin/*`, `/manager/*`. Không lộ dữ liệu (route vẫn kiểm vai trò), nhưng lộ bản đồ API.
 - Sau sửa: API chỉ đăng ký hai đường này khi `EXPOSE_API_DOCS=true` (đúng chữ `true`; mặc định tắt, `deploy/pilot.env.example` và `scripts/init-pilot.mjs` ghi `false`). Muốn xem Swagger khi chạy API cục bộ: đặt `EXPOSE_API_DOCS=true` rồi mở `/api/v1/docs`. Không bật trên VPS.
-- Thêm lớp phòng thủ: `deploy/Caddyfile.pilot` trả 404 cho `/api/v1/docs*` và `/api/v1/openapi*` dù API có bật cờ. `deploy/Caddyfile` (stack tĩnh cũ) không proxy `/api` nên không cần.
+- Thêm lớp phòng thủ: `deploy/Caddyfile.pilot` (từ phần tách tầng web là `deploy/edge/Caddyfile`) trả 404 cho `/api/v1/docs*` và `/api/v1/openapi*` dù API có bật cờ. `deploy/Caddyfile` (stack tĩnh cũ) không proxy `/api` nên không cần.
 - `npm run contract:generate` dựng `docs/api/openapi.json` bằng cùng hàm `buildOpenApiDocument`, không đăng ký route HTTP; chạy lại không làm đổi file.
 - Test `apps/api/src/api-docs.test.ts`: không có cờ (hoặc `false`, `TRUE`, `1`…) thì `/api/v1/docs`, `/docs/`, `/docs-json`, `/docs-yaml`, `/openapi.json` đều 404; có `EXPOSE_API_DOCS=true` thì 200.
 - Sau khi triển khai, `GET /api/v1/docs` và `GET /api/v1/openapi.json` phải trả 404: đã thêm vào mục kiểm sau nâng cấp của [DEPLOY_UPGRADE_25C.md](DEPLOY_UPGRADE_25C.md).

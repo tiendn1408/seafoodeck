@@ -151,7 +151,7 @@ Các điểm nhỏ đã ghi nhận qua các vòng review, còn lại sau lượt
 - **Shell**
   - `leaveGuard` dùng `location.replace`, ghi đè một mục lịch sử.
 
-**Câu hỏi mở cho chủ dự án:** spec mục 6.3 ghi manager có route `account` (đổi mật khẩu tự nguyện), còn plan T9 đã bỏ route đó; hiện manager không có màn tài khoản, chỉ đổi mật khẩu khi bị buộc (sau khi quản trị đặt lại). Cần quyết định: thêm `account` cho manager theo spec, hay sửa spec theo hiện trạng.
+**Câu hỏi mở cho chủ dự án:** spec mục 6.3 ghi manager có route `account` (đổi mật khẩu tự nguyện), còn plan T9 đã bỏ route đó; hiện manager không có màn tài khoản, chỉ đổi mật khẩu khi bị buộc (sau khi quản trị đặt lại). Cần quyết định: thêm `account` cho manager theo spec, hay sửa spec theo hiện trạng. Đã giải ở 2.5d (xem [DELIVERY_25D.md](DELIVERY_25D.md): màn Tài khoản cho manager, `#account`).
 
 ## Chạy E2E
 
