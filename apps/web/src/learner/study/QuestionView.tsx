@@ -609,7 +609,7 @@ export function QuestionView({
                         className="pair-combo"
                         style={{ '--pair-delay': `${i * 100}ms` } as CSSProperties}
                       >
-                        {`×${streak}`}
+                        <span aria-hidden="true">{`×${streak}`}</span>
                         <span className="study-visually-hidden">{` combo ${streak}`}</span>
                       </span>
                     )}

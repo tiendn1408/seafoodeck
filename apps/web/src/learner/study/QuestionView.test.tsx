@@ -296,6 +296,11 @@ describe('QuestionView pair combo badges in matching', () => {
     expect(visible(badge)).toBe('×2');
     expect(badge.querySelector('.study-visually-hidden')?.textContent).toBe(' combo 2');
     expect(rows[1]!.textContent?.match(/combo 2/g)).toHaveLength(1);
+    const times = [...badge.querySelectorAll('span')].find((n) => n.textContent === '×2');
+    expect(times?.getAttribute('aria-hidden')).toBe('true');
+    expect(
+      badge.querySelector('.study-visually-hidden')?.closest('[aria-hidden="true"]'),
+    ).toBeNull();
     expect(rows[2]!.textContent?.match(/combo 3/g)).toHaveLength(1);
   });
   it('staggers the reveal with a per-pair delay', () => {
