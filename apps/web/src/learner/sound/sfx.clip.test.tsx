@@ -39,7 +39,14 @@ class Ctx {
   });
 }
 
+const removers: (() => void)[] = [];
+const install = () => {
+  const r = installSoundUnlock();
+  removers.push(r);
+  return r;
+};
 afterEach(() => {
+  for (const r of removers.splice(0)) r();
   unmountAll();
   vi.unstubAllGlobals();
 });
@@ -48,7 +55,7 @@ describe('sfx with the real clip state', () => {
   it('a finished clip no longer blocks playSfx', async () => {
     vi.stubGlobal('Audio', ClipAudio);
     vi.stubGlobal('AudioContext', Ctx);
-    const remove = installSoundUnlock();
+    const remove = install();
     document.dispatchEvent(new Event('pointerdown'));
     const host = mount(<Pronunciation initialUrl="https://example.test/a.mp3" />);
     await click(button(host, 'Nghe'));
@@ -67,7 +74,7 @@ describe('clip state after a failed refresh', () => {
     }
     vi.stubGlobal('Audio', FlakyAudio);
     vi.stubGlobal('AudioContext', Ctx);
-    const remove = installSoundUnlock();
+    const remove = install();
     document.dispatchEvent(new Event('pointerdown'));
     const host = mount(
       <Pronunciation

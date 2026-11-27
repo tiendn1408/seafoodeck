@@ -11,6 +11,7 @@ const remove = vi.hoisted(() => vi.fn());
 vi.mock('../sound/sfx', () => ({
   playSfx: vi.fn(() => true),
   installSoundUnlock: vi.fn(() => remove),
+  soundSupported: vi.fn(() => true),
 }));
 import { installSoundUnlock, playSfx } from '../sound/sfx';
 

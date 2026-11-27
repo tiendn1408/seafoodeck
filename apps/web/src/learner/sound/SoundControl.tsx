@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
-import { playSfx } from './sfx';
+import { playSfx, soundSupported } from './sfx';
 import { updateSoundSettings, useSoundSettings } from './soundSettings';
 
 /**
@@ -47,12 +47,23 @@ export function SoundControl() {
     return () => el.removeEventListener('change', commit);
   }, [open]);
 
+  if (!soundSupported()) return null;
   return (
-    <div className="sound" ref={root}>
+    <div
+      className="sound"
+      ref={root}
+      onBlur={(e) => {
+        // Tabbing out closes the panel without taking focus back; focus moving inside, or to
+        // nowhere (browser UI), leaves it open.
+        const next = e.relatedTarget as Node | null;
+        if (open && next && !e.currentTarget.contains(next)) setOpen(false);
+      }}
+    >
       <button
         type="button"
         ref={button}
         className="sound-toggle"
+        title="Âm thanh hiệu ứng"
         aria-label={`Âm thanh hiệu ứng: ${muted ? 'tắt' : 'bật'}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

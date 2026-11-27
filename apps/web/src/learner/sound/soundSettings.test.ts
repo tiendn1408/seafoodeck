@@ -101,3 +101,19 @@ describe('useSoundSettings', () => {
     expect(host.textContent).toBe('off:0.6');
   });
 });
+
+describe('useSoundSettings with several subscribers', () => {
+  it('re-renders every mounted component on an update', () => {
+    const seen: string[][] = [[], []];
+    const Probe = ({ i }: { i: number }) => {
+      seen[i].push(String(useSoundSettings().volume));
+      return null;
+    };
+    mount(
+      createElement('div', null, createElement(Probe, { i: 0 }), createElement(Probe, { i: 1 })),
+    );
+    act(() => updateSoundSettings({ volume: 0.6 }));
+    expect(seen[0].at(-1)).toBe('0.6');
+    expect(seen[1].at(-1)).toBe('0.6');
+  });
+});

@@ -41,14 +41,21 @@ export function sfxPeak(volume: number): number {
 let ctx: AudioContext | null = null;
 let stopPrevious: (() => void) | null = null;
 
+/**
+ * True only with the unprefixed `AudioContext`. Older iPhones (before Safari 14.5) only have
+ * `webkitAudioContext`; there is no prefixed fallback, so the sound feature is off there.
+ */
+export function soundSupported(): boolean {
+  return typeof window !== 'undefined' && typeof window.AudioContext === 'function';
+}
+
 // Created only inside a user gesture (iOS/Safari), and only while sound is on.
 function unlock(): boolean {
   if (ctx) return true;
   if (!getSoundSettings().on) return false;
   try {
-    const Ctor = (globalThis as { AudioContext?: typeof AudioContext }).AudioContext;
-    if (typeof Ctor !== 'function') return false;
-    ctx = new Ctor();
+    if (!soundSupported()) return false;
+    ctx = new window.AudioContext();
     return true;
   } catch {
     ctx = null;
@@ -63,6 +70,7 @@ function unlock(): boolean {
  * listeners stay until the context is actually running; the remover detaches them earlier.
  */
 export function installSoundUnlock(): () => void {
+  if (!soundSupported()) return () => {};
   const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
   const remove = () => {
     for (const e of events) document.removeEventListener(e, onGesture, true);

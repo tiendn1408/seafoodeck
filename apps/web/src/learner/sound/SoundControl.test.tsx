@@ -4,13 +4,14 @@ import { mount, unmountAll } from '../testDom';
 import { SoundControl } from './SoundControl';
 import { getSoundSettings, resetSoundSettingsForTests, updateSoundSettings } from './soundSettings';
 
-vi.mock('./sfx', () => ({ playSfx: vi.fn(() => true) }));
-import { playSfx } from './sfx';
+vi.mock('./sfx', () => ({ playSfx: vi.fn(() => true), soundSupported: vi.fn(() => true) }));
+import { playSfx, soundSupported } from './sfx';
 
 beforeEach(() => {
   localStorage.clear();
   resetSoundSettingsForTests();
   vi.mocked(playSfx).mockClear();
+  vi.mocked(soundSupported).mockReturnValue(true);
 });
 afterEach(() => unmountAll());
 
@@ -96,14 +97,17 @@ describe('SoundControl', () => {
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
     const host = mount(<SoundControl />);
+    add.mockClear();
     open(host);
+    const opened = add.mock.calls.filter((c) => c[0] === 'keydown').map((c) => c[1]);
+    expect(opened).toHaveLength(1);
     expect(document.activeElement).toBe(document.body);
     const esc = () =>
       act(() => void document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
     esc();
     expect(host.querySelector('[role="group"]')).toBeNull();
     expect(document.activeElement).toBe(toggle(host));
-    const handler = add.mock.calls.find((c) => c[0] === 'keydown')?.[1];
+    const handler = opened[0];
     expect(handler).toBeDefined();
     expect(remove.mock.calls.some((c) => c[0] === 'keydown' && c[1] === handler)).toBe(true);
     act(() => toggle(host).blur());
@@ -122,10 +126,47 @@ describe('SoundControl', () => {
     expect(host.querySelector('[role="group"]')).toBeNull();
     open(host);
     unmountAll();
-    const added = add.mock.calls.map((c) => c[0]);
-    const removed = remove.mock.calls.map((c) => c[0]);
-    for (const type of new Set(added)) expect(removed).toContain(type);
+    const added = add.mock.calls.filter((c) => c[1]);
+    expect(added.length).toBeGreaterThan(0);
+    for (const [type, handler] of added)
+      expect(remove.mock.calls.some((c) => c[0] === type && c[1] === handler)).toBe(true);
     add.mockRestore();
     remove.mockRestore();
+  });
+
+  it('closes when focus leaves to an element outside, without taking focus back', () => {
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const host = mount(<SoundControl />);
+    open(host);
+    const box = checkbox(host);
+    act(() => box.focus());
+    // Between the panel's own controls: stays open.
+    act(() => slider(host).focus());
+    expect(host.querySelector('[role="group"]')).not.toBeNull();
+    act(() => outside.focus());
+    expect(host.querySelector('[role="group"]')).toBeNull();
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+
+  it('does not close when focus goes nowhere (browser UI)', () => {
+    const host = mount(<SoundControl />);
+    open(host);
+    act(() => slider(host).focus());
+    act(() => slider(host).blur());
+    expect(host.querySelector('[role="group"]')).not.toBeNull();
+  });
+
+  it('has a tooltip like the pause link, keeping its accessible name', () => {
+    const host = mount(<SoundControl />);
+    expect(toggle(host).title).toBe('Âm thanh hiệu ứng');
+    expect(toggle(host).getAttribute('aria-label')).toBe('Âm thanh hiệu ứng: bật');
+  });
+
+  it('renders nothing where sound is unsupported', () => {
+    vi.mocked(soundSupported).mockReturnValue(false);
+    const host = mount(<SoundControl />);
+    expect(host.querySelector('button, [role="group"], .sound')).toBeNull();
   });
 });

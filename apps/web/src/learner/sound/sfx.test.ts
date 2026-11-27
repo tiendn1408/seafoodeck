@@ -74,11 +74,21 @@ class FakeContext {
   }
 }
 
+// Removers are collected so a failing assertion cannot leak document listeners into later tests.
+const removers: (() => void)[] = [];
 async function load() {
   vi.resetModules();
   const settings = await import('./soundSettings');
-  const sfx = await import('./sfx');
+  const real = await import('./sfx');
   const media = await import('../../pilot/Media');
+  const sfx = {
+    ...real,
+    installSoundUnlock: () => {
+      const remove = real.installSoundUnlock();
+      removers.push(remove);
+      return remove;
+    },
+  };
   return { settings, sfx, media };
 }
 
@@ -96,6 +106,7 @@ beforeEach(() => {
   vi.stubGlobal('AudioContext', FakeContext);
 });
 afterEach(() => {
+  for (const r of removers.splice(0)) r();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -235,6 +246,30 @@ describe('unlock', () => {
     expect(() => gesture()).not.toThrow();
     expect(sfx.playSfx('done')).toBe(false);
     remove();
+  });
+});
+
+describe('unsupported (no unprefixed AudioContext)', () => {
+  class Prefixed extends FakeContext {}
+  it('soundSupported is false with only webkitAudioContext; true with AudioContext', async () => {
+    vi.stubGlobal('AudioContext', undefined);
+    vi.stubGlobal('webkitAudioContext', Prefixed);
+    const { sfx } = await load();
+    expect(sfx.soundSupported()).toBe(false);
+    vi.stubGlobal('AudioContext', FakeContext);
+    expect(sfx.soundSupported()).toBe(true);
+  });
+  it('installs no listeners and the remover is a safe no-op', async () => {
+    vi.stubGlobal('AudioContext', undefined);
+    vi.stubGlobal('webkitAudioContext', Prefixed);
+    const { sfx } = await load();
+    const add = vi.spyOn(document, 'addEventListener');
+    const remove = sfx.installSoundUnlock();
+    expect(add).not.toHaveBeenCalled();
+    expect(() => remove()).not.toThrow();
+    gesture();
+    expect(ctorCalls).toBe(0);
+    expect(sfx.playSfx('correct')).toBe(false);
   });
 });
 
