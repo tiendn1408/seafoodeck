@@ -328,3 +328,138 @@ describe('QuestionView pair combo badges in matching', () => {
     ]);
   });
 });
+
+describe('QuestionView image readiness and the time-up close', () => {
+  const imageGame: Game = {
+    id: 'g-image',
+    releaseId: 'rel-1',
+    internal: true,
+    mode: 'image',
+    expiresAt: '2026-11-27T10:00:00.000Z',
+    questions: [question],
+  };
+  let bodies: { url: string; body: { key: string; answer: unknown } }[];
+  afterEach(() => {
+    unmountAll();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+  function stubAttempts() {
+    bodies = [];
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        bodies.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              answered: true,
+              skipped: false,
+              correct: false,
+              selfRated: false,
+              questionId: question.id,
+              targetId: 't',
+              skill: 'name',
+              contentVersion: 'rel-1',
+              explanation: 'Hết giờ, tính là chưa chính xác.',
+              at: '2026-11-27T08:00:00.000Z',
+              correctOption: 'o1',
+            }),
+            { status: 200 },
+          ),
+        );
+      }),
+    );
+  }
+  function show(q: ApiQuestion, extra: Partial<Parameters<typeof QuestionView>[0]> = {}) {
+    return mount(
+      <QuestionView
+        game={{ ...imageGame, questions: [q] }}
+        q={q}
+        index={0}
+        species={null}
+        speciesSettled
+        onScore={() => {}}
+        onNext={() => {}}
+        onRefresh={async () => undefined}
+        {...extra}
+      />,
+    );
+  }
+
+  it('reports the image ready once it loads, not before', () => {
+    const settled = vi.fn();
+    const host = show(question, { onImageSettled: settled });
+    expect(settled).not.toHaveBeenCalled();
+    act(() => void host.querySelector('img')!.dispatchEvent(new Event('load')));
+    expect(settled).toHaveBeenCalled();
+  });
+
+  it('reports ready when the image fails', () => {
+    const settled = vi.fn();
+    const host = show(question, { onImageSettled: settled });
+    act(() => void host.querySelector('img')!.dispatchEvent(new Event('error')));
+    expect(settled).toHaveBeenCalled();
+  });
+
+  it('reports ready at once for an unavailable question', () => {
+    const settled = vi.fn();
+    show({ ...question, unavailable: true, image: undefined }, { onImageSettled: settled });
+    expect(settled).toHaveBeenCalled();
+  });
+
+  it('closeOut sends the selected option with the question token', async () => {
+    stubAttempts();
+    localStorage.setItem(
+      draftStorageKey('g-image', question.id),
+      JSON.stringify({ optionId: 'o2' }),
+    );
+    const handle = { current: null as null | { closeOut: () => Promise<void> } };
+    show(question, { ref: handle });
+    await act(async () => handle.current!.closeOut());
+    const token = JSON.parse(
+      localStorage.getItem(draftStorageKey('g-image', question.id) + ':key')!,
+    );
+    expect(bodies).toEqual([
+      {
+        url: '/api/v1/learning/sessions/g-image/questions/q-image/attempts',
+        body: { key: token, answer: { optionId: 'o2' } },
+      },
+    ]);
+  });
+
+  it('closeOut keeps the answer of its first call for every retry', async () => {
+    stubAttempts();
+    const fetchOk = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        bodies.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }),
+    );
+    localStorage.setItem(
+      draftStorageKey('g-image', question.id),
+      JSON.stringify({ optionId: 'o2' }),
+    );
+    const handle = { current: null as null | { closeOut: () => Promise<void> } };
+    const host = show(question, { ref: handle });
+    await act(async () => handle.current!.closeOut().catch(() => {}));
+    await click(button(host, 'Mực ống'));
+    vi.stubGlobal('fetch', fetchOk);
+    await act(async () => handle.current!.closeOut());
+    expect(bodies.map((b) => b.body.answer)).toEqual([{ optionId: 'o2' }, { optionId: 'o2' }]);
+    expect(bodies[0].body.key).toBe(bodies[1].body.key);
+  });
+
+  it('closeOut without a selection sends a timeout with the deterministic key', async () => {
+    stubAttempts();
+    const handle = { current: null as null | { closeOut: () => Promise<void> } };
+    show(question, { ref: handle });
+    await act(async () => handle.current!.closeOut());
+    expect(bodies.map((b) => b.body)).toEqual([
+      { key: 'timeout-g-image-q-image', answer: { timeout: true } },
+    ]);
+  });
+});

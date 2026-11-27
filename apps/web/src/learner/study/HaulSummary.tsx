@@ -77,6 +77,7 @@ export function Summary({
   onRetry,
   pending,
   bestCombo = 0,
+  timedOut = false,
 }: {
   game: Game;
   /** Review rows returned with this session's answers (empty for trial learners). */
@@ -92,6 +93,8 @@ export function Summary({
   pending: boolean;
   /** Longest run of correct graded answers in the session; shown from ×2. */
   bestCombo?: number;
+  /** The image-mode clock ran out in this session: say why the open questions count as wrong. */
+  timedOut?: boolean;
 }) {
   // When the saving status (the focus target until then) gives way to the title, move focus
   // to the title so keyboard and screen-reader users are not left on a removed element.
@@ -150,6 +153,9 @@ export function Summary({
           {haul.title}
         </h1>
         <p className="haul-lede">{lede}</p>
+        {timedOut && (
+          <p className="haul-timeout">Hết giờ: các câu chưa làm tính là chưa chính xác.</p>
+        )}
       </header>
       <div className="haul-sheet">
         {saveError}

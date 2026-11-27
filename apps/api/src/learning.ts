@@ -133,9 +133,15 @@ export function canonical(value: unknown): string {
     );
   return JSON.stringify(value);
 }
+const TIMEOUT_EXPLANATION = 'Hết giờ, tính là chưa chính xác.';
 export function grade(q: PrivateQuestion, answer: Record<string, unknown>) {
   if (answer.skip === true)
     return { answered: false, skipped: true, correct: false, selfRated: false };
+  if (answer.timeout === true) {
+    // The image session clock ran out: graded wrong whatever else the payload carries.
+    if (q.type !== 'image') throw new BadRequestException('Chỉ câu đoán hình có thể hết giờ.');
+    return { answered: true, skipped: false, correct: false, selfRated: false };
+  }
   if (q.type === 'flashcard') {
     if (!['known', 'again'].includes(String(answer.rating)))
       throw new BadRequestException('Cần tự đánh giá thẻ.');
@@ -683,7 +689,9 @@ export class Learning {
       contentVersion: s.releaseId,
       explanation: scored.skipped
         ? 'Câu bỏ qua không tính đúng/sai hoặc tạo lịch ôn.'
-        : q.explanation,
+        : answer.timeout === true
+          ? `${TIMEOUT_EXPLANATION} ${q.explanation}`.trim()
+          : q.explanation,
       ...(q.type === 'match' && !scored.skipped
         ? {
             items: Object.entries(q.pairs!).map(([left, right]) => ({
