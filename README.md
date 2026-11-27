@@ -1,6 +1,6 @@
 # Seafood Deck
 
-Bản demo học viên đã lên VPS ngày 20/11/2026: tài khoản, đổi mật khẩu lần đầu, học, tổng kết và tiến độ server. Xem [bản phát hành và biên bản VPS](docs/DEPLOY_LEARNER_DEMO_20261120.md). Màn quản lý học viên và quản trị người dùng (2.5c) đã xong trên branch, chưa lên VPS; nội dung public khách còn chờ hoàn thiện.
+Bản demo học viên đã lên VPS ngày 20/11/2026: tài khoản, đổi mật khẩu lần đầu, học, tổng kết và tiến độ server. Xem [bản phát hành và biên bản VPS](docs/DEPLOY_LEARNER_DEMO_20261120.md). **Ngày 26/11/2026 VPS đã lên 2.5e**: màn quản lý học viên, quản trị người dùng và app Studio riêng cho nhân sự ở host `seafoodeckstudio.tiendn.io.vn`, tầng web tách ba container (xem [DEPLOY_STUDIO_HOST.md](docs/DEPLOY_STUDIO_HOST.md) và [DELIVERY_25E.md](docs/DELIVERY_25E.md)). Giọng máy trên thiết bị (nút "Nghe" với nhãn "Giọng máy, tham khảo") đã vào `main` nhưng **chưa lên VPS**; sẽ đưa lên một lần cùng phần còn lại của giai đoạn 3. Nội dung public khách còn chờ hoàn thiện.
 
 Ứng dụng học tên và nghiệp vụ thủy hải sản cho người mới vào ngành và nhân viên kinh doanh quốc tế. Bản 0.6 online gồm React/Vite trong `apps/web`, NestJS/Prisma trong `apps/api`, PostgreSQL và S3 riêng. Người học dùng tài khoản hoặc mã mời học thử; quản trị đăng nhập, biên tập → duyệt → xuất bản revision. Bốn chế độ: Flashcard, Ghép tên, Đoán hình, HS; tổng kết, ôn lỗi và lịch ôn 1/3/7/14 ngày.
 
@@ -27,7 +27,7 @@ Swagger (`/api/v1/docs`, `/api/v1/openapi.json`) mặc định tắt: API chỉ 
 
 ## Tài khoản học viên (phase 2.5a, API; giao diện từ 2.5b/2.5c)
 
-Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` ở màn Người dùng (`#admin/users`, có nhập CSV hàng loạt) hoặc qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Tên đăng nhập không phân biệt hoa/thường. Manager xem bảng học viên ở `#manager`. Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
+Quản trị tạo tài khoản `student` (mật khẩu ≥ 8 ký tự) hoặc `manager` ở màn Người dùng của Studio (`#admin/users` trên host Studio, có nhập CSV hàng loạt; từ 2.5e các route này không còn ở host học viên) hoặc qua `POST /api/v1/admin/users`, có thể bật `mustChangePassword`. Tên đăng nhập không phân biệt hoa/thường. Manager xem bảng học viên ở `#manager` (host Studio). Với `student`, mỗi lượt chấm ghi nhật ký và lịch ôn trên server (`/me/home`, `/me/review`, `/me/progress`, `/me/mastery`); học viên mã mời không đổi. Từ 2.5b trình duyệt dùng các route này (xem mục dưới). Dựng lại lịch ôn từ nhật ký (chỉ in số lượng):
 
 ```sh
 docker compose --env-file .local/pilot.env run --rm --no-deps api node dist/rebuild-progress.js

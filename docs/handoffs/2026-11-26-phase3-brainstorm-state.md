@@ -50,3 +50,7 @@ Danh sách đầy đủ ở báo cáo rà soát (nội dung khách, audio thật
 - **Chủ dự án test cuối trên điện thoại (iPhone Safari, Android Chrome) SAU KHI deploy lên VPS.** Mỗi máy: một tên Anh, một tên Nhật, một tên khoa học, ở hồ sơ loài và ở mặt lật flashcard. Chưa kiểm: giọng và sự kiện của iOS/Android/Windows, công tắc im lặng của iPhone, độ đúng trọng âm tiếng Nhật.
 - Sau khi xong giọng máy thì chuyển sang bốn tính năng còn lại của giai đoạn 3 (HS nhiều bước có "bẫy", tính giờ Đoán hình, combo điểm Ghép tên, hiệu ứng âm thanh). Câu brainstorm đang chờ: cái nào quan trọng nhất với người mới vào ngành, và vì sao.
 - Hai lỗi nhỏ của giọng máy đang được sửa trên nhánh `fix/machine-voice-edge-cases` (trạng thái "Đang đọc" mắc kẹt khi máy không báo đọc xong; nút audio đã duyệt còn hiện "Đang phát" khi giọng máy chen vào).
+
+## Kế hoạch deploy (27/11/2026)
+
+Chủ dự án muốn **xong hết giai đoạn 3 rồi mới đưa lên VPS một lần**, không deploy riêng giọng máy. Khi tới lúc đó dùng `docs/DEPLOY_STUDIO_HOST.md` mục 3 (nếu có đổi API/migration) hoặc mục 6 (chỉ thay một ảnh web). Test điện thoại sau lần deploy đó. Hai lỗi nhỏ của giọng máy đã sửa và merge (`17b3d19`).

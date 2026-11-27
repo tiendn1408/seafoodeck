@@ -1,6 +1,6 @@
 # Phase 2.5e: tách app Studio cho nhân sự sang host riêng
 
-Ngày 26/11/2026. Branch `feat/studio-app-split-25e`. **Chưa triển khai lên VPS**, chưa build image phát hành, chưa push GHCR. Không có migration mới (stack local báo "4 migrations found… No pending migrations to apply").
+Ngày 26/11/2026. **Đã triển khai lên VPS ngày 26/11/2026** (tag `studio-web-tier-20261126-r1`, ba container web `edge` + `web-learner` + `web-studio`, host Studio `seafoodeckstudio.tiendn.io.vn`); chủ dự án tự build, đẩy GHCR và chạy lệnh. Các kiểm sau deploy theo `DEPLOY_STUDIO_HOST.md` mục 4: chủ dự án dán kết quả cổng (chỉ `edge` mở 80/443/udp 443; các container khác chỉ có cổng khai báo trong image, không mở ra ngoài) và báo các kiểm còn lại (host học viên chạy, catalogue không đổi, host học viên trả 404 cho đường nhân sự, host Studio, đăng nhập trình duyệt) là "ổn"; tài liệu này không lưu từng kết quả đó. Branch làm việc ban đầu `feat/studio-app-split-25e` (đã merge). Không có migration mới (stack local báo "4 migrations found… No pending migrations to apply").
 
 Mục tiêu của chủ dự án: **giảm số người biết là có khu quản trị**, không phải dựng một ranh giới bảo mật cứng. Nhân sự vẫn vào từ bất kỳ đâu, không VPN, không TOTP.
 
@@ -56,7 +56,7 @@ Chi tiết từng bước, kiểm sau triển khai và rollback: [DEPLOY_STUDIO_
 
 ## Còn lại / chưa làm
 
-- Chưa triển khai VPS; DNS và chứng chỉ là việc của chủ dự án.
+- Đã triển khai VPS ngày 26/11/2026 (xem đầu tài liệu). Chưa có gì kiểm bằng mắt người trên điện thoại cho bản này.
 - Metadata của media chưa duyệt vẫn nằm trong DTO danh mục: **vẫn mở**, cần chủ sản phẩm quyết.
 - `ALLOW_INTERNAL_DEMO` phải tắt trên bản cho người ngoài.
 - Ảnh minh họa của app học viên (~3,4 MB) cũng nằm trong build Studio do dùng chung thư mục `public`.
