@@ -109,6 +109,10 @@ let playing: HTMLAudioElement | null = null;
 let audioGeneration = 0;
 // Clears the status of the Pronunciation that owns the current clip.
 let playingReset: (() => void) | null = null;
+/** True while an approved-audio file clip is playing (machine voice is not a clip). */
+export function isClipPlaying(): boolean {
+  return playing !== null;
+}
 export function stopAudio() {
   audioGeneration++;
   const reset = playingReset;
