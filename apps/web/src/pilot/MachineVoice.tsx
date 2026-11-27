@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { stopAudio } from './Media';
 import {
@@ -19,6 +19,7 @@ export function MachineVoice({ kind, label }: { kind: VoiceKind; label: string }
   const status = shown.key === key ? shown.text : '';
   const setStatus = (text: string) => setShown({ key, text });
   const run = useRef(0);
+  const labelId = useId();
   useEffect(() => {
     if (!speechAvailable()) return;
     const synth = window.speechSynthesis;
@@ -49,8 +50,8 @@ export function MachineVoice({ kind, label }: { kind: VoiceKind; label: string }
   }
   return (
     <div className="pilot-audio">
-      <span>Giọng máy, tham khảo</span>
-      <button className="btn secondary" onClick={() => play(slow)}>
+      <span id={labelId}>Giọng máy, tham khảo</span>
+      <button className="btn secondary" aria-describedby={labelId} onClick={() => play(slow)}>
         <Volume2 size={17} />
         Nghe
       </button>

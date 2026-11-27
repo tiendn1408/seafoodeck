@@ -45,7 +45,7 @@ Quản trị có tab "Người dùng" (`#admin/users`): tạo (mật khẩu tự
 
 ## Giọng máy trên thiết bị
 
-Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Giọng máy, tham khảo" cho tên tiếng Anh, tiếng Nhật và tên khoa học. Giọng này do chính trình duyệt đọc (Web Speech API), không gọi mạng, không lưu thành bản thu và không phải bản thu đã duyệt. Nút chỉ hiện khi thiết bị có giọng phù hợp; nếu không có, nút ẩn đi. Khi một tên đã có bản thu đã duyệt thì chỉ hiện trình phát bản thu đó. Câu hỏi Nghe chỉ dùng bản thu đã duyệt, không bao giờ dùng giọng máy. Việc tạo giọng trên Studio được hoãn lại, ghi trong `docs/handoffs/2026-11-26-tts-provider-setup.md`.
+Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Giọng máy, tham khảo" cho tên tiếng Anh, tiếng Nhật và tên khoa học. Giọng này do chính trình duyệt đọc (Web Speech API), ứng dụng không gọi mạng; riêng một số giọng "Google …" trên Chrome máy tính do trình duyệt đọc qua mạng. Giọng không được lưu thành bản thu và không phải bản thu đã duyệt. Nút chỉ hiện khi thiết bị có giọng phù hợp; nếu không có, nút ẩn đi. Khi một tên đã có bản thu đã duyệt thì chỉ hiện trình phát bản thu đó. Câu hỏi Nghe chỉ dùng bản thu đã duyệt, không bao giờ dùng giọng máy. Việc tạo giọng trên Studio được hoãn lại, ghi trong `docs/handoffs/2026-11-26-tts-provider-setup.md`.
 
 ## Nhập dữ liệu prototype
 

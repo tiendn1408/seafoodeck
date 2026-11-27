@@ -147,6 +147,33 @@ describe('MachineVoice', () => {
     expect(a.querySelector('[role=status]')!.textContent).not.toBe('Đang đọc');
     expect(b.querySelector('[role=status]')!.textContent).toBe('Đang đọc');
   });
+  it('ignores late end and code-less error events from a taken-over utterance', async () => {
+    const fake = install([voice('Samantha', 'en-US')]);
+    const host = mount(
+      <>
+        <section data-testid="a">
+          <MachineVoice kind="en" label="Blue mussel" />
+        </section>
+        <section data-testid="b">
+          <MachineVoice kind="scientific" label="Mytilus edulis" />
+        </section>
+      </>,
+    );
+    const a = host.querySelector('[data-testid=a]') as HTMLElement;
+    const b = host.querySelector('[data-testid=b]') as HTMLElement;
+    await click(button(a, 'Nghe'));
+    await click(button(b, 'Nghe'));
+    act(() => fake.spoken[0].onend?.());
+    expect(a.querySelector('[role=status]')!.textContent).toBe('');
+    act(() => fake.spoken[0].onerror?.({} as { error: string }));
+    expect(a.querySelector('[role=status]')!.textContent).toBe('');
+  });
+  it('describes Nghe by the visible machine voice label', () => {
+    install([voice('Samantha', 'en-US')]);
+    const host = mount(<MachineVoice kind="en" label="Blue mussel" />);
+    const id = button(host, 'Nghe').getAttribute('aria-describedby')!;
+    expect(host.querySelector(`[id="${id}"]`)!.textContent).toBe('Giọng máy, tham khảo');
+  });
   it('cancels speech on unmount', () => {
     const fake = install([voice('Samantha', 'en-US')]);
     mount(<MachineVoice kind="en" label="Blue mussel" />);

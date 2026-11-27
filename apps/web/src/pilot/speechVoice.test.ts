@@ -48,6 +48,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('speechText', () => {
   it('normalises labels', () => {
     expect(speechText('ja', 'ウニ / ムラサキウニ')).toBe('ウニ、ムラサキウニ');
+    expect(speechText('en', 'Squid / Calamari')).toBe('Squid, Calamari');
     expect(speechText('scientific', 'Oreochromis sp.')).toBe('Oreochromis species');
     expect(speechText('en', '   ')).toBe('');
     expect(speechText('en', '  Blue  mussel ')).toBe('Blue mussel');
@@ -71,6 +72,34 @@ describe('pickVoice', () => {
     expect(pickVoice('en', [enGB, enUS])).toBe(enUS);
     expect(pickVoice('scientific', [enGB, enUS])).toBe(enUS);
     expect(pickVoice('en', [enGB, jaOther])).toBeUndefined();
+  });
+});
+
+describe('pickVoice choice', () => {
+  const v = (name: string, extra: Partial<SpeechSynthesisVoice> = {}) =>
+    ({ name, lang: 'en-US', localService: true, default: false, ...extra }) as SpeechSynthesisVoice;
+  const mac = [v('Albert'), v('Bad News'), v('Bahh'), v('Eddy'), v('Samantha')];
+  it('prefers Samantha over novelty voices listed first', () => {
+    expect(pickVoice('en', mac)?.name).toBe('Samantha');
+  });
+  it('prefers the default, then a non-novelty en-US, when Samantha is absent', () => {
+    expect(pickVoice('en', [v('Albert'), v('Eddy')])?.name).toBe('Eddy');
+    expect(pickVoice('en', [v('Albert'), v('Eddy'), v('Fred', { default: true })])?.name).toBe(
+      'Fred',
+    );
+  });
+  it('prefers on-device voices but keeps a remote one as last resort', () => {
+    const remote = v('Google US English', { localService: false });
+    expect(pickVoice('en', [remote, v('Eddy')])?.name).toBe('Eddy');
+    expect(pickVoice('en', [remote])).toBe(remote);
+    const jaRemote = {
+      name: 'Google 日本語',
+      lang: 'ja-JP',
+      localService: false,
+    } as SpeechSynthesisVoice;
+    const jaLocal = { name: 'Otoya', lang: 'ja-JP', localService: true } as SpeechSynthesisVoice;
+    expect(pickVoice('ja', [jaRemote, jaLocal])).toBe(jaLocal);
+    expect(pickVoice('ja', [jaRemote])).toBe(jaRemote);
   });
 });
 
@@ -105,6 +134,11 @@ describe('speak', () => {
       lang: 'ja-JP',
       rate: 0.65,
     });
+  });
+  it('sets a normalised BCP 47 lang for underscore voices', () => {
+    const { spoken } = install([voice('Google 日本語', 'ja_JP')]);
+    speak('ja', 'ウニ', false, handlers());
+    expect(spoken[0].lang).toBe('ja-JP');
   });
   it('returns false without speaking when there is no voice or no text', () => {
     const { synth } = install([enUS]);
