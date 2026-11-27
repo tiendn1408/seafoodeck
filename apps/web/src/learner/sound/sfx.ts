@@ -92,11 +92,17 @@ export function playSfx(kind: SfxKind): boolean {
   const { on, volume } = getSoundSettings();
   const peak = sfxPeak(volume);
   if (!ctx || !on || peak <= 0 || voiceBusy()) return false;
-  const c = ctx;
+  if (ctx.state === 'closed') {
+    // A closed context can never sound again: drop it and build a fresh one (sound is on here).
+    ctx = null;
+    stopPrevious = null;
+    if (!unlock()) return false;
+  }
+  const c = ctx as AudioContext;
   try {
     stopPrevious?.();
     stopPrevious = null;
-    if (c.state === 'suspended') void Promise.resolve(c.resume()).catch(() => {});
+    if (c.state !== 'running') void Promise.resolve(c.resume()).catch(() => {});
     const t0 = c.currentTime + LEAD_S;
     const nodes: { osc: OscillatorNode; gain: GainNode }[] = [];
     const stopAll = () => {

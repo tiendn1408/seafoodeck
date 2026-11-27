@@ -173,6 +173,50 @@ describe('unlock', () => {
   });
 });
 
+describe('context state', () => {
+  it.each(['suspended', 'interrupted'])('resumes a %s context at play time', async (state) => {
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture();
+    contexts[0].state = state;
+    contexts[0].resume.mockClear();
+    expect(sfx.playSfx('neutral')).toBe(true);
+    expect(contexts[0].resume).toHaveBeenCalledTimes(1);
+    remove();
+  });
+  it('does not resume a running context', async () => {
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture();
+    contexts[0].state = 'running';
+    contexts[0].resume.mockClear();
+    sfx.playSfx('neutral');
+    expect(contexts[0].resume).not.toHaveBeenCalled();
+    remove();
+  });
+  it('drops a closed context and builds a new one at the next play', async () => {
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture();
+    contexts[0].state = 'closed';
+    expect(sfx.playSfx('neutral')).toBe(true);
+    expect(ctorCalls).toBe(2);
+    expect(contexts[0].oscillators).toHaveLength(0);
+    expect(contexts[1].oscillators).toHaveLength(1);
+    remove();
+  });
+  it('a closed context is not rebuilt when sound is off', async () => {
+    const { sfx, settings } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture();
+    contexts[0].state = 'closed';
+    settings.updateSoundSettings({ on: false });
+    expect(sfx.playSfx('neutral')).toBe(false);
+    expect(ctorCalls).toBe(1);
+    remove();
+  });
+});
+
 describe('playSfx', () => {
   async function unlocked() {
     const l = await load();
