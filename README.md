@@ -53,6 +53,10 @@ Tính năng đã làm xong và có test nhưng **TẮT mặc định**: chủ d�
 
 Khi bật: màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Một phiên đã xong mà mở lại trong cùng lần tải trang, hoặc một màn hình được khôi phục hay dựng lại, có thể phát lại âm "xong phiên" hoặc âm phản hồi. Trên iPhone cũ hơn iOS 14.5 (chỉ có `webkitAudioContext`), tính năng âm thanh bị tắt và nút loa không hiện. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
 
+## Combo
+
+Màn học có **combo** chỉ để hiển thị, không ảnh hưởng điểm số hay lịch ôn. Thanh học hiện một chip combo khi có từ 2 câu đúng liên tiếp; màn tổng kết có dòng "Combo cao nhất". Ở kết quả Ghép tên, các cặp đúng liên tiếp hiện huy hiệu ×2, ×3 (theo thứ tự hiển thị, chỉ sau khi đã nộp, không có gì thêm cho cặp sai). Câu bỏ qua và thẻ tự đánh giá không làm tăng cũng không làm đứt chuỗi; câu chấm tự động sai thì chuỗi kết thúc và chip biến mất, không có thông báo nào. Ghép tên chỉ có một bộ ba cặp mỗi phiên nên combo của phiên chủ yếu hiện ở các chế độ có nhiều câu hỏi. Hiệu ứng xuất hiện tắt khi thiết bị bật "giảm chuyển động".
+
 ## Nhập dữ liệu prototype
 
 Bộ prototype (100 loài, 5 hồ sơ HS) được nhập thành bản nháp qua script chỉ gọi API quản trị; không ghi thẳng DB. Thông tin nguồn và giới hạn: [docs/sources/prototype-import](docs/sources/prototype-import/README.md).

@@ -741,6 +741,21 @@
   color: var(--s-wrong);
   text-decoration: line-through;
 }
+.pair-combo {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--s-surface);
+  color: var(--s-right);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  animation: combo-pop var(--dur) var(--ease-out) var(--pair-delay, 0ms) backwards;
+}
+.pair-combo + .study-verdict {
+  margin-left: var(--space-2);
+}
 .study-verdict {
   flex: none;
   display: grid;
@@ -1200,7 +1215,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .study-answer-face,
-  .combo-chip {
+  .combo-chip,
+  .pair-combo {
     animation: none;
   }
   .study-pause,

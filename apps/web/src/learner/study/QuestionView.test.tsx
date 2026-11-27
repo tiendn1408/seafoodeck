@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, useState } from 'react';
 import { renderToString } from 'react-dom/server';
-import type { ApiQuestion, Game } from '../../pilot/api';
+import type { ApiQuestion, Game, Score } from '../../pilot/api';
 import { QuestionView } from './QuestionView';
 import type { SpeciesRef } from './species';
 import { button, click, mount, unmountAll } from '../testDom';
@@ -196,5 +196,107 @@ describe('QuestionView machine voice', () => {
     synth.cancel.mockClear();
     await click(host.querySelector('[data-testid=next]') as HTMLElement);
     expect(synth.cancel).toHaveBeenCalled();
+  });
+});
+
+describe('QuestionView pair combo badges in matching', () => {
+  afterEach(() => {
+    unmountAll();
+    localStorage.clear();
+  });
+  // Left options are displayed in this (shuffled) order: l3, l1, l2.
+  const left = [
+    { id: 'l3', label: 'Tôm sú' },
+    { id: 'l1', label: 'Mực ống' },
+    { id: 'l2', label: 'Hải sâm' },
+  ];
+  const right = [
+    { id: 'r1', label: 'Squid' },
+    { id: 'r2', label: 'Sea cucumber' },
+    { id: 'r3', label: 'Tiger prawn' },
+  ];
+  const correct = { l1: 'r1', l2: 'r2', l3: 'r3' };
+  /** `verdicts` follow the displayed order; false picks a wrong partner, null leaves it unpaired. */
+  function matching(verdicts: (boolean | null)[], result: Partial<Score> | null) {
+    const q: ApiQuestion = {
+      id: 'q-match',
+      type: 'match',
+      prompt: 'Ghép tên\nTên',
+      left,
+      right,
+      unavailable: false,
+    };
+    const pairs: Record<string, string> = {};
+    left.forEach((o, i) => {
+      const v = verdicts[i];
+      if (v === null) return;
+      pairs[o.id] = v ? correct[o.id as keyof typeof correct] : 'r-wrong';
+    });
+    localStorage.setItem(`seafood-deck:draft:g-fc:q-match`, JSON.stringify({ pairs }));
+    if (result) {
+      q.result = {
+        answered: true,
+        skipped: false,
+        correct: false,
+        selfRated: false,
+        questionId: 'q-match',
+        targetId: 't',
+        skill: 's',
+        contentVersion: 'v',
+        explanation: '',
+        correctPairs: correct,
+        ...result,
+      };
+    }
+    return mount(view(q));
+  }
+  const badges = (host: HTMLElement) =>
+    [...host.querySelectorAll('.pair-combo')].map((b) => b.textContent);
+  /** The badge text per displayed pair row, '' when none. */
+  const perRow = (host: HTMLElement) =>
+    [...host.querySelectorAll('[aria-label="Tên tiếng Việt"] > button')].map(
+      (b) => b.querySelector('.pair-combo')?.textContent ?? '',
+    );
+
+  it('shows ×2 and ×3 on the second and third of three right pairs', () => {
+    expect(perRow(matching([true, true, true], {}))).toEqual(['', '×2', '×3']);
+  });
+  it('shows nothing when the middle pair is wrong', () => {
+    expect(perRow(matching([true, false, true], {}))).toEqual(['', '', '']);
+  });
+  it('shows ×2 on the second only when the third is wrong', () => {
+    expect(perRow(matching([true, true, false], {}))).toEqual(['', '×2', '']);
+  });
+  it('shows ×2 on the third after a wrong first', () => {
+    expect(perRow(matching([false, true, true], {}))).toEqual(['', '', '×2']);
+  });
+  it('counts an unpaired option as wrong', () => {
+    expect(perRow(matching([true, null, true], {}))).toEqual(['', '', '']);
+  });
+  it('follows the displayed order of the left options', () => {
+    const host = matching([true, true, true], {});
+    const rows = [...host.querySelectorAll('[aria-label="Tên tiếng Việt"] > button')];
+    expect(rows.map((r) => r.textContent?.slice(0, 6))).toEqual(['Tôm sú', 'Mực ốn', 'Hải sâ']);
+    expect(badges(host)).toEqual(['×2', '×3']);
+  });
+  it('gives each badge a text alternative with combo and the number', () => {
+    const host = matching([true, true, true], {});
+    const labels = [...host.querySelectorAll('.pair-combo')].map((b) =>
+      b.getAttribute('aria-label'),
+    );
+    expect(labels).toEqual(['combo 2', 'combo 3']);
+  });
+  it('staggers the reveal with a per-pair delay', () => {
+    const host = matching([true, true, true], {});
+    const delays = [...host.querySelectorAll('.pair-combo')].map((b) =>
+      (b as HTMLElement).style.getPropertyValue('--pair-delay'),
+    );
+    expect(delays).toEqual(['140ms', '280ms']);
+  });
+  it('renders no badge before the result exists', () => {
+    expect(badges(matching([true, true, true], null))).toEqual([]);
+  });
+  it('renders no badge for a skipped result', () => {
+    expect(badges(matching([true, true, true], { skipped: true, answered: false }))).toEqual([]);
   });
 });
