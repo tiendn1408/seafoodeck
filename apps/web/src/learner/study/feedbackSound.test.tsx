@@ -107,9 +107,17 @@ describe('Feedback sounds', () => {
   it.each([
     ['flashcard', flashcard('q1', score('q1', { selfRated: true }))],
     ['image', image('q1', score('q1'))],
-  ])('plays once in the %s layout, also under StrictMode and re-renders', (_, q) => {
-    mount(<StrictMode>{view(q)}</StrictMode>);
+  ])('plays once in the %s layout, also under StrictMode and re-renders', async (_, q) => {
+    const { createRoot } = await import('react-dom/client');
+    const { act } = await import('react');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() => root.render(<StrictMode>{view(q)}</StrictMode>));
     expect(playSfx).toHaveBeenCalledTimes(1);
+    act(() => root.render(<StrictMode>{view({ ...q })}</StrictMode>));
+    expect(playSfx).toHaveBeenCalledTimes(1);
+    act(() => root.unmount());
   });
 });
 
@@ -146,6 +154,41 @@ describe('Summary and Study', () => {
       pending={false}
     />
   );
+
+  it('Summary is silent while saving, then plays done once when saving ends', async () => {
+    const { createRoot } = await import('react-dom/client');
+    const { act } = await import('react');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    const show = (saving: boolean) =>
+      act(() =>
+        root.render(
+          <StrictMode>
+            <Summary
+              game={gameOf([flashcard('q1', score('q1'))])}
+              progress={[]}
+              server={null}
+              saving={saving}
+              saveError={null}
+              rope={null}
+              lookup={() => null}
+              onRetry={() => {}}
+              pending={false}
+            />
+          </StrictMode>,
+        ),
+      );
+    show(true);
+    show(true);
+    expect(playSfx).not.toHaveBeenCalled();
+    show(false);
+    expect(playSfx).toHaveBeenCalledTimes(1);
+    expect(playSfx).toHaveBeenCalledWith('done');
+    show(false);
+    expect(playSfx).toHaveBeenCalledTimes(1);
+    act(() => root.unmount());
+  });
 
   it('Summary plays done once on mount, not on re-render', async () => {
     const { createRoot } = await import('react-dom/client');

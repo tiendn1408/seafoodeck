@@ -49,6 +49,8 @@ describe('SoundControl', () => {
     expect(group.textContent).toContain('Bật âm thanh');
     const s = slider(host);
     expect([s.min, s.max, s.value]).toEqual(['0', '100', '25']);
+    // The value is shown but not announced a second time (the slider itself is announced).
+    expect(host.querySelector('output')!.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('toggles sound on and off', () => {

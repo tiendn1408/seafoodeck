@@ -84,7 +84,9 @@ export function SoundControl() {
               value={Math.round(volume * 100)}
               onChange={(e) => updateSoundSettings({ volume: Number(e.target.value) / 100 })}
             />
-            <output className="sound-value">{Math.round(volume * 100)}%</output>
+            <output className="sound-value" aria-hidden="true">
+              {Math.round(volume * 100)}%
+            </output>
           </label>
         </div>
       )}

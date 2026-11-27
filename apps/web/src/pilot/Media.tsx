@@ -179,7 +179,11 @@ export function Pronunciation({
           done();
           if (!refreshed) {
             refreshed = true;
-            void run().catch(() => settle('Không phát được bản thu. Hãy thử lại.'));
+            void run().catch(() => {
+              // The refreshed clip never played (e.g. play() refused outside a gesture).
+              if (generation === audioGeneration) playingDone = true;
+              settle('Không phát được bản thu. Hãy thử lại.');
+            });
           } else settle('Không phát được bản thu. Hãy thử lại.');
         };
         await audio.play();

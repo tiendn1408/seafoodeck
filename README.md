@@ -49,7 +49,7 @@ Hồ sơ loài và mặt sau thẻ ghi nhớ có nút **Nghe** với nhãn "Gi�
 
 ## Hiệu ứng âm thanh
 
-Màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
+Màn học có bốn âm ngắn (dưới 0,5 giây) do trình duyệt tự tạo, không dùng tệp âm thanh: đúng, sai, bỏ qua hoặc tự đánh giá, và kết thúc mẻ. Mặc định bật, âm lượng thấp (25%). Nút loa trên thanh học mở công tắc bật/tắt và thanh âm lượng; thiết lập được nhớ theo từng thiết bị. Hiệu ứng không phát đè lên giọng máy hay bản thu đã duyệt, và không ảnh hưởng điểm số hay lịch ôn. Một phiên đã xong mà mở lại trong cùng lần tải trang, hoặc một màn hình được khôi phục hay dựng lại, có thể phát lại âm "xong phiên" hoặc âm phản hồi. Chưa kiểm chứng trong CI: công tắc im lặng của iPhone và độ lớn thực tế trên loa điện thoại.
 
 ## Nhập dữ liệu prototype
 

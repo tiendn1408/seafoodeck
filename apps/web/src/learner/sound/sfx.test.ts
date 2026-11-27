@@ -8,8 +8,15 @@ interface FakeOsc {
   frequency: { value: number };
   calls: Call[];
 }
+interface Auto {
+  op: string;
+  v?: number;
+  t: number;
+  tc?: number;
+}
 interface FakeGain {
   peak: number | null;
+  auto: Auto[];
 }
 
 let seq = 0;
@@ -22,8 +29,10 @@ class FakeContext {
   destination = {};
   oscillators: FakeOsc[] = [];
   gains: FakeGain[] = [];
+  // refuse: resume() settles but the context stays suspended (no user activation).
+  static refuse = false;
   resume = vi.fn(() => {
-    this.state = 'running';
+    if (!FakeContext.refuse) this.state = 'running';
     return Promise.resolve();
   });
   close = vi.fn(() => Promise.resolve());
@@ -45,15 +54,19 @@ class FakeContext {
     return osc;
   }
   createGain() {
-    const g: FakeGain = { peak: null };
+    const g: FakeGain = { peak: null, auto: [] };
     this.gains.push(g);
     return {
       gain: {
-        setValueAtTime: () => {},
-        linearRampToValueAtTime: (v: number) => {
+        setValueAtTime: (v: number, t: number) => g.auto.push({ op: 'set', v, t }),
+        linearRampToValueAtTime: (v: number, t: number) => {
           g.peak = v;
+          g.auto.push({ op: 'linear', v, t });
         },
-        exponentialRampToValueAtTime: () => {},
+        exponentialRampToValueAtTime: (v: number, t: number) => g.auto.push({ op: 'exp', v, t }),
+        cancelScheduledValues: (t: number) => g.auto.push({ op: 'cancel', t }),
+        setTargetAtTime: (v: number, t: number, tc: number) =>
+          g.auto.push({ op: 'target', v, t, tc }),
       },
       connect: () => {},
       disconnect: () => {},
@@ -78,6 +91,7 @@ beforeEach(() => {
   seq = 0;
   contexts = [];
   ctorCalls = 0;
+  FakeContext.refuse = false;
   localStorage.clear();
   vi.stubGlobal('AudioContext', FakeContext);
 });
@@ -135,6 +149,57 @@ describe('unlock', () => {
     gesture();
     expect(ctorCalls).toBe(1);
     expect(sfx.playSfx('correct')).toBe(true);
+    remove();
+  });
+
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it('keeps listening while the context stays suspended; a later click or pointerup resumes it', async () => {
+    FakeContext.refuse = true;
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture('pointerdown');
+    await flush();
+    expect(contexts[0].state).toBe('suspended');
+    expect(contexts[0].resume).toHaveBeenCalledTimes(1);
+    FakeContext.refuse = false;
+    gesture('pointerup');
+    expect(contexts[0].resume).toHaveBeenCalledTimes(2);
+    expect(contexts[0].state).toBe('running');
+    expect(ctorCalls).toBe(1);
+    remove();
+  });
+
+  it.each(['pointerup', 'touchend', 'click'])('unlocks on %s', async (type) => {
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture(type);
+    expect(ctorCalls).toBe(1);
+    remove();
+  });
+
+  it('detaches its listeners once the context is running', async () => {
+    const { sfx } = await load();
+    sfx.installSoundUnlock();
+    gesture();
+    await flush();
+    expect(contexts[0].state).toBe('running');
+    contexts[0].state = 'suspended';
+    gesture('click');
+    gesture('keydown');
+    expect(contexts[0].resume).toHaveBeenCalledTimes(1);
+  });
+
+  it('a context that closed is rebuilt and resumed on the next gesture', async () => {
+    FakeContext.refuse = true;
+    const { sfx } = await load();
+    const remove = sfx.installSoundUnlock();
+    gesture();
+    await flush();
+    contexts[0].state = 'closed';
+    gesture('click');
+    expect(ctorCalls).toBe(2);
+    expect(contexts[1].resume).toHaveBeenCalledTimes(1);
     remove();
   });
 
@@ -260,6 +325,29 @@ describe('playSfx', () => {
     remove();
   });
 
+  it('shapes each note: start 0.0001, linear ramp to the peak in 8 ms, exponential to 0.0001 (never 0)', async () => {
+    const { sfx, ctx, remove } = await unlocked();
+    sfx.playSfx('correct');
+    const peak = sfx.sfxPeak(0.25);
+    [
+      [0, 110],
+      [90, 170],
+    ].forEach(([at, len], i) => {
+      const t0 = startOf(ctx.oscillators[0]);
+      const start = t0 + at / 1000;
+      const [set, lin, exp] = ctx.gains[i].auto;
+      expect(set).toMatchObject({ op: 'set', v: 0.0001 });
+      expect(set.t).toBeCloseTo(start, 9);
+      expect(lin.op).toBe('linear');
+      expect(lin.v).toBeCloseTo(peak, 10);
+      expect(lin.t).toBeCloseTo(start + 0.008, 9);
+      expect(exp.op).toBe('exp');
+      expect(exp.v).toBe(0.0001);
+      expect(exp.t).toBeCloseTo(start + len / 1000, 9);
+    });
+    remove();
+  });
+
   it('uses the volume setting for the peak', async () => {
     const { sfx, settings, ctx, remove } = await unlocked();
     settings.updateSoundSettings({ volume: 1 });
@@ -305,8 +393,16 @@ describe('playSfx', () => {
     const cut = (o: FakeOsc) => o.calls.filter((x) => x.op === 'stop').at(-1)!;
     expect(cut(a).seq).toBeLessThan(c.calls[0].seq);
     expect(cut(b).seq).toBeLessThan(c.calls[0].seq);
-    expect(cut(a).at).toBeLessThanOrEqual(ctx.currentTime);
-    expect(cut(b).at).toBeLessThanOrEqual(ctx.currentTime);
+    // Faded out over a few ms, then stopped: no click.
+    for (const [o, g] of [
+      [a, ctx.gains[0]],
+      [b, ctx.gains[1]],
+    ] as const) {
+      const tail = g.auto.slice(-2);
+      expect(tail[0]).toMatchObject({ op: 'cancel', t: ctx.currentTime });
+      expect(tail[1]).toMatchObject({ op: 'target', v: 0.0001, t: ctx.currentTime, tc: 0.005 });
+      expect(cut(o).at).toBeCloseTo(ctx.currentTime + 0.03, 9);
+    }
     remove();
   });
 

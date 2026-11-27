@@ -48,13 +48,7 @@ function unlock(): boolean {
   try {
     const Ctor = (globalThis as { AudioContext?: typeof AudioContext }).AudioContext;
     if (typeof Ctor !== 'function') return false;
-    const created = new Ctor();
-    ctx = created;
-    try {
-      void Promise.resolve(created.resume()).catch(() => {});
-    } catch {
-      /* resume is best effort */
-    }
+    ctx = new Ctor();
     return true;
   } catch {
     ctx = null;
@@ -63,16 +57,33 @@ function unlock(): boolean {
 }
 
 /**
- * Listens for the first pointerdown/keydown on the document. The listeners stay until a context
- * has actually been created (sound off at the first gesture keeps them); the remover detaches them.
+ * Listens on the document for the gestures iOS counts as user activation (pointerdown alone is
+ * not one for touch: pointerup, touchend and click are). Each gesture creates the context when
+ * sound is on and none exists (or it closed), and resumes it unless it is running. The
+ * listeners stay until the context is actually running; the remover detaches them earlier.
  */
 export function installSoundUnlock(): () => void {
-  const events = ['pointerdown', 'keydown'] as const;
+  const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
   const remove = () => {
     for (const e of events) document.removeEventListener(e, onGesture, true);
   };
   function onGesture() {
-    if (unlock()) remove();
+    if (ctx?.state === 'closed') {
+      ctx = null;
+      stopPrevious = null;
+    }
+    if (!unlock()) return;
+    const c = ctx as AudioContext;
+    if (c.state === 'running') return remove();
+    try {
+      void Promise.resolve(c.resume())
+        .then(() => {
+          if (ctx === c && c.state === 'running') remove();
+        })
+        .catch(() => {});
+    } catch {
+      /* resume is best effort; the next gesture tries again */
+    }
   }
   for (const e of events) document.addEventListener(e, onGesture, true);
   return remove;
@@ -108,9 +119,11 @@ export function playSfx(kind: SfxKind): boolean {
     const stopAll = () => {
       for (const { osc, gain } of nodes) {
         try {
-          osc.stop(c.currentTime);
-          osc.disconnect();
-          gain.disconnect();
+          // Fade over a few ms instead of cutting a sounding note (a cut clicks).
+          const now = c.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setTargetAtTime(FLOOR, now, 0.005);
+          osc.stop(now + 0.03);
         } catch {
           /* already stopped */
         }
@@ -130,6 +143,10 @@ export function playSfx(kind: SfxKind): boolean {
       gain.gain.exponentialRampToValueAtTime(FLOOR, end);
       osc.connect(gain);
       gain.connect(c.destination);
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
       osc.start(start);
       osc.stop(end + LEAD_S);
     }

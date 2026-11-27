@@ -121,7 +121,7 @@
   z-index: 5;
   display: grid;
   gap: var(--space-1);
-  width: min(16rem, calc(100vw - 2 * var(--space-4)));
+  width: min(16rem, calc(100vw - 2 * var(--space-4) - 52px));
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--s-line-strong);
   border-radius: var(--radius-md);
@@ -1174,6 +1174,7 @@
     animation: none;
   }
   .study-pause,
+  .sound-toggle,
   .study-flip,
   .pilot-option,
   .study-next svg,
