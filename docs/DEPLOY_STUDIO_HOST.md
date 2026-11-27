@@ -222,6 +222,32 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
   Vòng lặp xử lý từng service vì nhiều `--filter label=` trong một lệnh được hiểu là VÀ, không phải HOẶC. Service nào không có container thì `docker rm -f` của vòng đó báo `requires at least 1 argument`: vô hại, vòng lặp chạy tiếp. Lý do dùng `docker rm` thay `dc rm`: compose cũ không còn tên ba service này. **Giữ nguyên file compose cũ** (working tree lệch một file, `git status` hiện `M deploy/compose.pilot.ghcr.yaml`) chừng nào bản một container `web` còn chạy: trả file về bản mới khi env vẫn là `WEB_IMAGE_REF` thì mọi lệnh `dc` (kể cả `backup-pilot.sh`) lỗi `required variable LEARNER_IMAGE_REF is missing a value`. Khi nâng cấp lại sau một lần quay lại: ở mục 3.2, `git status --short` chỉ được hiện đúng dòng này; chạy `backup-pilot.sh` như viết (nó cần file cũ vì bản cũ đang chạy), rồi `git checkout HEAD -- deploy/compose.pilot.ghcr.yaml` ngay trước `git pull --ff-only`; `<previous-commit>` vẫn là commit đã ghi lần đầu (HEAD lúc này đã là commit mới). Cũng cần **xóa (hoặc comment) dòng `STUDIO_ORIGIN`** trong `.local/pilot.env` nếu quay về ảnh trước 2.5e (ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng giữ cho chắc); `STUDIO_SITE_ADDRESS` để nguyên được vì ảnh cũ không dùng nó. Ảnh web 2.5e với ảnh API cũ thì host học viên không còn chặn API nhân sự (chặn nằm trong API, edge chỉ gắn header): vì thế nâng cấp luôn chạy API trước web.
 - Bản ghi DNS của host Studio có thể giữ; không có site nào trả lời cho nó khi bản cũ chạy.
 
+## 6. Cập nhật chỉ một ảnh web (sau lần chuyển ba container)
+
+Khi chỉ đổi giao diện học viên (ví dụ giọng máy) hoặc chỉ giao diện Studio, thay đúng một container: API, DB, `edge` và container kia giữ nguyên, không có migration. Chưa diễn tập đầy đủ như mục 3 (chỉ thay một container; rollback là trả digest cũ). **Không dùng cho API** (có thể kèm migration, theo mục 3.4) **và không dùng cho `edge`** (mất cổng 80/443 trong lúc thay, theo mục 3.6).
+
+Máy build, từ `main` (đặt `TAG` mới, ví dụ `machine-voice-20261127-r1`; `SERVICE` là `web-learner` hoặc `web-studio`):
+
+    TAG=<TAG-mới>; SERVICE=web-learner
+    docker build --platform linux/amd64 --build-arg RELEASE_TAG=$TAG --target $SERVICE -f Dockerfile -t seafoodeck-$SERVICE:$TAG .
+    docker tag seafoodeck-$SERVICE:$TAG ghcr.io/tiendn1408/seafoodeck-$SERVICE:$TAG
+    docker push ghcr.io/tiendn1408/seafoodeck-$SERVICE:$TAG
+    docker buildx imagetools inspect ghcr.io/tiendn1408/seafoodeck-$SERVICE:$TAG    # ghi lại digest sha256 và kiểm amd64/linux như mục 3.1
+
+(`scripts/publish-pilot.sh` đẩy cả bốn ảnh nên không dùng ở đây.)
+
+VPS (`P` và alias `dc` như mục 3.6):
+
+    sudo grep -E '^(LEARNER|STUDIO)_IMAGE_REF=' .local/pilot.env     # ghi lại dòng cũ để quay lại
+    sudo -e .local/pilot.env     # CHỈ sửa dòng LEARNER_IMAGE_REF (hoặc STUDIO_IMAGE_REF) thành ghcr.io/tiendn1408/seafoodeck-$SERVICE@sha256:<digest mới>; không in file
+    dc pull $SERVICE
+    dc up -d --no-deps $SERVICE
+    dc ps
+
+Kiểm: `dc ps` cho `$SERVICE` healthy, `edge` không bị khởi động lại, cổng vẫn chỉ ở `edge`; hai lệnh `curl -fsSI` tới host học viên và host Studio (mục 4) đều 200.
+
+Quay lại: đặt lại dòng cũ trong `.local/pilot.env` rồi `dc up -d --no-deps $SERVICE`. Gián đoạn: chỉ host của container đó, vài giây (`edge` trả 502 cho host ấy trong lúc thay); host kia và API không bị ảnh hưởng.
+
 ## Giới hạn (nói thẳng)
 
 - Ở host Studio, `/api/v1/docs*` và `/api/v1/openapi*` được đưa thẳng tới API: chỉ cờ `EXPOSE_API_DOCS` (mặc định tắt) che chúng. Lớp phòng thủ thêm của Caddy (từ 2.5d) giờ chỉ còn ở host học viên, và nằm trong API (header `X-Edge`), không phải ở Caddy.
