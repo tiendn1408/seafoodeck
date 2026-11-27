@@ -7,6 +7,8 @@ import { FloatRope, type RopeFloat } from '../FloatRope';
 import { QuestionView, coverName } from './QuestionView';
 import { SoundControl } from '../sound/SoundControl';
 import { installSoundUnlock } from '../sound/sfx';
+import { ComboChip } from './ComboChip';
+import { sessionCombo } from './combo';
 import { Summary } from './HaulSummary';
 import { findSpecies, useSpeciesIndex } from './species';
 import { sessionQueue, withResult, type GameUpdate } from './submitQueues';
@@ -102,6 +104,7 @@ export function Study({
   }, [cursor]);
   usePrefetch(game.questions[cursor + 1]);
   const q = game.questions[cursor];
+  const combo = sessionCombo(game.questions);
   const server = useSessionSummary(
     game.id,
     userKind === 'student' && restored && !q && !saving && !failures.length,
@@ -133,6 +136,7 @@ export function Study({
           lookup={lookup}
           onRetry={onRetry}
           pending={pending}
+          bestCombo={combo.best}
         />
       </div>
     );
@@ -147,6 +151,7 @@ export function Study({
             <span className="study-count">
               Câu {cursor + 1} / {game.questions.length}
             </span>
+            <ComboChip current={combo.current} />
             <span className="study-saving" role="status">
               {saving ? 'Đang lưu…' : ''}
             </span>
