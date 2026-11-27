@@ -98,6 +98,10 @@ function LockedCards({ game, q, index }: { game: Game; q: ApiQuestion; index: nu
   );
 }
 
+/** Where a question's unsent answer is kept between visits. */
+export const draftStorageKey = (gameId: string, questionId: string) =>
+  `seafood-deck:draft:${gameId}:${questionId}`;
+
 /** Photo credit carried by an answered image question ("credit · rights\nsource"). */
 function SourceCredit({ source }: { source: string }) {
   const [line, link = ''] = source.split('\n');
@@ -209,7 +213,7 @@ export function QuestionView({
   onNext: () => void;
   onRefresh: () => Promise<ApiQuestion | undefined>;
 }) {
-  const draftKey = `seafood-deck:draft:${game.id}:${q.id}`;
+  const draftKey = draftStorageKey(game.id, q.id);
   const [draft, setDraft] = useState(() =>
     readLocal<{
       optionId?: string;
@@ -603,11 +607,10 @@ export function QuestionView({
                     {streak >= 2 && (
                       <span
                         className="pair-combo"
-                        role="img"
-                        aria-label={`combo ${streak}`}
                         style={{ '--pair-delay': `${i * 100}ms` } as CSSProperties}
                       >
-                        ×{streak}
+                        <span aria-hidden="true">{`×${streak}`}</span>
+                        <span className="study-visually-hidden">{` combo ${streak}`}</span>
                       </span>
                     )}
                     {verdict && (

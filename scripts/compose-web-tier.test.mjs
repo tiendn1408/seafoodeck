@@ -99,3 +99,15 @@ test('publish-pilot.sh loops over exactly api edge web-learner web-studio', () =
   assert.ok(m, 'for loop found');
   assert.deepEqual(m[1].split(/\s+/), ['api', 'edge', 'web-learner', 'web-studio']);
 });
+
+test('publish-pilot.sh keeps its amd64 check and its tag validation', () => {
+  const sh = text('scripts/publish-pilot.sh');
+  assert.match(
+    sh,
+    /test "\$\(docker image inspect "\$local_ref" --format '\{\{\.Architecture\}\}'\)" = amd64$/m,
+    'the Architecture of every local image must be compared to amd64 before the push',
+  );
+  assert.match(sh, /case "\$tag" in \*\[!a-zA-Z0-9_\.-\]\*\|'' *\) echo 'Invalid tag' >&2; exit 2;; esac/);
+  assert.ok(sh.indexOf('= amd64') < sh.indexOf('docker push'), 'amd64 check must precede docker push');
+  assert.ok(sh.indexOf('case "$tag" in') < sh.indexOf('docker tag'), 'tag validation must precede docker tag');
+});

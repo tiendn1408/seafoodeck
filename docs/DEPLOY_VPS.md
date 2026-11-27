@@ -1,3 +1,5 @@
+> Tài liệu 0.5 (legacy): `docker build .` giờ tạo ảnh `edge` không chứa app; dùng `DEPLOY_STUDIO_HOST.md` cho stack hiện tại
+
 # Docker demo trên VPS — seafoodeck.tiendn.io.vn
 
 VPS Linux có SSH, IP public và quyền sudo. Hướng dẫn cài Docker dưới đây dành cho Ubuntu 22.04/24.04; OS khác dùng hướng dẫn Docker tương ứng.

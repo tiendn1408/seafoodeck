@@ -43,10 +43,13 @@ export const HEADERS = [
 export const keyOf = ({ host, path, acceptEncoding }) =>
   `${host} ${path}${acceptEncoding ? ` [accept-encoding: ${acceptEncoding}]` : ''}`;
 
-function request(url, acceptEncoding) {
+export function request(url, acceptEncoding, extraHeaders = {}) {
   const u = new URL(url);
   const lib = u.protocol === 'https:' ? https : http;
-  const headers = acceptEncoding ? { 'accept-encoding': acceptEncoding } : {};
+  const headers = {
+    ...(acceptEncoding ? { 'accept-encoding': acceptEncoding } : {}),
+    ...extraHeaders,
+  };
   return new Promise((done, fail) => {
     const req = lib.request(u, { method: 'GET', headers, agent: false }, (res) => {
       const chunks = [];
@@ -70,17 +73,57 @@ async function firstAsset(base) {
   return m[1];
 }
 
-/** Captures the matrix; keys are "<host> <path>" (plus the Accept-Encoding sent, if any). */
-export async function capture(baseUrls) {
+async function captureRows(baseUrls) {
   const assets = {};
   for (const host of ['learner', 'studio']) assets[host] = await firstAsset(baseUrls[host]);
-  const out = {};
+  const rows = [];
   for (const entry of MATRIX) {
     const path = entry.path === ASSET ? assets[entry.host] : entry.path;
     const res = await request(new URL(path, baseUrls[entry.host]).href, entry.acceptEncoding);
     const headers = {};
     for (const h of HEADERS) if (res.headers[h] !== undefined) headers[h] = String(res.headers[h]);
-    out[keyOf(entry)] = { status: res.status, headers };
+    rows.push({
+      key: keyOf(entry),
+      host: entry.host,
+      path,
+      status: res.status,
+      headers,
+      via: res.headers.via,
+    });
+  }
+  return rows;
+}
+
+/** Captures the matrix; keys are "<host> <path>" (plus the Accept-Encoding sent, if any). */
+export async function capture(baseUrls) {
+  const out = {};
+  for (const r of await captureRows(baseUrls))
+    out[r.key] = { status: r.status, headers: r.headers };
+  return out;
+}
+
+/** The same requests with the `via` response header kept per row (the baseline does not hold it). */
+export const captureVia = captureRows;
+
+const S3_PREFIX = '/seafoodeck-private/';
+const CADDY_VIA = '1.1 Caddy';
+
+/**
+ * Rules for the `Via` header on captured rows ({host, path, via}): files served by the app containers
+ * carry none (the edge strips it), while API and S3-proxy responses keep the `1.1 Caddy` they always had.
+ */
+export function viaProblems(rows) {
+  const out = [];
+  for (const { host, path, via } of rows) {
+    const proxied = path.startsWith('/api/') || path.startsWith(S3_PREFIX);
+    if (!proxied && via !== undefined)
+      out.push(
+        `${host} ${path}: app-served response must not have a via header, got ${JSON.stringify(via)}`,
+      );
+    if (proxied && via !== CADDY_VIA)
+      out.push(
+        `${host} ${path}: proxied response must have via ${JSON.stringify(CADDY_VIA)}, got ${via === undefined ? '(absent)' : JSON.stringify(via)}`,
+      );
   }
   return out;
 }

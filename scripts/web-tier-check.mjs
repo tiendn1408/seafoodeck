@@ -9,12 +9,15 @@
 //   (b) only `edge` publishes ports
 //   (c) web-learner holds only the learner build, web-studio only the Studio build, edge no app files
 //   (d) the edge Caddyfile keeps the Studio-unconfigured abort guard
+//   (e) Via: none on app-served files, `1.1 Caddy` on API and S3-proxy responses
+//   (f) staff paths: GET /api/v1/admin/users is 404 on the learner host and 401 on Studio (also with a
+//       client-sent X-Edge: learner)
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FILE_NAME_MARKERS, MARKERS } from './check-bundles.mjs';
-import { capture, diff } from './web-tier-headers.mjs';
+import { capture, captureVia, diff, request, viaProblems } from './web-tier-headers.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -166,11 +169,35 @@ function checkStudioGuard() {
     : ['deploy/edge/Caddyfile lost the @unconfigured abort guard'];
 }
 
+async function checkVia() {
+  const rows = await captureVia({ learner: learnerUrl, studio: studioUrl });
+  const problems = viaProblems(rows);
+  return problems.length ? problems : `via header rules hold on ${rows.length} responses`;
+}
+
+async function checkStaffPaths() {
+  const problems = [];
+  const expect = async (label, base, status, headers) => {
+    const res = await request(new URL('/api/v1/admin/users', base).href, undefined, headers);
+    if (res.status !== status)
+      problems.push(`${label}: GET /api/v1/admin/users gave ${res.status}, expected ${status}`);
+  };
+  await expect('learner host', learnerUrl, 404);
+  await expect('studio host (client-sent X-Edge: learner)', studioUrl, 401, {
+    'x-edge': 'learner',
+  });
+  return problems.length
+    ? problems
+    : 'admin/users is 404 on the learner host and 401 on Studio, even with a client X-Edge';
+}
+
 const CHECKS = [
   ['(a) header matrix', checkHeaders],
   ['(b) published ports', checkPorts],
   ['(c) app files per container', checkFiles],
   ['(d) studio guard', checkStudioGuard],
+  ['(e) via header', checkVia],
+  ['(f) staff-path boundary', checkStaffPaths],
 ];
 
 let failed = 0;

@@ -95,12 +95,15 @@ Script dừng API vài chục giây trong lúc sao lưu, nên làm lúc không c
     git rev-parse --short HEAD  # ghi lại: đây là <previous-commit> cho phần Quay lại (mục 5)
     sudo env PILOT_COMPOSE_FILE=deploy/compose.pilot.ghcr.yaml sh scripts/backup-pilot.sh _backups/before-web-split
     ls -la _backups/before-web-split      # phải thấy db.sql, objects.json và images.txt
-    # Ghi lại số liệu catalogue TRƯỚC khi đổi ảnh (lệnh đếm ở mục 4, đang chạy ảnh cũ) để so sau deploy.
+    # Ghi lại số liệu catalogue TRƯỚC khi đổi ảnh (đang chạy ảnh cũ) để so sau deploy. Hai lệnh chỉ đọc dưới đây giống mục 4; `dc` định nghĩa ngay đây (cùng alias ở mục 3.3), còn `P` chỉ cần từ mục 3.6.
+    alias dc='sudo docker compose --env-file .local/pilot.env --project-directory . -f deploy/compose.pilot.ghcr.yaml'
+    dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select (select count(*) from \"Item\"), (select count(*) from \"Revision\"), (select count(*) from \"MediaAsset\")"'   # ghi lại ba số
+    dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select id, value from \"Setting\" where id like '"'"'current:%'"'"'"'   # ghi lại current:internal
     git pull --ff-only origin main        # BẮT BUỘC: mang về compose mới (ba dịch vụ web, ba biến *_IMAGE_REF); thiếu bước này thì ảnh mới chạy với compose cũ
 
 ### 3.3 Ghi nhớ bản đang chạy rồi đổi mã ảnh (VPS)
 
-    grep -E '^(API|WEB)_IMAGE_REF=' .local/pilot.env     # chỉ in hai dòng này, không in cả file; lưu lại để quay lại
+    sudo grep -E '^(API|WEB)_IMAGE_REF=' .local/pilot.env     # chỉ in hai dòng này, không in cả file; lưu lại để quay lại
 
 Không `cat` hay in toàn bộ `.local/pilot.env`. Mở file bằng trình soạn thảo, đổi `API_IMAGE_REF` sang digest mới, **xóa** dòng `WEB_IMAGE_REF` và thêm ba dòng `EDGE_IMAGE_REF`, `LEARNER_IMAGE_REF`, `STUDIO_IMAGE_REF` (giá trị digest ở mục 3.1):
 
@@ -203,12 +206,12 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
 ## 5. Quay lại
 
 - Lỗi chỉ ở site Studio (chứng chỉ, DNS): sửa DNS/env rồi `dc up -d --no-deps edge`; host học viên không bị ảnh hưởng.
-- Chỉ một app web hỏng: `dc up -d --no-deps web-learner` (hoặc `web-studio`) với `LEARNER_IMAGE_REF` (hoặc `STUDIO_IMAGE_REF`) đổi về digest trước; host kia không cần động tới.
+- Chỉ một app web hỏng: chạy `sudo -e .local/pilot.env` để trả `LEARNER_IMAGE_REF` (hoặc `STUDIO_IMAGE_REF`) về digest trước, rồi `dc up -d --no-deps web-learner` (hoặc `web-studio`); host kia không cần động tới. Chỉ áp dụng từ lần phát hành tách ba container thứ hai trở đi: lần đầu chưa có digest trước đó của hai app này (bản trước là một container `web`, xem bullet kế).
 - Quay về bản một container `web` (trước tách ba ảnh): ảnh API và ảnh web quay **cùng nhau** (ảnh web cũ với API mới, hoặc ngược lại, chưa được kiểm). Làm theo thứ tự này, `<previous-commit>` là commit đã ghi ở mục 3.2:
 
         P=seafoodeck-pilot    # đúng tên project (mục 3.6)
         git checkout <previous-commit> -- deploy/compose.pilot.ghcr.yaml
-        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF; nếu quay về ảnh trước 2.5e thì CŨNG xóa (hoặc comment) dòng STUDIO_ORIGIN trước khi chạy tiếp (còn đặt thì nhân sự không đăng nhập được ở host học viên và CORS kho S3 vẫn nhận nó)
+        sudo -e .local/pilot.env     # trả API_IMAGE_REF và WEB_IMAGE_REF về hai dòng đã lưu ở mục 3.3; xóa ba dòng EDGE/LEARNER/STUDIO_IMAGE_REF; nếu quay về ảnh trước 2.5e thì CŨNG xóa (hoặc comment) dòng STUDIO_ORIGIN trước khi chạy tiếp (còn đặt thì nhân sự không đăng nhập được ở host học viên và CORS kho S3 vẫn nhận nó; ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng vẫn xóa cho chắc; STUDIO_SITE_ADDRESS để nguyên được vì ảnh cũ không dùng nó)
         dc pull                      # kéo ảnh cũ TRƯỚC khi gỡ gì; lỗi ở đây (đăng nhập GHCR hết hạn, mạng) thì web mới vẫn đang chạy, dừng lại xử lý
         for svc in edge web-learner web-studio; do
           sudo docker rm -f $(sudo docker ps -aq --filter label=com.docker.compose.project=$P --filter label=com.docker.compose.service=$svc)
@@ -217,9 +220,11 @@ Mỗi lần thử sai tính vào giới hạn đăng nhập (20 lần / 10 phút
         dc up -d --no-deps api
         dc up -d --no-deps web
 
+  Nếu `dc pull` lỗi, tầng web mới vẫn đang chạy: sửa nguyên nhân (đăng nhập GHCR hoặc mạng) rồi chạy lại `dc pull`, chưa gỡ gì cho tới khi nó thành công.
+
   Cả hai host ngừng từ vòng `rm` cho tới khi `web` lên (vài giây ở local; sẽ lâu hơn nếu còn phải kéo ảnh, vì thế `dc pull` chạy trước). Đổi compose và env trước khi gỡ là vô hại: lúc đó ba container mới chỉ thành container mồ côi của file compose cũ, vẫn chạy cho tới vòng `rm`. Thứ tự này đã suy luận từ các lệnh đã diễn tập, chưa diễn tập lại nguyên thứ tự mới.
 
-  Vòng lặp xử lý từng service vì nhiều `--filter label=` trong một lệnh được hiểu là VÀ, không phải HOẶC. Service nào không có container thì `docker rm -f` của vòng đó báo `requires at least 1 argument`: vô hại, vòng lặp chạy tiếp. Lý do dùng `docker rm` thay `dc rm`: compose cũ không còn tên ba service này. **Giữ nguyên file compose cũ** (working tree lệch một file, `git status` hiện `M deploy/compose.pilot.ghcr.yaml`) chừng nào bản một container `web` còn chạy: trả file về bản mới khi env vẫn là `WEB_IMAGE_REF` thì mọi lệnh `dc` (kể cả `backup-pilot.sh`) lỗi `required variable LEARNER_IMAGE_REF is missing a value`. Khi nâng cấp lại sau một lần quay lại: ở mục 3.2, `git status --short` chỉ được hiện đúng dòng này; chạy `backup-pilot.sh` như viết (nó cần file cũ vì bản cũ đang chạy), rồi `git checkout HEAD -- deploy/compose.pilot.ghcr.yaml` ngay trước `git pull --ff-only`; `<previous-commit>` vẫn là commit đã ghi lần đầu (HEAD lúc này đã là commit mới). Cũng cần **xóa (hoặc comment) dòng `STUDIO_ORIGIN`** trong `.local/pilot.env` nếu quay về ảnh trước 2.5e (ảnh web cũ có màn quản trị trên host học viên; ảnh API cũ bỏ qua biến này nhưng giữ cho chắc); `STUDIO_SITE_ADDRESS` để nguyên được vì ảnh cũ không dùng nó. Ảnh web 2.5e với ảnh API cũ thì host học viên không còn chặn API nhân sự (chặn nằm trong API, edge chỉ gắn header): vì thế nâng cấp luôn chạy API trước web.
+  Vòng lặp xử lý từng service vì nhiều `--filter label=` trong một lệnh được hiểu là VÀ, không phải HOẶC. Service nào không có container thì `docker rm -f` của vòng đó báo `requires at least 1 argument`: vô hại, vòng lặp chạy tiếp. Lý do dùng `docker rm` thay `dc rm`: compose cũ không còn tên ba service này. **Giữ nguyên file compose cũ** (working tree lệch một file, `git status` hiện `M deploy/compose.pilot.ghcr.yaml`) chừng nào bản một container `web` còn chạy: trả file về bản mới khi env vẫn là `WEB_IMAGE_REF` thì mọi lệnh `dc` (kể cả `backup-pilot.sh`) lỗi `required variable LEARNER_IMAGE_REF is missing a value`. Khi nâng cấp lại sau một lần quay lại: ở mục 3.2, `git status --short` chỉ được hiện đúng dòng này; chạy `backup-pilot.sh` như viết (nó cần file cũ vì bản cũ đang chạy), rồi `git checkout HEAD -- deploy/compose.pilot.ghcr.yaml` ngay trước `git pull --ff-only`; `<previous-commit>` vẫn là commit đã ghi lần đầu (HEAD lúc này đã là commit mới). Ảnh web 2.5e với ảnh API cũ thì host học viên không còn chặn API nhân sự (chặn nằm trong API, edge chỉ gắn header): vì thế nâng cấp luôn chạy API trước web.
 - Bản ghi DNS của host Studio có thể giữ; không có site nào trả lời cho nó khi bản cũ chạy.
 
 ## 6. Cập nhật chỉ một ảnh web (sau lần chuyển ba container)

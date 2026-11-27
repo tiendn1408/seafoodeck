@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, useState } from 'react';
 import { renderToString } from 'react-dom/server';
 import type { ApiQuestion, Game, Score } from '../../pilot/api';
-import { QuestionView } from './QuestionView';
+import { QuestionView, draftStorageKey } from './QuestionView';
 import type { SpeciesRef } from './species';
 import { button, click, mount, unmountAll } from '../testDom';
 
@@ -217,7 +217,7 @@ describe('QuestionView pair combo badges in matching', () => {
   ];
   const correct = { l1: 'r1', l2: 'r2', l3: 'r3' };
   /** `verdicts` follow the displayed order; false picks a wrong partner, null leaves it unpaired. */
-  function matching(verdicts: (boolean | null)[], result: Partial<Score> | null) {
+  function matching(verdicts: (boolean | null)[], result: Partial<Score> | null, draft = true) {
     const q: ApiQuestion = {
       id: 'q-match',
       type: 'match',
@@ -232,7 +232,8 @@ describe('QuestionView pair combo badges in matching', () => {
       if (v === null) return;
       pairs[o.id] = v ? correct[o.id as keyof typeof correct] : 'r-wrong';
     });
-    localStorage.setItem(`seafood-deck:draft:g-fc:q-match`, JSON.stringify({ pairs }));
+    if (draft)
+      localStorage.setItem(draftStorageKey(sessionOf([]).id, 'q-match'), JSON.stringify({ pairs }));
     if (result) {
       q.result = {
         answered: true,
@@ -250,12 +251,19 @@ describe('QuestionView pair combo badges in matching', () => {
     }
     return mount(view(q));
   }
+  /** The visible text of a badge: its text without the visually hidden part. */
+  const visible = (b: Element | null) => {
+    if (!b) return '';
+    const copy = b.cloneNode(true) as Element;
+    copy.querySelector('.study-visually-hidden')?.remove();
+    return copy.textContent ?? '';
+  };
   const badges = (host: HTMLElement) =>
-    [...host.querySelectorAll('.pair-combo')].map((b) => b.textContent);
+    [...host.querySelectorAll('.pair-combo')].map((b) => visible(b));
   /** The badge text per displayed pair row, '' when none. */
   const perRow = (host: HTMLElement) =>
-    [...host.querySelectorAll('[aria-label="Tên tiếng Việt"] > button')].map(
-      (b) => b.querySelector('.pair-combo')?.textContent ?? '',
+    [...host.querySelectorAll('[aria-label="Tên tiếng Việt"] > button')].map((b) =>
+      visible(b.querySelector('.pair-combo')),
     );
 
   it('shows ×2 and ×3 on the second and third of three right pairs', () => {
@@ -279,12 +287,21 @@ describe('QuestionView pair combo badges in matching', () => {
     expect(rows.map((r) => r.textContent?.slice(0, 6))).toEqual(['Tôm sú', 'Mực ốn', 'Hải sâ']);
     expect(badges(host)).toEqual(['×2', '×3']);
   });
-  it('gives each badge a text alternative with combo and the number', () => {
+  it('names the button with combo N exactly once and keeps the visible ×N', () => {
     const host = matching([true, true, true], {});
-    const labels = [...host.querySelectorAll('.pair-combo')].map((b) =>
-      b.getAttribute('aria-label'),
-    );
-    expect(labels).toEqual(['combo 2', 'combo 3']);
+    const rows = [...host.querySelectorAll('[aria-label="Tên tiếng Việt"] > button')];
+    const badge = rows[1]!.querySelector('.pair-combo')!;
+    expect(badge.getAttribute('role')).toBeNull();
+    expect(badge.getAttribute('aria-label')).toBeNull();
+    expect(visible(badge)).toBe('×2');
+    expect(badge.querySelector('.study-visually-hidden')?.textContent).toBe(' combo 2');
+    expect(rows[1]!.textContent?.match(/combo 2/g)).toHaveLength(1);
+    const times = [...badge.querySelectorAll('span')].find((n) => n.textContent === '×2');
+    expect(times?.getAttribute('aria-hidden')).toBe('true');
+    expect(
+      badge.querySelector('.study-visually-hidden')?.closest('[aria-hidden="true"]'),
+    ).toBeNull();
+    expect(rows[2]!.textContent?.match(/combo 3/g)).toHaveLength(1);
   });
   it('staggers the reveal with a per-pair delay', () => {
     const host = matching([true, true, true], {});
@@ -298,5 +315,16 @@ describe('QuestionView pair combo badges in matching', () => {
   });
   it('renders no badge for a skipped result', () => {
     expect(badges(matching([true, true, true], { skipped: true, answered: false }))).toEqual([]);
+  });
+  it('a restored session without a draft shows no badge and no verdict, but the correct pairs', () => {
+    const host = matching([true, true, true], {}, false);
+    expect(badges(host)).toEqual([]);
+    expect(host.querySelector('.is-right, .is-wrong')).toBeNull();
+    expect(host.textContent).not.toContain('combo');
+    expect([...host.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      'Mực ống — Squid',
+      'Hải sâm — Sea cucumber',
+      'Tôm sú — Tiger prawn',
+    ]);
   });
 });

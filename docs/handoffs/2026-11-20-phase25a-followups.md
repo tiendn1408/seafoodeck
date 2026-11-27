@@ -1,3 +1,5 @@
+> Cập nhật 27/11/2026: phần lớn các mục dưới đây đã làm (xem `git log` các commit `20ae6d1`, `05c43c7`, `a15f61c` và báo cáo rà soát); danh sách giữ để tham khảo, các ô chưa tick không còn phản ánh trạng thái.
+
 # Việc còn lại sau review cuối phase 2.5a — 2026-11-20
 
 Trạng thái: không có file inbox/outbox; đây là danh sách theo dõi nội bộ, chưa việc nào được làm trừ khi ghi khác. Hai lỗi M1 (huy hiệu đạt luôn có `earnedAt`) và M2 (`afterSubmit` lỗi không làm hỏng câu đã lưu) đã sửa trong commit cùng đợt.

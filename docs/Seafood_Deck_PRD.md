@@ -41,9 +41,9 @@ Bản đầu ưu tiên chọn đáp án; nhập tên hoặc mã từ trí nhớ 
 
 Tên Việt Cá tuyết Đại Tây Dương và Bạch tuộc Đông Á có phần diễn giải biên tập, chưa duyệt tên thương mại; phải hiển thị lưu ý và dẫn nguồn đúng, không coi là tên khách xác nhận. Thịt trắng/đỏ là thuộc tính thương mại, không thay định danh loài. Tên Nhật/khoa học đối chiếu tài liệu cập nhật, không tự gán マダコ về O. vulgaris bằng nguồn cũ.
 
-Ba bài HS cùng loài Thunnus albacares: nguyên con đông lạnh (0303.42), thiếu dạng hàng (cần hỏi nguyên con/phi lê), phi lê đông lạnh (0304.87). Dùng cấp 6 số từ bản HS 2022 trong phụ lục nguồn Việt Nam, không tự suy ra cấp 8 số. Nguồn và giới hạn nằm trong `src/data/customer.ts` và `docs/sources/customer-demo/README.md`; chưa duyệt nghiệp vụ/hiệu lực hiện hành.
+Ba bài HS cùng loài Thunnus albacares: nguyên con đông lạnh (0303.42), thiếu dạng hàng (cần hỏi nguyên con/phi lê), phi lê đông lạnh (0304.87). Dùng cấp 6 số từ bản HS 2022 trong phụ lục nguồn Việt Nam, không tự suy ra cấp 8 số. Nguồn và giới hạn nằm trong `src/data/customer.ts` (nay ở `test-fixtures/legacy-web/data/`; dữ liệu chạy thật ở API và DB) và `docs/sources/customer-demo/README.md`; chưa duyệt nghiệp vụ/hiệu lực hiện hành.
 
-Giữ fixtures tôm cũ trong `src/data/demo.ts`, `src/data/imageMedia.ts`, `test-fixtures/legacy-shrimp/` để kiểm hồi quy. App hiện hành import `customerPack`, không nhập fixtures này; lịch sử bộ cũ không góp vào tiến độ bộ mới.
+Giữ fixtures tôm cũ trong `src/data/demo.ts` (nay ở `test-fixtures/legacy-web/data/`; dữ liệu chạy thật ở API và DB), `src/data/imageMedia.ts`, `test-fixtures/legacy-shrimp/` để kiểm hồi quy. App hiện hành import `customerPack`, không nhập fixtures này; lịch sử bộ cũ không góp vào tiến độ bộ mới.
 
 ## 4. Media và trạng thái lỗi
 
