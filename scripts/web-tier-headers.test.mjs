@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { diff, MATRIX, keyOf } from './web-tier-headers.mjs';
+import { diff, MATRIX, keyOf, viaProblems } from './web-tier-headers.mjs';
 
 const base = () => ({ a: { status: 200, headers: { 'cache-control': 'no-store' } } });
 
@@ -40,4 +40,36 @@ test('the matrix covers both hosts and gives unique keys', () => {
   const keys = MATRIX.map(keyOf);
   assert.equal(new Set(keys).size, keys.length);
   for (const host of ['learner', 'studio']) assert.ok(MATRIX.some((e) => e.host === host));
+});
+
+const CADDY = '1.1 Caddy';
+const goodRows = () => [
+  { host: 'learner', path: '/' },
+  { host: 'learner', path: '/assets/index-abc.js' },
+  { host: 'studio', path: '/some/spa/route' },
+  { host: 'learner', path: '/api/v1/auth/me', via: CADDY },
+  { host: 'studio', path: '/seafoodeck-private/x', via: CADDY },
+];
+
+test('via rules: app files carry none, API and S3 responses carry 1.1 Caddy', () => {
+  assert.deepEqual(viaProblems(goodRows()), []);
+});
+
+test('an app-served row with a via header is reported by host and path', () => {
+  const rows = goodRows();
+  rows[1].via = CADDY;
+  const out = viaProblems(rows);
+  assert.equal(out.length, 1);
+  assert.match(out[0], /learner \/assets\/index-abc\.js/);
+  assert.match(out[0], /must not have a via header/);
+});
+
+test('an API or S3 row without the Caddy via is reported, a different via too', () => {
+  const rows = goodRows();
+  delete rows[3].via;
+  rows[4].via = '1.1 other';
+  const out = viaProblems(rows);
+  assert.equal(out.length, 2);
+  assert.match(out[0], /learner \/api\/v1\/auth\/me.*1\.1 Caddy/);
+  assert.match(out[1], /studio \/seafoodeck-private\/x.*"1\.1 other"/);
 });
