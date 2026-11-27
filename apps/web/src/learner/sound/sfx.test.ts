@@ -102,11 +102,13 @@ beforeEach(() => {
   contexts = [];
   ctorCalls = 0;
   FakeContext.refuse = false;
+  vi.stubEnv('VITE_SOUND_EFFECTS', 'on');
   localStorage.clear();
   vi.stubGlobal('AudioContext', FakeContext);
 });
 afterEach(() => {
   for (const r of removers.splice(0)) r();
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });

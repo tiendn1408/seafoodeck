@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Pronunciation, isClipPlaying } from '../../pilot/Media';
 import { button, click, mount, unmountAll } from '../testDom';
 import { installSoundUnlock, playSfx } from './sfx';
@@ -39,6 +39,7 @@ class Ctx {
   });
 }
 
+beforeEach(() => vi.stubEnv('VITE_SOUND_EFFECTS', 'on'));
 const removers: (() => void)[] = [];
 const install = () => {
   const r = installSoundUnlock();
@@ -48,6 +49,7 @@ const install = () => {
 afterEach(() => {
   for (const r of removers.splice(0)) r();
   unmountAll();
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
 
