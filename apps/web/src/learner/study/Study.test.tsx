@@ -445,7 +445,7 @@ describe('Study combo chip', () => {
       );
       await tick();
       expect(chip(host)?.textContent).toBe('Combo ×3');
-      expect(chip(host)?.getAttribute('role')).toBe('status');
+      expect(chip(host)?.parentElement?.getAttribute('role')).toBe('status');
     },
   );
 

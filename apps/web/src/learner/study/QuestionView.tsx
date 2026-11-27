@@ -605,7 +605,7 @@ export function QuestionView({
                         className="pair-combo"
                         role="img"
                         aria-label={`combo ${streak}`}
-                        style={{ '--pair-delay': `${i * 140}ms` } as CSSProperties}
+                        style={{ '--pair-delay': `${i * 100}ms` } as CSSProperties}
                       >
                         ×{streak}
                       </span>

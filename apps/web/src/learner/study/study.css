@@ -109,7 +109,8 @@
   font-weight: 600;
 }
 .study-saving:empty,
-.haul-saving:empty {
+.haul-saving:empty,
+.combo-slot:empty {
   display: none;
 }
 .study-tools {
@@ -741,20 +742,24 @@
   color: var(--s-wrong);
   text-decoration: line-through;
 }
+/* On the row's top edge, out of the flex width, so the pair label keeps its room. */
+.pilot-match .pilot-option {
+  position: relative;
+}
 .pair-combo {
-  flex: none;
-  margin-left: auto;
+  position: absolute;
+  top: -8px;
+  right: var(--space-3);
   padding: 0 var(--space-2);
+  border: 1px solid var(--s-right);
   border-radius: var(--radius-pill);
   background: var(--s-surface);
   color: var(--s-right);
+  line-height: 1.4;
   font-size: var(--text-sm);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   animation: combo-pop var(--dur) var(--ease-out) var(--pair-delay, 0ms) backwards;
-}
-.pair-combo + .study-verdict {
-  margin-left: var(--space-2);
 }
 .study-verdict {
   flex: none;

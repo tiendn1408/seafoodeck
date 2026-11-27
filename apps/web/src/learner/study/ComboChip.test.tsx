@@ -7,12 +7,13 @@ import { ComboChip } from './ComboChip';
 afterEach(unmountAll);
 
 describe('ComboChip', () => {
-  it.each([0, 1])('renders nothing for %i', (n) => {
+  it.each([0, 1])('renders no pill (an empty live region) for %i', (n) => {
     const host = document.createElement('div');
     document.body.appendChild(host);
     const root = createRoot(host);
     act(() => root.render(<ComboChip current={n} />));
-    expect(host.innerHTML).toBe('');
+    expect(host.querySelector('.combo-chip')).toBeNull();
+    expect(host.querySelector('[role="status"]')?.innerHTML).toBe('');
     act(() => root.unmount());
     host.remove();
   });
@@ -36,7 +37,7 @@ describe('ComboChip', () => {
     expect(host.textContent).toBe('Combo ×3');
     act(() => root.render(<ComboChip current={0} />));
     expect(host.textContent).toBe('');
-    expect(host.innerHTML).toBe('');
+    expect(host.querySelector('.combo-chip')).toBeNull();
     act(() => root.unmount());
     host.remove();
   });

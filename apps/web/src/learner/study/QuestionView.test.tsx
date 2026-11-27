@@ -291,7 +291,7 @@ describe('QuestionView pair combo badges in matching', () => {
     const delays = [...host.querySelectorAll('.pair-combo')].map((b) =>
       (b as HTMLElement).style.getPropertyValue('--pair-delay'),
     );
-    expect(delays).toEqual(['140ms', '280ms']);
+    expect(delays).toEqual(['100ms', '200ms']);
   });
   it('renders no badge before the result exists', () => {
     expect(badges(matching([true, true, true], null))).toEqual([]);
